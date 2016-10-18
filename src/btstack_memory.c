@@ -51,7 +51,6 @@
 #include <stdlib.h>
 
 
-
 // MARK: hci_connection_t
 #if !defined(HAVE_MALLOC) && !defined(MAX_NR_HCI_CONNECTIONS)
     #if defined(MAX_NO_HCI_CONNECTIONS)

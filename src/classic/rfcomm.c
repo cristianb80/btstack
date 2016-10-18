@@ -2108,7 +2108,7 @@ int rfcomm_send_prepared(uint16_t rfcomm_cid, uint16_t len){
     return result;
 }
 
-int rfcomm_send(uint16_t rfcomm_cid, uint8_t *data, uint16_t len){
+int rfcomm_send(uint16_t rfcomm_cid, const uint8_t *data, uint16_t len){
     rfcomm_channel_t * channel = rfcomm_channel_for_rfcomm_cid(rfcomm_cid);
     if (!channel){
         log_error("rfcomm_send cid 0x%02x doesn't exist!", rfcomm_cid);

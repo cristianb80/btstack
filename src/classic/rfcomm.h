@@ -337,7 +337,7 @@ void rfcomm_request_can_send_now_event(uint16_t rfcomm_cid);
  * @brief Sends RFCOMM data packet to the RFCOMM channel with given identifier.
  * @param rfcomm_cid
  */
-int  rfcomm_send(uint16_t rfcomm_cid, uint8_t *data, uint16_t len);
+int  rfcomm_send(uint16_t rfcomm_cid, const uint8_t *data, uint16_t len);
 
 /** 
  * @brief Sends Local Line Status, see LINE_STATUS_..
