@@ -1,0 +1,1 @@
+cscope -b -c -R -X
