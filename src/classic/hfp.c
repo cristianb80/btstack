@@ -459,6 +459,9 @@ static hfp_connection_t * connection_doing_sdp_query = NULL;
 static void handle_query_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
     hfp_connection_t * hfp_connection = connection_doing_sdp_query;
     
+    if (NULL == hfp_connection)
+    	return ;
+
     if ( hfp_connection->state != HFP_W4_SDP_QUERY_COMPLETE) return;
     
     switch (hci_event_packet_get_type(packet)){
@@ -547,6 +550,7 @@ void hfp_handle_hci_event(uint8_t packet_type, uint16_t channel, uint8_t *packet
                     hfp_connection = get_hfp_connection_context_for_bd_addr(event_addr);
                     if (!hfp_connection) break;
                     hfp_connection->hf_accept_sco = 1;
+                    break;
                 default:
                     break;                    
             }            

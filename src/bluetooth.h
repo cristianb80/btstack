@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -78,7 +78,7 @@ typedef uint8_t bd_addr_t[BD_ADDR_LEN];
  */
 #define LINK_KEY_LEN 16
 #define LINK_KEY_STR_LEN (LINK_KEY_LEN*2)
-typedef uint8_t link_key_t[LINK_KEY_LEN]; 
+typedef uint8_t link_key_t[LINK_KEY_LEN];
 
 /**
  * @brief link key type
@@ -105,7 +105,7 @@ typedef enum {
 } inquiry_mode_t;
 
 /**
- * HCI Transport 
+ * HCI Transport
  */
 
 /**
@@ -122,7 +122,7 @@ typedef enum {
 #define HCI_SCO_HEADER_SIZE          3
 #define HCI_EVENT_HEADER_SIZE        2
 
-/** 
+/**
  * HCI Layer
  */
 
@@ -131,7 +131,7 @@ typedef enum {
 //
 
 // from Bluetooth Core Specification
-#define ERROR_CODE_SUCCESS                                 0x00 
+#define ERROR_CODE_SUCCESS                                 0x00
 #define ERROR_CODE_UNKNOWN_HCI_COMMAND                     0x01
 #define ERROR_CODE_UNKNOWN_CONNECTION_IDENTIFIER           0x02
 #define ERROR_CODE_HARDWARE_FAILURE                        0x03
@@ -145,18 +145,18 @@ typedef enum {
 #define ERROR_CODE_ACL_CONNECTION_ALREADY_EXISTS           0x0B
 #define ERROR_CODE_COMMAND_DISALLOWED                      0x0C
 #define ERROR_CODE_CONNECTION_REJECTED_DUE_TO_LIMITED_RESOURCES 0x0D
-#define ERROR_CODE_CONNECTION_REJECTED_DUE_TO_SECURITY_REASONS  0x0E 
-#define ERROR_CODE_CONNECTION_REJECTED_DUE_TO_UNACCEPTABLE_BD_ADDR 0x0F 
+#define ERROR_CODE_CONNECTION_REJECTED_DUE_TO_SECURITY_REASONS  0x0E
+#define ERROR_CODE_CONNECTION_REJECTED_DUE_TO_UNACCEPTABLE_BD_ADDR 0x0F
 #define ERROR_CODE_CONNECTION_ACCEPT_TIMEOUT_EXCEEDED      0x10
-#define ERROR_CODE_UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE  0x11 
-#define ERROR_CODE_INVALID_HCI_COMMAND_PARAMETERS          0x12 
+#define ERROR_CODE_UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE  0x11
+#define ERROR_CODE_INVALID_HCI_COMMAND_PARAMETERS          0x12
 #define ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION       0x13
-#define ERROR_CODE_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES 0x14 
+#define ERROR_CODE_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES 0x14
 #define ERROR_CODE_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_POWER_OFF     0x15
 #define ERROR_CODE_CONNECTION_TERMINATED_BY_LOCAL_HOST     0x16
 #define ERROR_CODE_REPEATED_ATTEMPTS                       0x17
 #define ERROR_CODE_PAIRING_NOT_ALLOWED                     0x18
-#define ERROR_CODE_UNKNOWN_LMP_PDU                         0x19                  
+#define ERROR_CODE_UNKNOWN_LMP_PDU                         0x19
 #define ERROR_CODE_UNSUPPORTED_REMOTE_FEATURE_UNSUPPORTED_LMP_FEATURE 0x1A
 #define ERROR_CODE_SCO_OFFSET_REJECTED                     0x1B
 #define ERROR_CODE_SCO_INTERVAL_REJECTED                   0x1C
@@ -214,7 +214,7 @@ typedef enum {
 #define HCI_ACL_3DH3_SIZE          552
 #define HCI_ACL_2DH5_SIZE          679
 #define HCI_ACL_3DH5_SIZE         1021
-       
+
 #define HCI_EVENT_PAYLOAD_SIZE     255
 #define HCI_CMD_PAYLOAD_SIZE       255
 
@@ -236,7 +236,7 @@ typedef enum {
 
 
 /**
- * SSP Authentication Requirements, see IO Capability Request Reply Commmand 
+ * SSP Authentication Requirements, see IO Capability Request Reply Commmand
  */
 
 // Numeric comparison with automatic accept allowed.
@@ -277,7 +277,7 @@ typedef enum {
  */
 #define HCI_EVENT_INQUIRY_COMPLETE                         0x01
 
-/** 
+/**
  * @format 1B11132
  * @param num_responses
  * @param bd_addr
@@ -309,7 +309,7 @@ typedef enum {
  * @format 121
  * @param status
  * @param connection_handle
- * @param reason 
+ * @param reason
  */
 #define HCI_EVENT_DISCONNECTION_COMPLETE                   0x05
 /**
@@ -329,7 +329,7 @@ typedef enum {
  * @format 121
  * @param status
  * @param connection_handle
- * @param encryption_enabled 
+ * @param encryption_enabled
  */
 #define HCI_EVENT_ENCRYPTION_CHANGE                        0x08
 /**
@@ -342,7 +342,7 @@ typedef enum {
  * @format 121
  * @param status
  * @param connection_handle
- * @param key_flag 
+ * @param key_flag
  */
 #define HCI_EVENT_MASTER_LINK_KEY_COMPLETE                 0x0A
 
@@ -443,7 +443,7 @@ typedef enum {
  */
 #define HCI_EVENT_CONNECTION_PACKET_TYPE_CHANGED           0x1D
 
-/** 
+/**
  * @format 1B11321
  * @param num_responses
  * @param bd_addr
@@ -470,7 +470,7 @@ typedef enum {
 #define HCI_EVENT_SYNCHRONOUS_CONNECTION_COMPLETE          0x2C
 
 // TODO: serialize extended_inquiry_response and provide parser
-/** 
+/**
  * @format 1B11321
  * @param num_responses
  * @param bd_addr
@@ -482,7 +482,7 @@ typedef enum {
  */
 #define HCI_EVENT_EXTENDED_INQUIRY_RESPONSE                0x2F
 
- /** 
+ /**
   * @format 1H
   * @param status
   * @param handle
@@ -522,7 +522,7 @@ typedef enum {
 
 #define HCI_EVENT_VENDOR_SPECIFIC                          0xFF
 
-/** 
+/**
  * @format 11H11B2221
  * @param subevent_code
  * @param status
@@ -540,11 +540,11 @@ typedef enum {
 #define HCI_SUBEVENT_LE_CONNECTION_UPDATE_COMPLETE         0x03
 #define HCI_SUBEVENT_LE_READ_REMOTE_USED_FEATURES_COMPLETE 0x04
 #define HCI_SUBEVENT_LE_LONG_TERM_KEY_REQUEST              0x05
-    
+
 // last used HCI_EVENT in 2.1 is 0x3d
 // last used HCI_EVENT in 4.1 is 0x57
 
-/** 
+/**
  * L2CAP Layer
  */
 
@@ -554,15 +554,15 @@ typedef enum {
 
 // size of HCI ACL + L2CAP Header for regular data packets (8)
 #define COMPLETE_L2CAP_HEADER (HCI_ACL_HEADER_SIZE + L2CAP_HEADER_SIZE)
-    
+
 // minimum signaling MTU
 #define L2CAP_MINIMAL_MTU 48
 #define L2CAP_DEFAULT_MTU 672
-    
+
 // Minimum/default MTU
 #define L2CAP_LE_DEFAULT_MTU  23
 
-// L2CAP Fixed Channel IDs    
+// L2CAP Fixed Channel IDs
 #define L2CAP_CID_SIGNALING                 0x0001
 #define L2CAP_CID_CONNECTIONLESS_CHANNEL    0x0002
 #define L2CAP_CID_ATTRIBUTE_PROTOCOL        0x0004
@@ -574,7 +574,7 @@ typedef enum {
 
 // L2CAP Reject Result Codes
 #define L2CAP_REJ_CMD_UNKNOWN               0x0000
-    
+
 // Response Timeout eXpired
 #define L2CAP_RTX_TIMEOUT_MS   10000
 
@@ -672,7 +672,7 @@ typedef enum {
 #define BT_RFCOMM_UIH        0xEF       // 1 1 1 1  0 1 1 1
 #define BT_RFCOMM_UIH_PF     0xFF       // 1 1 1 1  0 1 1 1
 
-// Multiplexer message types 
+// Multiplexer message types
 #define BT_RFCOMM_CLD_CMD    0xC3
 #define BT_RFCOMM_FCON_CMD   0xA3
 #define BT_RFCOMM_FCON_RSP   0xA1
@@ -724,7 +724,7 @@ typedef enum rpn_data_bits {
 
 typedef enum rpn_stop_bits {
     RPN_STOP_BITS_1_0 = 0,
-    RPN_STOP_BITS_1_5 
+    RPN_STOP_BITS_1_5
 } rpn_stop_bits_t;
 
 typedef enum rpn_parity {
@@ -732,7 +732,7 @@ typedef enum rpn_parity {
     RPN_PARITY_ODD   = 1,
     RPN_PARITY_EVEN  = 3,
     RPN_PARITY_MARK  = 5,
-    RPN_PARITY_SPACE = 7, 
+    RPN_PARITY_SPACE = 7,
 } rpn_parity_t;
 
 typedef enum rpn_flow_control {
@@ -747,7 +747,7 @@ typedef enum rpn_flow_control {
 #define RPN_PARAM_MASK_0_BAUD             0x01
 #define RPN_PARAM_MASK_0_DATA_BITS        0x02
 #define RPN_PARAM_MASK_0_STOP_BITS        0x04
-#define RPN_PARAM_MASK_0_PARITY           0x08       
+#define RPN_PARAM_MASK_0_PARITY           0x08
 #define RPN_PARAM_MASK_0_PARITY_TYPE      0x10
 #define RPN_PARAM_MASK_0_XON_CHAR         0x20
 #define RPN_PARAM_MASK_0_XOFF_CHAR        0x40
@@ -757,7 +757,7 @@ typedef enum rpn_flow_control {
 #define RPN_PARAM_MASK_1_XONOFF_ON_INPUT  0x01
 #define RPN_PARAM_MASK_1_XONOFF_ON_OUTPUT 0x02
 #define RPN_PARAM_MASK_1_RTR_ON_INPUT     0x04
-#define RPN_PARAM_MASK_1_RTR_ON_OUTPUT    0x08       
+#define RPN_PARAM_MASK_1_RTR_ON_OUTPUT    0x08
 #define RPN_PARAM_MASK_1_RTC_ON_INPUT     0x10
 #define RPN_PARAM_MASK_1_RTC_ON_OUTPUT    0x20
 #define RPN_PARAM_MASK_1_RESERVED_0       0x40
@@ -774,15 +774,15 @@ typedef enum rpn_flow_control {
 #ifndef ETHERTYPE_VLAN
 #define ETHERTYPE_VLAN                                  0x8100 /* IEEE 802.1Q VLAN tag */
 #endif
-    
+
 #define BNEP_MTU_MIN                                    1691
 
 #define BNEP_EXT_FLAG                                   0x80
 #define BNEP_TYPE_MASK                                  0x7F
 #define BNEP_TYPE(header)                               ((header) & BNEP_TYPE_MASK)
 #define BNEP_HEADER_HAS_EXT(x)                          (((x) & BNEP_EXT_FLAG) == BNEP_EXT_FLAG)
-    
-/* BNEP packet types */    
+
+/* BNEP packet types */
 #define BNEP_PKT_TYPE_GENERAL_ETHERNET                  0x00
 #define BNEP_PKT_TYPE_CONTROL                           0x01
 #define BNEP_PKT_TYPE_COMPRESSED_ETHERNET               0x02
@@ -821,9 +821,9 @@ typedef enum rpn_flow_control {
 
 typedef enum {
     PANU_UUID = 0x1115,
-    NAP_UUID = 0x1116, 
+    NAP_UUID = 0x1116,
     GN_UUID = 0x1117
-} bnep_service_uuid_t; 
+} bnep_service_uuid_t;
 
 typedef enum {
     BNEP_SECURITY_NONE = 0x0000,
@@ -858,7 +858,7 @@ typedef enum {
 // Minimum/default MTU
 #define ATT_DEFAULT_MTU               23
 
-// MARK: Attribute PDU Opcodes 
+// MARK: Attribute PDU Opcodes
 #define ATT_ERROR_RESPONSE              0x01
 
 #define ATT_EXCHANGE_MTU_REQUEST        0x02
@@ -900,7 +900,7 @@ typedef enum {
 #define ATT_ERROR_INVALID_HANDLE                   0x01
 #define ATT_ERROR_READ_NOT_PERMITTED               0x02
 #define ATT_ERROR_WRITE_NOT_PERMITTED              0x03
-#define ATT_ERROR_INVALID_PDU                      0x04  
+#define ATT_ERROR_INVALID_PDU                      0x04
 #define ATT_ERROR_INSUFFICIENT_AUTHENTICATION      0x05
 #define ATT_ERROR_REQUEST_NOT_SUPPORTED            0x06
 #define ATT_ERROR_INVALID_OFFSET                   0x07
@@ -968,9 +968,9 @@ typedef enum {
 #define GAP_RECONNECTION_ADDRESS_UUID  0x2a03
 #define GAP_PERIPHERAL_PREFERRED_CONNECTION_PARAMETERS_UUID 0x2a04
 #define GAP_SERVICE_CHANGED            0x2a05
- 
+
 /**
- * SM - LE Security Manager 
+ * SM - LE Security Manager
  */
 // Bluetooth Spec definitions
 typedef enum {
@@ -1052,7 +1052,7 @@ typedef enum {
 
 
 // Company identifiers / manufacturers
-#define COMPANY_ID_CAMBRIDGE_SILICON_RADIO     0x000A 
+#define COMPANY_ID_CAMBRIDGE_SILICON_RADIO     0x000A
 #define COMPANY_ID_TEXAS_INSTRUMENTS_INC       0x000D
 #define COMPANY_ID_BROADCOM_CORPORATION        0x000F
 #define COMPANY_ID_ST_MICROELECTRONICS         0x0030

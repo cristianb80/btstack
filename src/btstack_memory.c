@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -347,7 +347,7 @@ bnep_service_t * btstack_memory_bnep_service_get(void){
 void btstack_memory_bnep_service_free(bnep_service_t *bnep_service){
     // silence compiler warning about unused parameter in a portable way
     (void) bnep_service;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 bnep_service_t * btstack_memory_bnep_service_get(void){
@@ -385,7 +385,7 @@ bnep_channel_t * btstack_memory_bnep_channel_get(void){
 void btstack_memory_bnep_channel_free(bnep_channel_t *bnep_channel){
     // silence compiler warning about unused parameter in a portable way
     (void) bnep_channel;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 bnep_channel_t * btstack_memory_bnep_channel_get(void){
@@ -424,7 +424,7 @@ hfp_connection_t * btstack_memory_hfp_connection_get(void){
 void btstack_memory_hfp_connection_free(hfp_connection_t *hfp_connection){
     // silence compiler warning about unused parameter in a portable way
     (void) hfp_connection;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 hfp_connection_t * btstack_memory_hfp_connection_get(void){
@@ -503,7 +503,7 @@ gatt_client_t * btstack_memory_gatt_client_get(void){
 void btstack_memory_gatt_client_free(gatt_client_t *gatt_client){
     // silence compiler warning about unused parameter in a portable way
     (void) gatt_client;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 gatt_client_t * btstack_memory_gatt_client_get(void){

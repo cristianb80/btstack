@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -52,8 +52,6 @@
 
 static const btstack_run_loop_t * the_run_loop = NULL;
 
-extern const btstack_run_loop_t btstack_run_loop_embedded;
-
 // assert run loop initialized
 static void btstack_run_loop_assert(void){
     if (!the_run_loop){
@@ -65,11 +63,11 @@ static void btstack_run_loop_assert(void){
 
 void btstack_run_loop_set_timer_handler(btstack_timer_source_t *ts, void (*process)(btstack_timer_source_t *_ts)){
     ts->process = process;
-};
+}
 
 void btstack_run_loop_set_data_source_handler(btstack_data_source_t *ds, void (*process)(btstack_data_source_t *_ds,  btstack_data_source_callback_type_t callback_type)){
     ds->process = process;
-};
+}
 
 void btstack_run_loop_set_data_source_fd(btstack_data_source_t *ds, int fd){
     ds->fd = fd;
