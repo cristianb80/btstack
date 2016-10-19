@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -38,7 +38,7 @@
 /*
  *  btstack_debug.h
  *
- *  allow to funnel debug & error messages 
+ *  allow to funnel debug & error messages
  */
 
 #ifndef __DEBUG_H
@@ -55,7 +55,7 @@
 #endif
 
 // Avoid complaints of unused arguments when log levels are disabled.
-static inline void __log_unused(const char *format, ...) {}
+//static inline void __log_unused(const char *format, ...) {}
 
 #ifdef __AVR__
 #define HCI_DUMP_LOG(log_level, format, ...) hci_dump_log_P(log_level, PSTR(format), ## __VA_ARGS__)
@@ -74,7 +74,7 @@ static inline void __log_unused(const char *format, ...) {}
 #define log_debug(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
 #endif
 #else
-#define log_debug(...) __log_unused(__VA_ARGS__)
+#define log_debug(...)
 #endif
 
 #ifdef ENABLE_LOG_INFO
@@ -84,7 +84,7 @@ static inline void __log_unused(const char *format, ...) {}
 #define log_info(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
 #endif
 #else
-#define log_info(...) __log_unused(__VA_ARGS__)
+#define log_info(...)
 #endif
 
 #ifdef ENABLE_LOG_ERROR
@@ -94,10 +94,10 @@ static inline void __log_unused(const char *format, ...) {}
 #define log_error(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
 #endif
 #else
-#define log_error(...) __log_unused(__VA_ARGS__)
+#define log_error(...)
 #endif
 
-/** 
+/**
  * @brief Log Security Manager key via log_info
  * @param key to log
  */

@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -56,7 +56,7 @@ extern "C" {
 /* API_START */
 
 /**
- * @brief Create HFP Hands-Free (HF) SDP service record. 
+ * @brief Create HFP Hands-Free (HF) SDP service record.
  * @param service
  * @param rfcomm_channel_nr
  * @param name
@@ -66,13 +66,13 @@ extern "C" {
 void hfp_hf_create_sdp_record(uint8_t * service, uint32_t service_record_handle, int rfcomm_channel_nr, const char * name, uint16_t supported_features, int wide_band_speech);
 
 /**
- * @brief Set up HFP Hands-Free (HF) device without additional supported features. 
+ * @brief Set up HFP Hands-Free (HF) device without additional supported features.
  * @param rfcomm_channel_nr
  */
 void hfp_hf_init(uint16_t rfcomm_channel_nr);
 
 /**
- * @brief Set codecs. 
+ * @brief Set codecs.
  * @param codecs_nr
  * @param codecs
  */
@@ -85,7 +85,7 @@ void hfp_hf_init_codecs(int codecs_nr, uint8_t * codecs);
 void hfp_hf_init_supported_features(uint32_t supported_features);
 
 /**
- * @brief Set HF indicators. 
+ * @brief Set HF indicators.
  * @param indicators_nr
  * @param indicators
  */
@@ -93,16 +93,16 @@ void hfp_hf_init_hf_indicators(int indicators_nr, uint16_t * indicators);
 
 
 /**
- * @brief Register callback for the HFP Hands-Free (HF) client. 
+ * @brief Register callback for the HFP Hands-Free (HF) client.
  * @param callback
  */
 void hfp_hf_register_packet_handler(btstack_packet_handler_t callback);
 
 /**
- * @brief Establish RFCOMM connection with the AG with given Bluetooth address, 
+ * @brief Establish RFCOMM connection with the AG with given Bluetooth address,
  * and perform service level connection (SLC) agreement:
  * - exchange supported features
- * - retrieve Audio Gateway (AG) indicators and their status 
+ * - retrieve Audio Gateway (AG) indicators and their status
  * - enable indicator status update in the AG
  * - notify the AG about its own available codecs, if possible
  * - retrieve the AG information describing the call hold and multiparty services, if possible
@@ -115,7 +115,7 @@ void hfp_hf_register_packet_handler(btstack_packet_handler_t callback);
 void hfp_hf_establish_service_level_connection(bd_addr_t bd_addr);
 
 /**
- * @brief Release the RFCOMM channel and the audio connection between the HF and the AG. 
+ * @brief Release the RFCOMM channel and the audio connection between the HF and the AG.
  * The status of releasing the SLC connection is reported via
  * HFP_SUBEVENT_SERVICE_LEVEL_CONNECTION_RELEASED.
  *
@@ -143,28 +143,28 @@ void hfp_hf_disable_status_update_for_all_ag_indicators(hci_con_handle_t acl_han
  * @brief Enable or disable status update for the individual indicators in the AG using bitmap.
  * The status field of the HFP_SUBEVENT_COMPLETE reports if the command was accepted.
  * The status of an AG indicator is reported via HFP_SUBEVENT_AG_INDICATOR_STATUS_CHANGED.
- * 
+ *
  * @param bd_addr Bluetooth address of the AG
  * @param indicators_status_bitmap 32-bit bitmap, 0 - indicator is disabled, 1 - indicator is enabled
  */
 void hfp_hf_set_status_update_for_individual_ag_indicators(hci_con_handle_t acl_handle, uint32_t indicators_status_bitmap);
 
 /**
- * @brief Query the name of the currently selected Network operator by AG. 
- * 
- * The name is restricted to max 16 characters. The result is reported via 
- * HFP_SUBEVENT_NETWORK_OPERATOR_CHANGED subtype 
+ * @brief Query the name of the currently selected Network operator by AG.
+ *
+ * The name is restricted to max 16 characters. The result is reported via
+ * HFP_SUBEVENT_NETWORK_OPERATOR_CHANGED subtype
  * containing network operator mode, format and name.
  * If no operator is selected, format and operator are omitted.
- * 
+ *
  * @param bd_addr Bluetooth address of the AG
  */
 void hfp_hf_query_operator_selection(hci_con_handle_t acl_handle);
 
 /**
  * @brief Enable Extended Audio Gateway Error result codes in the AG.
- * Whenever there is an error relating to the functionality of the AG as a 
- * result of AT command, the AG shall send +CME ERROR. This error is reported via 
+ * Whenever there is an error relating to the functionality of the AG as a
+ * result of AT command, the AG shall send +CME ERROR. This error is reported via
  * HFP_SUBEVENT_EXTENDED_AUDIO_GATEWAY_ERROR, see hfp_cme_error_t in hfp.h
  *
  * @param bd_addr Bluetooth address of the AG
@@ -179,7 +179,7 @@ void hfp_hf_enable_report_extended_audio_gateway_error_result_code(hci_con_handl
  void hfp_hf_disable_report_extended_audio_gateway_error_result_code(hci_con_handle_t acl_handle);
 
 /**
- * @brief Establish audio connection. 
+ * @brief Establish audio connection.
  * The status of audio connection establishment is reported via
  * HFP_SUBEVENT_AUDIO_CONNECTION_ESTABLISHED.
  * @param bd_addr Bluetooth address of the AG
@@ -239,14 +239,14 @@ Transfer).
 void hfp_hf_connect_calls(hci_con_handle_t acl_handle);
 
 /**
- * @brief Terminate an incoming or an outgoing call. 
+ * @brief Terminate an incoming or an outgoing call.
  * HFP_SUBEVENT_CALL_TERMINATED is sent upon call termination.
  * @param bd_addr Bluetooth address of the AG
  */
 void hfp_hf_terminate_call(hci_con_handle_t acl_handle);
 
 /**
- * @brief Initiate outgoing voice call by providing the destination phone number to the AG. 
+ * @brief Initiate outgoing voice call by providing the destination phone number to the AG.
  * @param bd_addr Bluetooth address of the AG
  * @param number
  */
@@ -266,8 +266,8 @@ void hfp_hf_dial_memory(hci_con_handle_t acl_handle, int memory_id);
 void hfp_hf_redial_last_number(hci_con_handle_t acl_handle);
 
 /*
- * @brief Enable the “Call Waiting notification” function in the AG. 
- * The AG shall send the corresponding result code to the HF whenever 
+ * @brief Enable the “Call Waiting notification” function in the AG.
+ * The AG shall send the corresponding result code to the HF whenever
  * an incoming call is waiting during an ongoing call. In that event,
  * the HFP_SUBEVENT_CALL_WAITING_NOTIFICATION is emitted.
  *
@@ -282,7 +282,7 @@ void hfp_hf_activate_call_waiting_notification(hci_con_handle_t acl_handle);
 void hfp_hf_deactivate_call_waiting_notification(hci_con_handle_t acl_handle);
 
 /*
- * @brief Enable the “Calling Line Identification notification” function in the AG. 
+ * @brief Enable the “Calling Line Identification notification” function in the AG.
  * The AG shall issue the corresponding result code just after every RING indication,
  * when the HF is alerted in an incoming call. In that event,
  * the HFP_SUBEVENT_CALLING_LINE_INDETIFICATION_NOTIFICATION is emitted.
@@ -298,10 +298,10 @@ void hfp_hf_deactivate_calling_line_notification(hci_con_handle_t acl_handle);
 
 
 /*
- * @brief Activate echo canceling and noise reduction in the AG. By default, 
- * if the AG supports its own embedded echo canceling and/or noise reduction 
+ * @brief Activate echo canceling and noise reduction in the AG. By default,
+ * if the AG supports its own embedded echo canceling and/or noise reduction
  * functions, it shall have them activated until this function is called.
- * If the AG does not support any echo canceling and noise reduction functions, 
+ * If the AG does not support any echo canceling and noise reduction functions,
  * it shall respond with the ERROR indicator (TODO)
  * @param bd_addr Bluetooth address of the AG
  */
@@ -325,7 +325,7 @@ void hfp_hf_activate_voice_recognition_notification(hci_con_handle_t acl_handle)
 void hfp_hf_deactivate_voice_recognition_notification(hci_con_handle_t acl_handle);
 
 /*
- * @brief Set microphone gain. 
+ * @brief Set microphone gain.
  * @param bd_addr Bluetooth address of the AG
  * @param gain Valid range: [0,15]
  */
@@ -346,16 +346,16 @@ void hfp_hf_set_speaker_gain(hci_con_handle_t acl_handle, int gain);
 void hfp_hf_send_dtmf_code(hci_con_handle_t acl_handle, char code);
 
 /*
- * @brief Read numbers from the AG for the purpose of creating 
+ * @brief Read numbers from the AG for the purpose of creating
  * a unique voice tag and storing the number and its linked voice
- * tag in the HF’s memory. 
+ * tag in the HF’s memory.
  * The number is reported via HFP_SUBEVENT_NUMBER_FOR_VOICE_TAG.
  * @param bd_addr Bluetooth address of the AG
  */
 void hfp_hf_request_phone_number_for_voice_tag(hci_con_handle_t acl_handle);
 
 /*
- * @brief Query the list of current calls in AG. 
+ * @brief Query the list of current calls in AG.
  * The result is received via HFP_SUBEVENT_ENHANCED_CALL_STATUS.
  * @param bd_addr Bluetooth address of the AG
  */
@@ -369,7 +369,7 @@ void hfp_hf_query_current_call_status(hci_con_handle_t acl_handle);
 void hfp_hf_release_call_with_index(hci_con_handle_t acl_handle, int index);
 
 /*
- * @brief Place all parties of a multiparty call on hold with the 
+ * @brief Place all parties of a multiparty call on hold with the
  * exception of the specified call.
  * @param bd_addr Bluetooth address of the AG
  * @param index

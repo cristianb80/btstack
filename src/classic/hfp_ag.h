@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -61,13 +61,13 @@ typedef struct {
 } hfp_phone_number_t;
 
 /**
- * @brief Create HFP Audio Gateway (AG) SDP service record. 
+ * @brief Create HFP Audio Gateway (AG) SDP service record.
  * @param service
  * @param rfcomm_channel_nr
  * @param name
  * @param ability_to_reject_call
  * @param suported_features 32-bit bitmap, see HFP_AGSF_* values in hfp.h
- * @param wide_band_speech supported 
+ * @param wide_band_speech supported
  */
 void hfp_ag_create_sdp_record(uint8_t * service, uint32_t service_record_handle, int rfcomm_channel_nr, const char * name, uint8_t ability_to_reject_call, uint16_t supported_features, int wide_band_speech);
 
@@ -78,7 +78,7 @@ void hfp_ag_create_sdp_record(uint8_t * service, uint32_t service_record_handle,
 void hfp_ag_init(uint16_t rfcomm_channel_nr);
 
 /**
- * @brief Set codecs. 
+ * @brief Set codecs.
  * @param codecs_nr
  * @param codecs
  */
@@ -91,21 +91,21 @@ void hfp_ag_init_codecs(int codecs_nr, uint8_t * codecs);
 void hfp_ag_init_supported_features(uint32_t supported_features);
 
 /**
- * @brief Set AG indicators. 
+ * @brief Set AG indicators.
  * @param indicators_nr
  * @param indicators
  */
 void hfp_ag_init_ag_indicators(int ag_indicators_nr, hfp_ag_indicator_t * ag_indicators);
 
 /**
- * @brief Set HF indicators. 
+ * @brief Set HF indicators.
  * @param indicators_nr
  * @param indicators
  */
 void hfp_ag_init_hf_indicators(int hf_indicators_nr, hfp_generic_status_indicator_t * hf_indicators);
 
 /**
- * @brief Set Call Hold services. 
+ * @brief Set Call Hold services.
  * @param indicators_nr
  * @param indicators
  */
@@ -113,7 +113,7 @@ void hfp_ag_init_call_hold_services(int call_hold_services_nr, const char * call
 
 
 /**
- * @brief Register callback for the HFP Audio Gateway (AG) client. 
+ * @brief Register callback for the HFP Audio Gateway (AG) client.
  * @param callback
  */
 void hfp_ag_register_packet_handler(btstack_packet_handler_t callback);
@@ -130,7 +130,7 @@ void hfp_ag_set_use_in_band_ring_tone(int use_in_band_ring_tone);
 /**
  * @brief Establish RFCOMM connection, and perform service level connection agreement:
  * - exchange of supported features
- * - report Audio Gateway (AG) indicators and their status 
+ * - report Audio Gateway (AG) indicators and their status
  * - enable indicator status update in the AG
  * - accept the information about available codecs in the Hands-Free (HF), if sent
  * - report own information describing the call hold and multiparty services, if possible
@@ -143,7 +143,7 @@ void hfp_ag_set_use_in_band_ring_tone(int use_in_band_ring_tone);
 void hfp_ag_establish_service_level_connection(bd_addr_t bd_addr);
 
 /**
- * @brief Release the RFCOMM channel and the audio connection between the HF and the AG. 
+ * @brief Release the RFCOMM channel and the audio connection between the HF and the AG.
  * If the audio connection exists, it will be released.
  * The status of releasing the SLC connection is reported via
  * HFP_SUBEVENT_SERVICE_LEVEL_CONNECTION_RELEASED.
@@ -169,7 +169,7 @@ void hfp_ag_establish_audio_connection(hci_con_handle_t acl_handle);
 void hfp_ag_release_audio_connection(hci_con_handle_t acl_handle);
 
 /**
- * @brief Put the current call on hold, if it exists, and accept incoming call. 
+ * @brief Put the current call on hold, if it exists, and accept incoming call.
  */
 void hfp_ag_answer_incoming_call(void);
 
@@ -199,7 +199,7 @@ void hfp_ag_accept_held_incoming_call(void);
 void hfp_ag_reject_held_incoming_call(void);
 
 /*
- * @brief Set microphone gain. 
+ * @brief Set microphone gain.
  * @param bd_addr Bluetooth address of the HF
  * @param gain Valid range: [0,15]
  */
@@ -224,9 +224,9 @@ void hfp_ag_set_battery_level(int level);
 void hfp_ag_clear_last_dialed_number(void);
 
 /*
- * @brief Notify the HF that an incoming call is waiting 
+ * @brief Notify the HF that an incoming call is waiting
  * during an ongoing call. The notification will be sent only if the HF has
- * has previously enabled the "Call Waiting notification" in the AG. 
+ * has previously enabled the "Call Waiting notification" in the AG.
  * @param bd_addr Bluetooth address of the HF
  */
 void hfp_ag_notify_incoming_call_waiting(hci_con_handle_t acl_handle);
@@ -294,8 +294,8 @@ void hfp_ag_outgoing_call_established(void);
 void hfp_ag_call_dropped(void);
 
 /*
- * @brief Set network registration status.  
- * @param status 0 - not registered, 1 - registered 
+ * @brief Set network registration status.
+ * @param status 0 - not registered, 1 - registered
  */
 void hfp_ag_set_registration_status(int status);
 
@@ -312,7 +312,7 @@ void hfp_ag_set_signal_strength(int strength);
 void hfp_ag_set_roaming_status(int status);
 
 /*
- * @brief Set subcriber number information, e.g. the phone number 
+ * @brief Set subcriber number information, e.g. the phone number
  * @param numbers
  * @param numbers_count
  */
@@ -320,27 +320,27 @@ void hfp_ag_set_subcriber_number_information(hfp_phone_number_t * numbers, int n
 
 /*
  * @brief Called by cellular unit after a DTMF code was transmitted, so that the next one can be emitted.
- * @param bd_addr Bluetooth address of the HF 
+ * @param bd_addr Bluetooth address of the HF
  */
 void hfp_ag_send_dtmf_code_done(hci_con_handle_t acl_handle);
 
 /**
  * @brief Report Extended Audio Gateway Error result codes in the AG.
- * Whenever there is an error relating to the functionality of the AG as a 
+ * Whenever there is an error relating to the functionality of the AG as a
  * result of AT command, the AG shall send +CME ERROR:
  * - +CME ERROR: 0  - AG failure
- * - +CME ERROR: 1  - no connection to phone 
- * - +CME ERROR: 3  - operation not allowed 
- * - +CME ERROR: 4  - operation not supported 
- * - +CME ERROR: 5  - PH-SIM PIN required 
- * - +CME ERROR: 10 - SIM not inserted 
- * - +CME ERROR: 11 - SIM PIN required 
- * - +CME ERROR: 12 - SIM PUK required 
+ * - +CME ERROR: 1  - no connection to phone
+ * - +CME ERROR: 3  - operation not allowed
+ * - +CME ERROR: 4  - operation not supported
+ * - +CME ERROR: 5  - PH-SIM PIN required
+ * - +CME ERROR: 10 - SIM not inserted
+ * - +CME ERROR: 11 - SIM PIN required
+ * - +CME ERROR: 12 - SIM PUK required
  * - +CME ERROR: 13 - SIM failure
  * - +CME ERROR: 14 - SIM busy
- * - +CME ERROR: 16 - incorrect password 
- * - +CME ERROR: 17 - SIM PIN2 required 
- * - +CME ERROR: 18 - SIM PUK2 required 
+ * - +CME ERROR: 16 - incorrect password
+ * - +CME ERROR: 17 - SIM PIN2 required
+ * - +CME ERROR: 18 - SIM PUK2 required
  * - +CME ERROR: 20 - memory full
  * - +CME ERROR: 21 - invalid index
  * - +CME ERROR: 23 - memory failure
