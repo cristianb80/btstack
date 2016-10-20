@@ -187,15 +187,15 @@ void hfp_ag_create_sdp_record(uint8_t * service, uint32_t service_record_handle,
     hfp_create_sdp_record(service, service_record_handle, SDP_HandsfreeAudioGateway, rfcomm_channel_nr, name);
     
     /*
-     * 0x01 – Ability to reject a call
-     * 0x00 – No ability to reject a call
+     * 0x01 : Ability to reject a call
+     * 0x00 : No ability to reject a call
      */
     de_add_number(service, DE_UINT, DE_SIZE_16, 0x0301);    // Hands-Free Profile - Network
     de_add_number(service, DE_UINT, DE_SIZE_8, ability_to_reject_call);
 
     // Construct SupportedFeatures for SDP bitmap:
     // 
-    // "The values of the “SupportedFeatures” bitmap given in Table 5.4 shall be the same as the values
+    // "The values of the 'SupportedFeatures' bitmap given in Table 5.4 shall be the same as the values
     //  of the Bits 0 to 4 of the unsolicited result code +BRSF"
     //
     uint16_t sdp_features = supported_features &0x1f;

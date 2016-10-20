@@ -169,7 +169,7 @@ void hfp_hf_create_sdp_record(uint8_t * service, uint32_t service_record_handle,
 
     // Construct SupportedFeatures for SDP bitmap:
     // 
-    // "The values of the “SupportedFeatures” bitmap given in Table 5.4 shall be the same as the values
+    // "The values of the 'SupportedFeatures' bitmap given in Table 5.4 shall be the same as the values
     //  of the Bits 0 to 4 of the unsolicited result code +BRSF"
     //
     uint16_t sdp_features = supported_features & 0x1f;

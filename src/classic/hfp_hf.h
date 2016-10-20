@@ -266,7 +266,7 @@ void hfp_hf_dial_memory(hci_con_handle_t acl_handle, int memory_id);
 void hfp_hf_redial_last_number(hci_con_handle_t acl_handle);
 
 /*
- * @brief Enable the “Call Waiting notification” function in the AG.
+ * @brief Enable the 'Call Waiting notification' function in the AG.
  * The AG shall send the corresponding result code to the HF whenever
  * an incoming call is waiting during an ongoing call. In that event,
  * the HFP_SUBEVENT_CALL_WAITING_NOTIFICATION is emitted.
@@ -276,13 +276,13 @@ void hfp_hf_redial_last_number(hci_con_handle_t acl_handle);
 void hfp_hf_activate_call_waiting_notification(hci_con_handle_t acl_handle);
 
 /*
- * @brief Disable the “Call Waiting notification” function in the AG.
+ * @brief Disable the 'Call Waiting notification' function in the AG.
  * @param bd_addr Bluetooth address of the AG
  */
 void hfp_hf_deactivate_call_waiting_notification(hci_con_handle_t acl_handle);
 
 /*
- * @brief Enable the “Calling Line Identification notification” function in the AG.
+ * @brief Enable the 'Calling Line Identification notification' function in the AG.
  * The AG shall issue the corresponding result code just after every RING indication,
  * when the HF is alerted in an incoming call. In that event,
  * the HFP_SUBEVENT_CALLING_LINE_INDETIFICATION_NOTIFICATION is emitted.
@@ -291,7 +291,7 @@ void hfp_hf_deactivate_call_waiting_notification(hci_con_handle_t acl_handle);
 void hfp_hf_activate_calling_line_notification(hci_con_handle_t acl_handle);
 
 /*
- * @brief Disable the “Calling Line Identification notification” function in the AG.
+ * @brief Disable the 'Calling Line Identification notification' function in the AG.
  * @param bd_addr Bluetooth address of the AG
  */
 void hfp_hf_deactivate_calling_line_notification(hci_con_handle_t acl_handle);
@@ -377,7 +377,7 @@ void hfp_hf_release_call_with_index(hci_con_handle_t acl_handle, int index);
 void hfp_hf_private_consultation_with_call(hci_con_handle_t acl_handle, int index);
 
 /*
- * @brief Query the status of the “Response and Hold” state of the AG.
+ * @brief Query the status of the 'Response and Hold' state of the AG.
  * The result is reported via HFP_SUBEVENT_RESPONSE_AND_HOLD_STATUS.
  * @param bd_addr Bluetooth address of the AG
  */
