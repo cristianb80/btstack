@@ -43,7 +43,7 @@ set(CODICE
     ble/sm_mbedtls_allocator.c
 )
 
-include_directories("${PROJECT_SOURCE_DIR}/compila")
+include_directories("${PROJECT_SOURCE_DIR}/per_cmake")
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
 set(CMAKE_C_FLAGS
