@@ -480,10 +480,12 @@ static void handle_query_rfcomm_event(uint8_t packet_type, uint16_t channel, uin
     
     switch (hci_event_packet_get_type(packet)){
         case SDP_EVENT_QUERY_RFCOMM_SERVICE:
+/* irrangiungibile            
             if (!hfp_connection) {
                 log_error("handle_query_rfcomm_event alloc connection for RFCOMM port %u failed", sdp_event_query_rfcomm_service_get_rfcomm_channel(packet));
                 return;
             }
+*/            
             hfp_connection->rfcomm_channel_nr = sdp_event_query_rfcomm_service_get_rfcomm_channel(packet);
             break;
         case SDP_EVENT_QUERY_COMPLETE:
