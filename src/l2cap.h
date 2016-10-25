@@ -124,9 +124,6 @@ typedef struct {
     bd_addr_t address;
     bd_addr_type_t address_type;
     
-    bd_addr_t address;
-    bd_addr_type_t address_type;
-    
     uint8_t   remote_sig_id;    // used by other side, needed for delayed response
     uint8_t   local_sig_id;     // own signaling identifier
     
