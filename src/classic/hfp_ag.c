@@ -543,17 +543,17 @@ static void hfp_init_link_settings(hfp_connection_t * hfp_connection){
     hfp_connection->link_setting = HFP_LINK_SETTINGS_D1;
     // anything else requires eSCO support on both sides
     if (hci_extended_sco_link_supported() && hci_remote_esco_supported(hfp_connection->acl_handle)){
-    switch (hfp_connection->negotiated_codec){
-        case HFP_CODEC_CVSD:
+        switch (hfp_connection->negotiated_codec){
+            case HFP_CODEC_CVSD:
                 hfp_connection->link_setting = HFP_LINK_SETTINGS_S3;
                 if ((hfp_connection->remote_supported_features & (1<<HFP_HFSF_ESCO_S4))
-                &&  (hfp_supported_features             & (1<<HFP_AGSF_ESCO_S4))){
+                &&  (hfp_supported_features                    & (1<<HFP_AGSF_ESCO_S4))){
                     hfp_connection->link_setting = HFP_LINK_SETTINGS_S4;
                 }
-            break;
-        case HFP_CODEC_MSBC:
+                break;
+            case HFP_CODEC_MSBC:
                 hfp_connection->link_setting = HFP_LINK_SETTINGS_T2;
-            break;
+                break;
             default:
                 break;
         }
@@ -1332,7 +1332,7 @@ static void hfp_ag_call_sm(hfp_ag_call_event_t event, hfp_connection_t * hfp_con
                             hfp_gsm_handle_event(HFP_AG_TERMINATE_CALL_BY_HF);
                             hfp_ag_set_callsetup_indicator();
                             hfp_ag_transfer_callsetup_state();
-                            log_info("AG terminate outgoing call process");                            
+                            log_info("AG terminate outgoing call process"); 
                             break;              
                         default:
                             break;

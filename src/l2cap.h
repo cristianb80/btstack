@@ -59,7 +59,7 @@ extern "C" {
 #if (L2CAP_MINIMAL_MTU + L2CAP_HEADER_SIZE) > HCI_ACL_PAYLOAD_SIZE
 #error "HCI_ACL_PAYLOAD_SIZE too small for minimal L2CAP MTU of 48 bytes"
 #endif    
-    
+
 #define L2CAP_LE_AUTOMATIC_CREDITS 0xffff
 
 // private structs
@@ -120,6 +120,9 @@ typedef struct {
 
     // info
     hci_con_handle_t con_handle;
+
+    bd_addr_t address;
+    bd_addr_type_t address_type;
     
     bd_addr_t address;
     bd_addr_type_t address_type;
@@ -132,7 +135,7 @@ typedef struct {
     
     uint16_t  local_mtu;
     uint16_t  remote_mtu;
-    
+
     uint16_t  flush_timeout;    // default 0xffff
 
     uint16_t  psm;
@@ -141,7 +144,7 @@ typedef struct {
 
     uint8_t   reason; // used in decline internal
     uint8_t   waiting_for_can_send_now;
-    
+
     // LE Data Channels
 
     // incoming SDU
@@ -181,12 +184,13 @@ typedef struct {
     
     // incoming MTU
     uint16_t mtu;
-
+    
     // internal connection
     btstack_packet_handler_t packet_handler;
 
     // required security level
-    gap_security_level_t required_security_level;    
+    gap_security_level_t required_security_level;
+
 } l2cap_service_t;
 
 
