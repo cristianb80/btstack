@@ -30,69 +30,44 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at
+ * Please inquire about commercial licensing options at 
  * contact@bluekitchen-gmbh.com
  *
  */
+#ifndef __BATTERY_SERVICE_SERVER_H
+#define __BATTERY_SERVICE_SERVER_H
 
-/*
- *  btstack.h
- *  Convenience header to include all public APIs
- */
+#include <stdint.h>
 
-
-#ifndef __BTSTACK_H
-#define __BTSTACK_H
-
-#include "btstack_config.h"
-
-#include "bluetooth.h"
-#include "bluetooth_data_types.h"
-#include "bluetooth_gatt.h"
-#include "ad_parser.h"
-#include "btstack_control.h"
-#include "btstack_debug.h"
-#include "btstack_event.h"
-#include "btstack_defines.h"
-#include "btstack_linked_list.h"
-#include "btstack_memory.h"
-#include "btstack_memory_pool.h"
-#include "btstack_run_loop.h"
-#include "btstack_util.h"
-#include "gap.h"
-#include "hci.h"
-#include "hci_cmd.h"
-#include "hci_dump.h"
-#include "hci_transport.h"
-#include "l2cap.h"
-#include "l2cap_signaling.h"
-
-#ifdef ENABLE_BLE
-#include "ble/ancs_client.h"
-#include "ble/att_db.h"
-#include "ble/att_db_util.h"
-#include "ble/att_dispatch.h"
-#include "ble/att_server.h"
-#include "ble/gatt_client.h"
-#include "ble/le_device_db.h"
-#include "ble/sm.h"
+#if defined __cplusplus
+extern "C" {
 #endif
 
-// #ifdef HAVE_CLASSIC
-#include "classic/bnep.h"
-#include "classic/btstack_link_key_db.h"
-#include "classic/hfp.h"
-#include "classic/hfp_ag.h"
-#include "classic/hfp_hf.h"
-#include "classic/hsp_ag.h"
-#include "classic/hsp_hs.h"
-#include "classic/pan.h"
-#include "classic/rfcomm.h"
-#include "classic/sdp_client.h"
-#include "classic/sdp_client_rfcomm.h"
-#include "classic/sdp_server.h"
-#include "classic/sdp_util.h"
-#include "classic/spp_server.h"
-// #endif
+/**
+ * Implementation of the GATT Battery Service Server 
+ * To use with your application, add '#import <battery_service.gatt' to your .gatt file
+ */
 
-#endif  // __BTSTACK_H
+/* API_START */
+
+/**
+ * @brief Init Battery Service Server with ATT DB
+ * @param battery_value in range 0-100
+ */
+void battery_service_server_init(uint8_t battery_value);
+
+/**
+ * @brief Update battery value
+ * @note triggers notifications if subscribed
+ * @param battery_value in range 0-100
+ */
+void battery_service_server_set_battery_value(uint8_t battery_value);
+
+/* API_END */
+
+#if defined __cplusplus
+}
+#endif
+
+#endif
+
