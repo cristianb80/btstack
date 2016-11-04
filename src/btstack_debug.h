@@ -79,7 +79,7 @@
 #define log_debug(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
 #endif
 #else
-#define log_debug(...)
+#define log_debug(...)		{}
 #endif
 
 #ifdef ENABLE_LOG_INFO
@@ -89,7 +89,7 @@
 #define log_info(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
 #endif
 #else
-#define log_info(...)
+#define log_info(...)		{}
 #endif
 
 #ifdef ENABLE_LOG_ERROR
@@ -99,7 +99,7 @@
 #define log_error(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
 #endif
 #else
-#define log_error(...)
+#define log_error(...)		{}
 #endif
 
 /**
