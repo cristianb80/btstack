@@ -55,7 +55,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <unistd.h>
 
 #include "btstack.h"
@@ -122,8 +121,8 @@ static void show_usage(void){
 
 #ifdef HAVE_POSIX_STDIN
 static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callback_type_t callback_type){
-    char buffer;
-    read(ds->fd, &buffer, 1);
+
+    char buffer = btstack_stdin_read();
 
     switch (buffer){
         case 'c':

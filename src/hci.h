@@ -56,6 +56,10 @@
 #include "gap.h"
 #include "hci_transport.h"
 
+#ifdef ENABLE_BLE
+#include "ble/att_db.h"
+#endif
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -198,6 +202,8 @@ typedef enum {
     LE_CONNECTING_DIRECT,
     LE_CONNECTING_WHITELIST,
 } le_connecting_state_t;
+
+#ifdef ENABLE_BLE
 
 //
 // SM internal types and globals
@@ -378,6 +384,44 @@ typedef struct sm_connection {
     int                      sm_le_db_index;
 } sm_connection_t;
 
+//
+// ATT Server
+//
+
+// max ATT request matches L2CAP PDU -- allow to use smaller buffer
+#ifndef ATT_REQUEST_BUFFER_SIZE
+#define ATT_REQUEST_BUFFER_SIZE HCI_ACL_PAYLOAD_SIZE
+#endif
+
+typedef enum {
+    ATT_SERVER_IDLE,
+    ATT_SERVER_REQUEST_RECEIVED,
+    ATT_SERVER_W4_SIGNED_WRITE_VALIDATION,
+    ATT_SERVER_REQUEST_RECEIVED_AND_VALIDATED,
+} att_server_state_t;
+
+typedef struct {
+    att_server_state_t      state;
+
+    uint8_t                 peer_addr_type;
+    bd_addr_t               peer_address;
+
+    int                     ir_le_device_db_index;
+    int                     ir_lookup_active;
+
+    int                     value_indication_handle;    
+    btstack_timer_source_t  value_indication_timer;
+
+    att_connection_t        connection;
+
+    uint16_t                request_size;
+    uint8_t                 request_buffer[ATT_REQUEST_BUFFER_SIZE];
+
+} att_server_t;
+
+#endif
+
+//
 typedef struct {
     // linked list - assert: first field
     btstack_linked_item_t    item;
@@ -437,6 +481,9 @@ typedef struct {
 #ifdef ENABLE_BLE
     // LE Security Manager
     sm_connection_t sm_connection;
+
+    // ATT Server
+    att_server_t    att_server;
 #endif
 
 } hci_connection_t;
@@ -450,6 +497,8 @@ typedef enum hci_init_state{
     HCI_INIT_W4_SEND_RESET,
     HCI_INIT_SEND_READ_LOCAL_VERSION_INFORMATION,
     HCI_INIT_W4_SEND_READ_LOCAL_VERSION_INFORMATION,
+    HCI_INIT_SEND_READ_LOCAL_NAME,
+    HCI_INIT_W4_SEND_READ_LOCAL_NAME,
 
     HCI_INIT_SEND_BAUD_CHANGE,
     HCI_INIT_W4_SEND_BAUD_CHANGE,
@@ -571,9 +620,6 @@ typedef struct {
     /* callbacks for events */
     btstack_linked_list_t event_handlers;
 
-    // local version information callback
-    void (*local_version_information_callback)(uint8_t * local_version_information);
-
     // hardware error callback
     void (*hardware_error_callback)(uint8_t error);
 
@@ -642,7 +688,7 @@ typedef struct {
     /* buffer for scan enable cmd - 0xff no change */
     uint8_t   new_scan_enable_value;
     
-    uint16_t   sco_voice_setting;
+    uint16_t  sco_voice_setting;
 
     uint8_t   loopback_mode;
 
@@ -672,6 +718,7 @@ typedef struct {
     uint8_t  le_advertisements_active;
     uint8_t  le_advertisements_enabled;
     uint8_t  le_advertisements_todo;
+    uint8_t  le_advertisements_random_address_set;
 
     uint16_t le_advertisements_interval_min;
     uint16_t le_advertisements_interval_max;
@@ -723,12 +770,6 @@ void hci_set_link_key_db(btstack_link_key_db_t const * link_key_db);
  * @brief Set callback for Bluetooth Hardware Error
  */
 void hci_set_hardware_error_callback(void (*fn)(uint8_t error));
-
-/**
- * @brief Set callback for local information from Bluetooth controller right after HCI Reset
- * @note Can be used to select chipset driver dynamically during startup
- */
-void hci_set_local_version_information_callback(void (*fn)(uint8_t * local_version_information));
 
 /**
  * @brief Set Public BD ADDR - passed on to Bluetooth chipset during init if supported in bt_control_h
@@ -850,6 +891,10 @@ void hci_release_packet_buffer(void);
 /* API_END */
 
 
+/**
+ * va_list version of hci_send_cmd
+ */
+int hci_send_cmd_va_arg(const hci_cmd_t *cmd, va_list argtr);
 
 /**
  * Get connection iterator. Only used by l2cap.c and sm.c
@@ -974,6 +1019,13 @@ void hci_le_advertisements_set_params(uint16_t adv_int_min, uint16_t adv_int_max
     uint8_t own_address_type, uint8_t direct_address_typ, bd_addr_t direct_address,
     uint8_t channel_map, uint8_t filter_policy);
 
+void hci_le_advertisements_set_own_address_type(uint8_t own_address_type);
+
+/**
+ * @brief Get Manufactured
+ * @return manufacturer id
+ */
+uint16_t hci_get_manufacturer(void);
 
 // Only for PTS testing
 

@@ -44,31 +44,7 @@
 
 #include "wav_util.h"
 #include "btstack_util.h"
-
-static const uint8_t sine_uint8[] = {
-      0,  15,  31,  46,  61,  74,  86,  97, 107, 114,
-    120, 124, 126, 126, 124, 120, 114, 107,  97,  86,
-     74,  61,  46,  31,  15,   0, 241, 225, 210, 195,
-    182, 170, 159, 149, 142, 136, 132, 130, 130, 132,
-    136, 142, 149, 159, 170, 182, 195, 210, 225, 241,
-};
-
-
-// input signal: pre-computed sine wave, 160 Hz at 16000 kHz
-static const int16_t sine_int16[] = {
-     0,    2057,    4107,    6140,    8149,   10126,   12062,   13952,   15786,   17557,
- 19260,   20886,   22431,   23886,   25247,   26509,   27666,   28714,   29648,   30466,
- 31163,   31738,   32187,   32509,   32702,   32767,   32702,   32509,   32187,   31738,
- 31163,   30466,   29648,   28714,   27666,   26509,   25247,   23886,   22431,   20886,
- 19260,   17557,   15786,   13952,   12062,   10126,    8149,    6140,    4107,    2057,
-     0,   -2057,   -4107,   -6140,   -8149,  -10126,  -12062,  -13952,  -15786,  -17557,
--19260,  -20886,  -22431,  -23886,  -25247,  -26509,  -27666,  -28714,  -29648,  -30466,
--31163,  -31738,  -32187,  -32509,  -32702,  -32767,  -32702,  -32509,  -32187,  -31738,
--31163,  -30466,  -29648,  -28714,  -27666,  -26509,  -25247,  -23886,  -22431,  -20886,
--19260,  -17557,  -15786,  -13952,  -12062,  -10126,   -8149,   -6140,   -4107,   -2057,
-};
-
-static int phase = 0;
+#include "btstack_debug.h"
 
 static int wav_reader_fd;
 static int bytes_per_sample = 2;
@@ -189,7 +165,7 @@ int wav_writer_write_int16(int num_samples, int16_t * data){
 int wav_reader_open(const char * filepath){
     wav_reader_fd = open(filepath, O_RDONLY); 
     if (!wav_reader_fd) {
-        printf("Can't open file %s", filepath);
+        log_error("Can't open file %s", filepath);
         return 1;
     }
 
@@ -198,6 +174,10 @@ int wav_reader_open(const char * filepath){
 
     int num_channels = little_endian_read_16(buf, 22);
     int block_align = little_endian_read_16(buf, 32);
+    if (num_channels != 1 && num_channels != 2) {
+        log_error("Unexpected num channels %d", num_channels);
+        return 1;
+    }
     bytes_per_sample = block_align/num_channels;
     if (bytes_per_sample > 2){
         bytes_per_sample = bytes_per_sample/8;
@@ -242,22 +222,4 @@ int wav_reader_read_int16(int num_samples, int16_t * data){
     return bytes_read == num_samples*bytes_per_sample;
 }
 
-void wav_synthesize_sine_wave_int8(int num_samples, int8_t * data){
-    int i;
-    for (i=0; i<num_samples; i++){
-        data[i] = (int8_t)sine_uint8[phase];
-        phase++;
-        if (phase >= sizeof(sine_uint8)) phase = 0;
-    }  
-}
-
-void wav_synthesize_sine_wave_int16(int num_samples, int16_t * data){
-    int i;
-    for (i=0; i < num_samples; i++){
-        data[i] = sine_int16[phase++];
-        if (phase >= (sizeof(sine_int16) / sizeof(int16_t))){
-            phase = 0;
-        }
-    }
-}
 

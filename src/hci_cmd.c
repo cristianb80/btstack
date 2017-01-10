@@ -62,9 +62,10 @@
  *   D: 8 byte data block
  *   E: Extended Inquiry Result
  *   N: Name up to 248 chars, \0 terminated
- *   P: 16 byte Pairing code
+ *   P: 16 byte data block. Pairing code, Simple Pairing Hash and Randomizer
  *   A: 31 bytes advertising data
  *   S: Service Record (Data Element Sequence)
+ *   Q: 32 byte data block, e.g. for X and Y coordinates of P-256 public key
  */
 uint16_t hci_cmd_create_from_template(uint8_t *hci_cmd_buffer, const hci_cmd_t *cmd, va_list argptr){
     
@@ -155,6 +156,13 @@ uint16_t hci_cmd_create_from_template(uint8_t *hci_cmd_buffer, const hci_cmd_t *
                 pos += len;
                 break;
             }
+#endif
+#ifdef ENABLE_LE_SECURE_CONNECTIONS
+            case 'Q':
+                ptr = va_arg(argptr, uint8_t *);
+                reverse_bytes(ptr, &hci_cmd_buffer[pos], 32);
+                pos += 32;
+                break;
 #endif
             default:
                 break;
@@ -380,6 +388,15 @@ OPCODE(OGF_LINK_CONTROL, 0x2f), "B"
 
 /**
  * @param bd_addr
+ * @param c Simple Pairing Hash C
+ * @param r Simple Pairing Randomizer R
+ */
+const hci_cmd_t hci_remote_oob_data_request_reply = {
+OPCODE(OGF_LINK_CONTROL, 0x30), "BPP"
+};
+
+/**
+ * @param bd_addr
  */
 const hci_cmd_t hci_remote_oob_data_request_negative_reply = {
 OPCODE(OGF_LINK_CONTROL, 0x33), "B"
@@ -547,6 +564,13 @@ OPCODE(OGF_CONTROLLER_BASEBAND, 0x03), ""
 };
 
 /**
+ * @param handle
+ */
+const hci_cmd_t hci_flush = {
+OPCODE(OGF_CONTROLLER_BASEBAND, 0x09), "H"
+};
+
+/**
  * @param bd_addr
  * @param delete_all_flags
  */
@@ -559,6 +583,12 @@ OPCODE(OGF_CONTROLLER_BASEBAND, 0x12), "B1"
  */
 const hci_cmd_t hci_write_local_name = {
 OPCODE(OGF_CONTROLLER_BASEBAND, 0x13), "N"
+};
+
+/**
+ */
+const hci_cmd_t hci_read_local_name = {
+OPCODE(OGF_CONTROLLER_BASEBAND, 0x14), ""
 };
 
 /**
@@ -656,6 +686,12 @@ const hci_cmd_t hci_write_simple_pairing_mode = {
 OPCODE(OGF_CONTROLLER_BASEBAND, 0x56), "1"
 };
 
+/**
+ */
+const hci_cmd_t hci_read_local_oob_data = {
+OPCODE(OGF_CONTROLLER_BASEBAND, 0x57), ""
+// return status, C, R
+};
 
 /**
  * @param mode (0 = off, 1 = on)
@@ -679,6 +715,14 @@ const hci_cmd_t hci_write_le_host_supported = {
 OPCODE(OGF_CONTROLLER_BASEBAND, 0x6d), "11"
 // return: status
 };
+
+/**
+ */
+const hci_cmd_t hci_read_local_extended_ob_data = {
+OPCODE(OGF_CONTROLLER_BASEBAND, 0x7d), ""
+// return status, C_192, R_192, R_256, C_256
+};
+
 
 /**
  * Testing Commands
@@ -1000,4 +1044,20 @@ const hci_cmd_t hci_le_test_end = {
 OPCODE(OGF_LE_CONTROLLER, 0x1f), "1"
 // return: status, number of packets (8)
 };
+
+/**
+ */
+const hci_cmd_t hci_le_read_local_p256_public_key = {
+OPCODE(OGF_LE_CONTROLLER, 0x25), ""
+//  LE Read Local P-256 Public Key Complete is generated on completion
+};
+
+/**
+ * @param end_test_cmd
+ */
+const hci_cmd_t hci_le_generate_dhkey = {
+OPCODE(OGF_LE_CONTROLLER, 0x26), "QQ"
+// LE Generate DHKey Complete is generated on completion
+};
+
 #endif

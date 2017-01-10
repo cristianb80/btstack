@@ -957,6 +957,10 @@ static void hci_initializing_run(void){
             hci_send_cmd(&hci_read_local_version_information);
             hci_stack->substate = HCI_INIT_W4_SEND_READ_LOCAL_VERSION_INFORMATION;
             break;
+        case HCI_INIT_SEND_READ_LOCAL_NAME:
+            hci_send_cmd(&hci_read_local_name);
+            hci_stack->substate = HCI_INIT_W4_SEND_READ_LOCAL_NAME;
+            break;
         case HCI_INIT_SEND_RESET_CSR_WARM_BOOT:
             hci_state_reset();
             // prepare reset if command complete not received in 100ms
@@ -1277,8 +1281,8 @@ static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
         case HCI_INIT_W4_SEND_RESET:
             btstack_run_loop_remove_timer(&hci_stack->timeout);
             break;
-        case HCI_INIT_W4_SEND_READ_LOCAL_VERSION_INFORMATION:
-            log_info("Received local version info, need baud change %d", need_baud_change);
+        case HCI_INIT_W4_SEND_READ_LOCAL_NAME:
+            log_info("Received local name, need baud change %d", need_baud_change);
             if (need_baud_change){
                 hci_stack->substate = HCI_INIT_SEND_BAUD_CHANGE;
                 return;
@@ -1441,10 +1445,14 @@ static void event_handler(uint8_t *packet, int size){
     switch (hci_event_packet_get_type(packet)) {
                         
         case HCI_EVENT_COMMAND_COMPLETE:
-            // get num cmd packets
-            // log_info("HCI_EVENT_COMMAND_COMPLETE cmds old %u - new %u", hci_stack->num_cmd_packets, packet[2]);
-            hci_stack->num_cmd_packets = packet[2];
+            // get num cmd packets - limit to 1 to reduce complexity
+            hci_stack->num_cmd_packets = packet[2] ? 1 : 0;
 
+            if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_local_name)){
+                // terminate, name 248 chars
+                packet[6+248] = 0;
+                log_info("local name: %s", &packet[6]);
+            }
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_buffer_size)){
                 // from offset 5
                 // status 
@@ -1479,15 +1487,16 @@ static void event_handler(uint8_t *packet, int size){
                 log_info("hci_le_read_white_list_size: size %u", hci_stack->le_whitelist_capacity);
             }   
 #endif
-            // Dump local address
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_bd_addr)) {
                 reverse_bd_addr(&packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE + 1],
 				hci_stack->local_bd_addr);
                 log_info("Local Address, Status: 0x%02x: Addr: %s",
                     packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE], bd_addr_to_str(hci_stack->local_bd_addr));
+#ifdef ENABLE_CLASSIC
                 if (hci_stack->link_key_db){
                     hci_stack->link_key_db->set_local_bd_addr(hci_stack->local_bd_addr);
                 }
+#endif
             }
 #ifdef ENABLE_CLASSIC
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_write_scan_enable)){
@@ -1514,10 +1523,6 @@ static void event_handler(uint8_t *packet, int size){
                 hci_stack->manufacturer   = little_endian_read_16(packet, 10);
                 // hci_stack->lmp_subversion = little_endian_read_16(packet, 12);
                 log_info("Manufacturer: 0x%04x", hci_stack->manufacturer);
-                // notify app
-                if (hci_stack->local_version_information_callback){
-                    hci_stack->local_version_information_callback(packet);
-                }
             }
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_local_supported_commands)){
                 hci_stack->local_supported_commands[0] =
@@ -1535,9 +1540,8 @@ static void event_handler(uint8_t *packet, int size){
             break;
             
         case HCI_EVENT_COMMAND_STATUS:
-            // get num cmd packets
-            // log_info("HCI_EVENT_COMMAND_STATUS cmds - old %u - new %u", hci_stack->num_cmd_packets, packet[3]);
-            hci_stack->num_cmd_packets = packet[3];
+            // get num cmd packets - limit to 1 to reduce complexity
+            hci_stack->num_cmd_packets = packet[3] ? 1 : 0;
             break;
             
         case HCI_EVENT_NUMBER_OF_COMPLETED_PACKETS:{
@@ -1886,6 +1890,8 @@ static void event_handler(uint8_t *packet, int size){
                     } else {
                         // if we're slave, it was an incoming connection, advertisements have stopped
                         hci_stack->le_advertisements_active = 0;
+                        // try to re-enable them
+                        hci_stack->le_advertisements_todo |= LE_ADVERTISEMENT_TASKS_ENABLE;
                     }
                     // LE connections are auto-accepted, so just create a connection if there isn't one already
                     if (!conn){
@@ -2026,6 +2032,7 @@ static void hci_state_reset(void){
     
     // LE
     hci_stack->adv_addr_type = 0;
+    hci_stack->le_advertisements_random_address_set = 0;
     memset(hci_stack->adv_address, 0, 6);
     hci_stack->le_scanning_state = LE_SCAN_IDLE;
     hci_stack->le_scan_type = 0xff; 
@@ -2546,7 +2553,9 @@ static void hci_run(void){
                 hci_stack->le_scan_response_data);
             return;
         }
-        if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_ENABLE){
+        // Random address needs to be set before enabling advertisements
+        if ((hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_ENABLE)
+        &&  (hci_stack->le_advertisements_own_address_type == 0 || hci_stack->le_advertisements_random_address_set)){
             hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_ENABLE;
             hci_send_cmd(&hci_le_set_advertise_enable, 1);
             return;
@@ -2979,6 +2988,7 @@ int hci_send_cmd_packet(uint8_t *packet, int size){
         hci_stack->adv_addr_type = packet[8];
     }
     if (IS_COMMAND(packet, hci_le_set_random_address)){
+        hci_stack->le_advertisements_random_address_set = 1;
         reverse_bd_addr(&packet[3], hci_stack->adv_address);
     }
     if (IS_COMMAND(packet, hci_le_set_advertise_enable)){
@@ -3053,11 +3063,8 @@ void gap_ssp_set_auto_accept(int auto_accept){
 }
 #endif
 
-/**
- * pre: numcmds >= 0 - it's allowed to send a command to the controller
- */
-int hci_send_cmd(const hci_cmd_t *cmd, ...){
-
+// va_list part of hci_send_cmd
+int hci_send_cmd_va_arg(const hci_cmd_t *cmd, va_list argptr){
     if (!hci_can_send_command_packet_now()){ 
         log_error("hci_send_cmd called but cannot send packet now");
         return 0;
@@ -3069,13 +3076,19 @@ int hci_send_cmd(const hci_cmd_t *cmd, ...){
 
     hci_reserve_packet_buffer();
     uint8_t * packet = hci_stack->hci_packet_buffer;
+    uint16_t size = hci_cmd_create_from_template(packet, cmd, argptr);
+    return hci_send_cmd_packet(packet, size);
+}
 
+/**
+ * pre: numcmds >= 0 - it's allowed to send a command to the controller
+ */
+int hci_send_cmd(const hci_cmd_t *cmd, ...){
     va_list argptr;
     va_start(argptr, cmd);
-    uint16_t size = hci_cmd_create_from_template(packet, cmd, argptr);
+    int res = hci_send_cmd_va_arg(cmd, argptr);
     va_end(argptr);
-
-    return hci_send_cmd_packet(packet, size);
+    return res;
 }
 
 // Create various non-HCI events. 
@@ -3576,6 +3589,12 @@ void gap_scan_response_set_data(uint8_t scan_response_data_length, uint8_t * sca
     gap_advertisments_changed();
  }
 
+void hci_le_advertisements_set_own_address_type(uint8_t own_address_type){
+    hci_stack->le_advertisements_own_address_type = own_address_type;
+    hci_stack->le_advertisements_todo |= LE_ADVERTISEMENT_TASKS_SET_PARAMS;
+    gap_advertisments_changed();
+}
+
 /**
  * @brief Enable/Disable Advertisements
  * @param enabled
@@ -3751,14 +3770,6 @@ void hci_set_hardware_error_callback(void (*fn)(uint8_t error)){
     hci_stack->hardware_error_callback = fn;
 }
 
-/**
- * @brief Set callback for local information from Bluetooth controller right after HCI Reset
- * @note Can be used to select chipset driver dynamically during startup
- */
-void hci_set_local_version_information_callback(void (*fn)(uint8_t * local_version_information)){
-    hci_stack->local_version_information_callback = fn;
-}
-
 void hci_disconnect_all(void){
     btstack_linked_list_iterator_t it;
     btstack_linked_list_iterator_init(&it, &hci_stack->connections);
@@ -3768,4 +3779,8 @@ void hci_disconnect_all(void){
         con->state = SEND_DISCONNECT;
     }
     hci_run();
+}
+
+uint16_t hci_get_manufacturer(void){
+    return hci_stack->manufacturer;
 }
