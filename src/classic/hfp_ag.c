@@ -1115,7 +1115,6 @@ static int call_setup_state_machine(hfp_connection_t * hfp_connection){
             hfp_connection->ag_ring = 1;
             hfp_connection->ag_send_clip = hfp_gsm_clip_type() && hfp_connection->clip_enabled;
             hfp_connection->call_state = HFP_CALL_RINGING;
-            hfp_connection->call_state = HFP_CALL_RINGING;
             hfp_emit_simple_event(hfp_callback, HFP_SUBEVENT_START_RINGINIG);
             break;        
         case HFP_CALL_W4_AUDIO_CONNECTION_FOR_ACTIVE:
