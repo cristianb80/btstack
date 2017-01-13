@@ -49,6 +49,7 @@
 
 // UNUSED macro
 #define UNUSED(x) (void)(sizeof(x))
+#define NOT(x)    (~(unsigned int) (x))
 
 // TYPES
 

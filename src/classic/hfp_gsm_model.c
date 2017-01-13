@@ -30,11 +30,11 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
- 
+
 // *****************************************************************************
 //
 // GSM Model
@@ -64,7 +64,7 @@
 #define HFP_GSM_MAX_NR_CALLS 3
 #define HFP_GSM_MAX_CALL_NUMBER_SIZE 25
 
-static hfp_gsm_call_t gsm_calls[HFP_GSM_MAX_NR_CALLS]; 
+static hfp_gsm_call_t gsm_calls[HFP_GSM_MAX_NR_CALLS];
 static hfp_callsetup_status_t callsetup_status = HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS;
 
 static uint8_t clip_type;
@@ -77,7 +77,7 @@ static inline int get_number_active_calls(void);
 static void set_callsetup_status(hfp_callsetup_status_t status){
     callsetup_status = status;
     if (callsetup_status != HFP_CALLSETUP_STATUS_OUTGOING_CALL_SETUP_IN_ALERTING_STATE) return;
-    
+
     int i ;
     for (i = 0; i < HFP_GSM_MAX_NR_CALLS; i++){
         if (gsm_calls[i].direction == HFP_ENHANCED_CALL_DIR_OUTGOING){
@@ -110,7 +110,7 @@ static inline void set_enhanced_call_status_initiated(int index_in_table){
         } else {
             gsm_calls[index_in_table].enhanced_status = HFP_ENHANCED_CALL_STATUS_INCOMING;
         }
-    } 
+    }
     gsm_calls[index_in_table].used_slot = 1;
 }
 
@@ -131,7 +131,7 @@ static inline int is_enhanced_call_status_initiated(int index_in_table){
         case HFP_ENHANCED_CALL_STATUS_INCOMING_WAITING:
             return 1;
         default:
-            return 0; 
+            return 0;
     }
 }
 
@@ -149,7 +149,7 @@ void hfp_gsm_init(void){
     for (i = 0; i < HFP_GSM_MAX_NR_CALLS; i++){
         free_call_slot(i);
     }
-} 
+}
 
 static int get_number_calls_with_enhanced_status(hfp_enhanced_call_status_t enhanced_status){
     int i, count = 0;
@@ -221,7 +221,7 @@ static int next_call_index(void){
 
 static void hfp_gsm_set_clip(int index_in_table, uint8_t type, const char * number){
     if (strlen(number) == 0) return;
-    
+
     gsm_calls[index_in_table].clip_type = type;
 
     int clip_number_size = strlen(number) < HFP_GSM_MAX_CALL_NUMBER_SIZE ? (int) strlen(number) : HFP_GSM_MAX_CALL_NUMBER_SIZE-1;
@@ -229,7 +229,7 @@ static void hfp_gsm_set_clip(int index_in_table, uint8_t type, const char * numb
     gsm_calls[index_in_table].clip_number[clip_number_size] = '\0';
     strncpy(last_dialed_number, number, clip_number_size);
     last_dialed_number[clip_number_size] = '\0';
-    
+
     clip_type = 0;
     memset(clip_number, 0, sizeof(clip_number));
 }
@@ -242,7 +242,7 @@ static void delete_call(int delete_index_in_table){
         }
     }
     free_call_slot(delete_index_in_table);
-    
+
     gsm_calls[delete_index_in_table].clip_type = 0;
     gsm_calls[delete_index_in_table].index = 0;
     gsm_calls[delete_index_in_table].clip_number[0] = '\0';
@@ -258,7 +258,7 @@ static void create_call(hfp_enhanced_call_dir_t direction){
     gsm_calls[next_free_slot].clip_type = 0;
     gsm_calls[next_free_slot].clip_number[0] = '\0';
     gsm_calls[next_free_slot].mpty = HFP_ENHANCED_CALL_MPTY_NOT_A_CONFERENCE_CALL;
-    
+
     hfp_gsm_set_clip(next_free_slot, clip_type, clip_number);
 }
 
@@ -293,33 +293,33 @@ uint8_t hfp_gsm_clip_type(void){
     if (initiated_call_index != -1){
         if (gsm_calls[initiated_call_index].clip_type != 0) {
             return gsm_calls[initiated_call_index].clip_type;
-        } 
+        }
     }
 
     int active_call_index = get_active_call_index();
     if (active_call_index != -1){
         if (gsm_calls[active_call_index].clip_type != 0) {
             return gsm_calls[active_call_index].clip_type;
-        } 
+        }
     }
     return 0;
 }
 
 char *  hfp_gsm_clip_number(void){
     if (strlen(clip_number) != 0) return clip_number;
-    
+
     int initiated_call_index = get_initiated_call_index();
     if (initiated_call_index != -1){
         if (gsm_calls[initiated_call_index].clip_type != 0) {
             return gsm_calls[initiated_call_index].clip_number;
-        } 
+        }
     }
 
     int active_call_index = get_active_call_index();
     if (active_call_index != -1){
         if (gsm_calls[active_call_index].clip_type != 0) {
             return gsm_calls[active_call_index].clip_number;
-        } 
+        }
     }
     clip_number[0] = 0;
     return clip_number;
@@ -387,7 +387,7 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
             }
             create_call(HFP_ENHANCED_CALL_DIR_OUTGOING);
             break;
-            
+
         case HFP_AG_OUTGOING_CALL_REJECTED:
             if (current_call_index != -1){
                 delete_call(current_call_index);
@@ -401,7 +401,7 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
             }
             set_callsetup_status(HFP_CALLSETUP_STATUS_OUTGOING_CALL_SETUP_IN_DIALING_STATE);
             break;
-        
+
         case HFP_AG_OUTGOING_CALL_RINGING:
             if (current_call_index == -1){
                 log_error("gsm: no active call");
@@ -419,11 +419,11 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
             set_callsetup_status(HFP_CALLSETUP_STATUS_INCOMING_CALL_SETUP_IN_PROGRESS);
             create_call(HFP_ENHANCED_CALL_DIR_INCOMING);
             break;
-        
+
         case HFP_AG_INCOMING_CALL_ACCEPTED_BY_AG:
             if (hfp_gsm_callsetup_status() != HFP_CALLSETUP_STATUS_INCOMING_CALL_SETUP_IN_PROGRESS) break;
             set_callsetup_status(HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS);
-            
+
             if (hfp_gsm_call_status() == HFP_CALL_STATUS_ACTIVE_OR_HELD_CALL_IS_PRESENT){
                 set_enhanced_call_status_held(current_call_index);
             }
@@ -432,14 +432,14 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
 
         case HFP_AG_HELD_CALL_JOINED_BY_AG:
             if (hfp_gsm_call_status() != HFP_CALL_STATUS_ACTIVE_OR_HELD_CALL_IS_PRESENT) break;
-            
+
             // TODO: is following condition correct? Can we join incoming call before it is answered?
             if (callsetup_status == HFP_CALLSETUP_STATUS_INCOMING_CALL_SETUP_IN_PROGRESS){
                 set_enhanced_call_status_active(initiated_call_index);
                 set_callsetup_status(HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS);
             } else if (hfp_gsm_callheld_status() == HFP_CALLHELD_STATUS_CALL_ON_HOLD_OR_SWAPPED) {
                 set_enhanced_call_status_active(held_call_index);
-            } 
+            }
 
             for (i = 0; i < HFP_GSM_MAX_NR_CALLS; i++){
                 if (is_enhanced_call_status_active(i)){
@@ -460,7 +460,7 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
             if (hfp_gsm_callsetup_status() != HFP_CALLSETUP_STATUS_INCOMING_CALL_SETUP_IN_PROGRESS) break;
             if (hfp_gsm_call_status() != HFP_CALL_STATUS_NO_HELD_OR_ACTIVE_CALLS) break;
             set_callsetup_status(HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS);
-            set_enhanced_call_status_response_hold(initiated_call_index); 
+            set_enhanced_call_status_response_hold(initiated_call_index);
             break;
 
         case HFP_AG_RESPONSE_AND_HOLD_ACCEPT_HELD_CALL_BY_AG:
@@ -475,7 +475,7 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
             delete_call(get_response_held_call_index());
             break;
 
-            
+
         case HFP_AG_TERMINATE_CALL_BY_HF:
             switch (hfp_gsm_call_status()){
                 case HFP_CALL_STATUS_NO_HELD_OR_ACTIVE_CALLS:
@@ -505,19 +505,19 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
         case HFP_AG_CALL_DROPPED:
             set_callsetup_status(HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS);
             if (hfp_gsm_call_status() != HFP_CALL_STATUS_ACTIVE_OR_HELD_CALL_IS_PRESENT) break;
-            
+
             for (i = 0; i < HFP_GSM_MAX_NR_CALLS; i++){
                 delete_call(i);
             }
             break;
-        
+
         case HFP_AG_CALL_HOLD_USER_BUSY:
-            // Held or waiting call gets active, 
+            // Held or waiting call gets active,
             set_callsetup_status(HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS);
             free_call_slot(initiated_call_index);
             set_enhanced_call_status_active(held_call_index);
             break;
-        
+
         case HFP_AG_CALL_HOLD_RELEASE_ACTIVE_ACCEPT_HELD_OR_WAITING_CALL:
             if (index != 0 && index <= HFP_GSM_MAX_NR_CALLS ){
                 for (i = 0; i < HFP_GSM_MAX_NR_CALLS; i++){
@@ -531,25 +531,25 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
                     if (is_enhanced_call_status_active(i)){
                         delete_call(i);
                     }
-                }    
+                }
             }
-            
+
             if (callsetup_status != HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS){
                 set_enhanced_call_status_active(initiated_call_index);
             } else {
                 set_enhanced_call_status_active(held_call_index);
             }
-            
+
             set_callsetup_status(HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS);
             break;
-        
+
         case HFP_AG_CALL_HOLD_PARK_ACTIVE_ACCEPT_HELD_OR_WAITING_CALL:
             for (i = 0; i < HFP_GSM_MAX_NR_CALLS; i++){
                 if (is_enhanced_call_status_active(i) && gsm_calls[i].index != index){
                     set_enhanced_call_status_held(i);
                 }
             }
-            
+
             if (callsetup_status != HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS){
                 set_enhanced_call_status_active(initiated_call_index);
             } else {
@@ -557,7 +557,7 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
             }
             set_callsetup_status(HFP_CALLSETUP_STATUS_NO_CALL_SETUP_IN_PROGRESS);
             break;
-        
+
         case HFP_AG_CALL_HOLD_ADD_HELD_CALL:
             if (hfp_gsm_callheld_status() != HFP_CALLHELD_STATUS_NO_CALLS_HELD){
                 for (i = 0; i < HFP_GSM_MAX_NR_CALLS; i++){
@@ -574,7 +574,7 @@ static void hfp_gsm_handler(hfp_ag_call_event_t event, uint8_t index, uint8_t ty
                 delete_call(i);
             }
             break;
-        
+
         case HFP_AG_SET_CLIP:
             if (initiated_call_index != -1){
                 hfp_gsm_set_clip(initiated_call_index, type, number);
