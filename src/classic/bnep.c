@@ -681,7 +681,7 @@ inline static void bnep_channel_state_add(bnep_channel_t *channel, BNEP_CHANNEL_
     channel->state_var = (BNEP_CHANNEL_STATE_VAR) (channel->state_var | event);
 }
 inline static void bnep_channel_state_remove(bnep_channel_t *channel, BNEP_CHANNEL_STATE_VAR event){
-    channel->state_var = (BNEP_CHANNEL_STATE_VAR) (channel->state_var & ~event);
+    channel->state_var = (BNEP_CHANNEL_STATE_VAR) (channel->state_var & NOT(event));
 }
 
 static uint16_t bnep_max_frame_size_for_l2cap_mtu(uint16_t l2cap_mtu){

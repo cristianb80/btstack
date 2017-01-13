@@ -502,7 +502,6 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
             index+=2;
             uint16_t tx_packet_length = little_endian_read_16(packet, index); // measured in bytes
             index+=2;
-            uint8_t air_mode = packet[index];
 
             if (status != 0){
                 log_error("(e)SCO Connection failed, status %u", status);
@@ -528,7 +527,7 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
             }
             log_info("sco_handle 0x%2x, address %s, transmission_interval %u slots, retransmission_interval %u slots, " 
                  " rx_packet_length %u bytes, tx_packet_length %u bytes, air_mode 0x%2x (0x02 == CVSD)", sco_handle,
-                 bd_addr_to_str(address), transmission_interval, retransmission_interval, rx_packet_length, tx_packet_length, air_mode);
+                 bd_addr_to_str(address), transmission_interval, retransmission_interval, rx_packet_length, tx_packet_length, packet[index]);
 
             hsp_state = HSP_AUDIO_CONNECTION_ESTABLISHED;
             emit_event_audio_connected(status, sco_handle);

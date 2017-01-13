@@ -242,7 +242,7 @@ inline static void connectionSetAuthenticationFlags(hci_connection_t * conn, hci
 
 
 inline static void connectionClearAuthenticationFlags(hci_connection_t * conn, hci_authentication_flags_t flags){
-    conn->authentication_flags = (hci_authentication_flags_t)(conn->authentication_flags & ~flags);
+    conn->authentication_flags = (hci_authentication_flags_t)(conn->authentication_flags & NOT(flags));
 }
 
 /**
@@ -793,7 +793,7 @@ static uint16_t hci_acl_packet_types_for_buffer_size_and_local_features(uint16_t
         int feature_set = (local_supported_features[bit_idx >> 3] & (1<<(bit_idx & 7))) != 0;
         if (feature_set) continue;
         log_info("Features bit %02u is not set, removing packet types 0x%04x", bit_idx, packet_type_feature_packet_mask[i]);
-        packet_types &= ~packet_type_feature_packet_mask[i];
+        packet_types &= NOT(packet_type_feature_packet_mask[i]);
     }
     // flip bits for "may not be used"
     packet_types ^= 0x3306;
@@ -1769,7 +1769,7 @@ static void event_handler(uint8_t *packet, int size){
 
             // dedicated bonding: send result and disconnect
             if (conn->bonding_flags & BONDING_DEDICATED){
-                conn->bonding_flags &= ~BONDING_DEDICATED;
+                conn->bonding_flags &= NOT(BONDING_DEDICATED);
                 conn->bonding_flags |= BONDING_DISCONNECT_DEDICATED_DONE;
                 conn->bonding_status = packet[2];
                 break;
@@ -2750,29 +2750,29 @@ static void hci_run(void){
 #endif
 
         if (connection->bonding_flags & BONDING_REQUEST_REMOTE_FEATURES){
-            connection->bonding_flags &= ~BONDING_REQUEST_REMOTE_FEATURES;
+            connection->bonding_flags &= NOT(BONDING_REQUEST_REMOTE_FEATURES);
             hci_send_cmd(&hci_read_remote_supported_features_command, connection->con_handle);
             return;
         }
 
         if (connection->bonding_flags & BONDING_DISCONNECT_SECURITY_BLOCK){
-            connection->bonding_flags &= ~BONDING_DISCONNECT_SECURITY_BLOCK;
+            connection->bonding_flags &= NOT(BONDING_DISCONNECT_SECURITY_BLOCK);
             hci_send_cmd(&hci_disconnect, connection->con_handle, 0x0005);  // authentication failure
             return;
         }
         if (connection->bonding_flags & BONDING_DISCONNECT_DEDICATED_DONE){
-            connection->bonding_flags &= ~BONDING_DISCONNECT_DEDICATED_DONE;
+            connection->bonding_flags &= NOT(BONDING_DISCONNECT_DEDICATED_DONE);
             connection->bonding_flags |= BONDING_EMIT_COMPLETE_ON_DISCONNECT;
             hci_send_cmd(&hci_disconnect, connection->con_handle, 0x13);  // authentication done
             return;
         }
         if (connection->bonding_flags & BONDING_SEND_AUTHENTICATE_REQUEST){
-            connection->bonding_flags &= ~BONDING_SEND_AUTHENTICATE_REQUEST;
+            connection->bonding_flags &= NOT(BONDING_SEND_AUTHENTICATE_REQUEST);
             hci_send_cmd(&hci_authentication_requested, connection->con_handle);
             return;
         }
         if (connection->bonding_flags & BONDING_SEND_ENCRYPTION_REQUEST){
-            connection->bonding_flags &= ~BONDING_SEND_ENCRYPTION_REQUEST;
+            connection->bonding_flags &= NOT(BONDING_SEND_ENCRYPTION_REQUEST);
             hci_send_cmd(&hci_set_connection_encryption, connection->con_handle, 1);
             return;
         }
