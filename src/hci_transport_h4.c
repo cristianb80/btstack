@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -95,7 +95,7 @@ static btstack_timer_source_t ehcill_sleep_ack_timer;
 #error HCI_OUTGOING_PRE_BUFFER_SIZE not defined. Please update hci.h
 #endif
 
-static void dummy_handler(uint8_t packet_type, uint8_t *packet, uint16_t size); 
+static void dummy_handler(uint8_t packet_type, uint8_t *packet, uint16_t size);
 
 typedef enum {
     H4_W4_PACKET_TYPE,
@@ -109,7 +109,7 @@ typedef enum {
     TX_IDLE = 1,
     TX_W4_PACKET_SENT,
 #ifdef ENABLE_EHCILL
-    TX_W4_WAKEUP, 
+    TX_W4_WAKEUP,
     TX_W2_EHCILL_SEND,
     TX_W4_EHCILL_SENT,
 #endif
@@ -120,9 +120,11 @@ static const btstack_uart_block_t * btstack_uart;
 static btstack_uart_config_t uart_config;
 
 // write state
-static TX_STATE tx_state;         
+static TX_STATE tx_state;
+#ifdef ENABLE_EHCILL
 static uint8_t * tx_data;
 static uint16_t  tx_len;   // 0 == no outgoing packet
+#endif
 
 static uint8_t packet_sent_event[] = { HCI_EVENT_TRANSPORT_PACKET_SENT, 0};
 
@@ -150,7 +152,7 @@ static void hci_transport_h4_reset_statemachine(void){
 
 static void hci_transport_h4_trigger_next_read(void){
     // log_info("hci_transport_h4_trigger_next_read: %u bytes", bytes_to_read);
-    btstack_uart->receive_block(&hci_packet[read_pos], bytes_to_read);  
+    btstack_uart->receive_block(&hci_packet[read_pos], bytes_to_read);
 }
 
 static void hci_transport_h4_block_read(void){
@@ -187,23 +189,23 @@ static void hci_transport_h4_block_read(void){
                     break;
             }
             break;
-            
+
         case H4_W4_EVENT_HEADER:
             bytes_to_read = hci_packet[2];
             h4_state = H4_W4_PAYLOAD;
             break;
-            
+
         case H4_W4_ACL_HEADER:
             bytes_to_read = little_endian_read_16( hci_packet, 3);
             // check ACL length
             if (HCI_ACL_HEADER_SIZE + bytes_to_read >  HCI_PACKET_BUFFER_SIZE){
                 log_error("hci_transport_h4: invalid ACL payload len %d - only space for %u", bytes_to_read, HCI_PACKET_BUFFER_SIZE - HCI_ACL_HEADER_SIZE);
                 hci_transport_h4_reset_statemachine();
-                break;              
+                break;
             }
             h4_state = H4_W4_PAYLOAD;
             break;
-            
+
         case H4_W4_SCO_HEADER:
             bytes_to_read = hci_packet[3];
             h4_state = H4_W4_PAYLOAD;
@@ -223,10 +225,11 @@ static void hci_transport_h4_block_sent(void){
     switch (tx_state){
         case TX_W4_PACKET_SENT:
             // packet fully sent, reset state
-            tx_len = 0;
             tx_state = TX_IDLE;
 
 #ifdef ENABLE_EHCILL
+            tx_len = 0;
+
             // notify eHCILL engine
             hci_transport_h4_ehcill_handle_packet_sent();
 #endif
@@ -234,8 +237,8 @@ static void hci_transport_h4_block_sent(void){
             packet_handler(HCI_EVENT_PACKET, &packet_sent_event[0], sizeof(packet_sent_event));
             break;
 
-#ifdef ENABLE_EHCILL        
-        case TX_W4_EHCILL_SENT: 
+#ifdef ENABLE_EHCILL
+        case TX_W4_EHCILL_SENT:
             hci_transport_h4_ehcill_handle_ehcill_command_sent();
             break;
 #endif
@@ -246,6 +249,7 @@ static void hci_transport_h4_block_sent(void){
 }
 
 static int hci_transport_h4_can_send_now(uint8_t packet_type){
+	UNUSED(packet_type) ;
     return tx_state == TX_IDLE;
 }
 
@@ -255,11 +259,11 @@ static int hci_transport_h4_send_packet(uint8_t packet_type, uint8_t * packet, i
     packet--;
     *packet = packet_type;
 
+#ifdef ENABLE_EHCILL
     // store request
     tx_len   = size;
     tx_data  = packet;
 
-#ifdef ENABLE_EHCILL
     switch (ehcill_state){
         case EHCILL_STATE_SLEEP:
             hci_transport_h4_ehcill_trigger_wakeup();
@@ -267,7 +271,7 @@ static int hci_transport_h4_send_packet(uint8_t packet_type, uint8_t * packet, i
         case EHCILL_STATE_W2_SEND_SLEEP_ACK:
             return 0;
         default:
-            break;    
+            break;
     }
 #endif
 
@@ -325,6 +329,9 @@ static void hci_transport_h4_register_packet_handler(void (*handler)(uint8_t pac
 }
 
 static void dummy_handler(uint8_t packet_type, uint8_t *packet, uint16_t size){
+	UNUSED(packet_type) ;
+	UNUSED(packet) ;
+	UNUSED(size) ;
 }
 
 //
@@ -421,7 +428,7 @@ static void hci_transport_h4_ehcill_trigger_wakeup(void){
 static void hci_transport_h4_ehcill_schedule_ehcill_command(uint8_t command){
 #ifdef ENABLE_LOG_EHCILL
     log_info("eHCILL: schedule eHCILL command %02x", command);
-#endif                
+#endif
     ehcill_command_to_send = command;
     switch (tx_state){
         case TX_IDLE:
@@ -455,7 +462,7 @@ static void hci_transport_h4_ehcill_handle_command(uint8_t action){
                     break;
             }
             break;
-            
+
         case EHCILL_STATE_SLEEP:
         case EHCILL_STATE_W2_SEND_SLEEP_ACK:
             switch(action){
@@ -466,12 +473,12 @@ static void hci_transport_h4_ehcill_handle_command(uint8_t action){
 #endif
                     hci_transport_h4_ehcill_schedule_ehcill_command(EHCILL_WAKE_UP_ACK);
                     break;
-                    
+
                 default:
                     break;
             }
             break;
-            
+
         case EHCILL_STATE_W4_WAKEUP_IND_OR_ACK:
             switch(action){
                 case EHCILL_WAKE_UP_IND:

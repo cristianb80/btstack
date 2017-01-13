@@ -129,7 +129,9 @@ static int signaling_responses_pending;
 
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 
+#ifdef ENABLE_BLE
 static btstack_packet_handler_t l2cap_event_packet_handler;
+#endif
 static l2cap_fixed_channel_t fixed_channels[L2CAP_FIXED_CHANNEL_TABLE_SIZE];
 
 static uint16_t l2cap_fixed_channel_table_channel_id_for_index(int index){
@@ -175,8 +177,9 @@ void l2cap_init(void){
     l2cap_le_services = NULL;
     l2cap_le_channels = NULL;
 #endif
-
+#ifdef ENABLE_BLE
     l2cap_event_packet_handler = NULL;
+#endif
     memset(fixed_channels, 0, sizeof(fixed_channels));
 
     //
@@ -192,9 +195,11 @@ void l2cap_init(void){
 #endif
 }
 
+#ifdef ENABLE_BLE
 void l2cap_register_packet_handler(void (*handler)(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size)){
     l2cap_event_packet_handler = handler;
 }
+#endif
 
 void l2cap_request_can_send_fix_channel_now_event(hci_con_handle_t con_handle, uint16_t channel_id){
     UNUSED(con_handle);
@@ -992,7 +997,11 @@ uint8_t l2cap_create_channel(btstack_packet_handler_t channel_packet_handler, bd
 
 void
 l2cap_disconnect(uint16_t local_cid, uint8_t reason){
+#ifdef ENABLE_LOG_INFO
     log_info("L2CAP_DISCONNECT local_cid 0x%x reason 0x%x", local_cid, reason);
+#else
+    UNUSED(reason) ;
+#endif
     // find channel for local_cid
     l2cap_channel_t * channel = l2cap_get_channel_for_local_cid(local_cid);
     if (channel) {
