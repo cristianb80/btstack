@@ -340,11 +340,11 @@ int sscanf_bd_addr(const char * addr_string, bd_addr_t addr){
 		union {
 			long int li ;
 			uint32_t u ;
-		} ;
+		} cast ;
 
-		li = atol(str) ;
+		cast.li = atol(str) ;
 
-		return u ;
+		return cast.u ;
 	}
 
 #endif
