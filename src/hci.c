@@ -1070,7 +1070,7 @@ static void hci_initializing_run(void){
             // otherwise continue
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_COMMANDS;
             hci_send_cmd(&hci_read_local_supported_commands);
-            break;            
+            break;
         case HCI_INIT_SET_BD_ADDR:
             log_info("Set Public BD ADDR to %s", bd_addr_to_str(hci_stack->custom_bd_addr));
             hci_stack->chipset->set_bd_addr_command(hci_stack->custom_bd_addr, hci_stack->hci_packet_buffer);
@@ -1084,7 +1084,7 @@ static void hci_initializing_run(void){
             log_info("Resend hci_read_local_supported_commands after CSR Warm Boot double reset");
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_COMMANDS;
             hci_send_cmd(&hci_read_local_supported_commands);
-            break;       
+            break;
         case HCI_INIT_READ_BD_ADDR:
             hci_stack->substate = HCI_INIT_W4_READ_BD_ADDR;
             hci_send_cmd(&hci_read_bd_addr);
@@ -1191,7 +1191,7 @@ static void hci_init_done(void){
 
 static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
     UNUSED(size);
-    
+
     uint8_t command_completed = 0;
 
     if (hci_event_packet_get_type(packet) == HCI_EVENT_COMMAND_COMPLETE){
@@ -1524,7 +1524,7 @@ static void event_handler(uint8_t *packet, int size){
                         hci_stack->le_data_packets_length = HCI_ACL_PAYLOAD_SIZE;
                     }
                 log_info("hci_le_read_buffer_size: size %u, count %u", hci_stack->le_data_packets_length, hci_stack->le_acl_packets_total_num);
-            }         
+            }
 #ifdef ENABLE_LE_CENTRAL
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_le_read_white_list_size)){
                 hci_stack->le_whitelist_capacity = little_endian_read_16(packet, 6);
@@ -1582,7 +1582,7 @@ static void event_handler(uint8_t *packet, int size){
                 if (packet[5] == 0){
                     hci_stack->synchronous_flow_control_enabled = 1;
                 }
-            } 
+            }
 #endif
             break;
 
@@ -2102,7 +2102,7 @@ static void hci_state_reset(void){
     hci_stack->le_whitelist = 0;
     hci_stack->le_whitelist_capacity = 0;
 #endif
-    hci_stack->le_connection_parameter_range.le_conn_interval_min =          6; 
+    hci_stack->le_connection_parameter_range.le_conn_interval_min =          6;
     hci_stack->le_connection_parameter_range.le_conn_interval_max =       3200;
     hci_stack->le_connection_parameter_range.le_conn_latency_min =           0;
     hci_stack->le_connection_parameter_range.le_conn_latency_max =         500;
@@ -2760,7 +2760,7 @@ static void hci_run(void){
                 hci_send_cmd(&hci_le_create_connection_cancel);
                 return;
 #endif
-#endif                
+#endif
             case SEND_DISCONNECT:
                 connection->state = SENT_DISCONNECT;
                 hci_send_cmd(&hci_disconnect, connection->con_handle, 0x13); // remote closed connection
@@ -2852,7 +2852,7 @@ static void hci_run(void){
 #endif
 
         if (connection->bonding_flags & BONDING_DISCONNECT_SECURITY_BLOCK){
-            connection->bonding_flags &= ~BONDING_DISCONNECT_SECURITY_BLOCK;
+            connection->bonding_flags &= NOT(BONDING_DISCONNECT_SECURITY_BLOCK);
             hci_send_cmd(&hci_disconnect, connection->con_handle, 0x0005);  // authentication failure
             return;
         }
