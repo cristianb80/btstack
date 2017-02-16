@@ -1,3 +1,4 @@
+del tags
 del /s /q *~
 del /s /q *.bak
 del /s /q *.err

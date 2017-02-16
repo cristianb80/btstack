@@ -1,1 +1,1 @@
-cscope -b -c -R -X
+ctags -R
