@@ -30,14 +30,14 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
 
 /*
  * avdtp_source.h
- * 
+ *
  * Audio/Video Distribution Transport Protocol Source
  *
  * AVDTP Source is a device that streames media data.
@@ -55,7 +55,7 @@ extern "C" {
 /* API_START */
 
 /**
- * @brief AVDTP Source service record. 
+ * @brief AVDTP Source service record.
  * @param service
  * @param service_record_handle
  * @param supported_features 16-bit bitmap, see AVDTP_SOURCE_SF_* values in avdtp.h

@@ -58,45 +58,35 @@
 //MZ static inline void __log_unused(const char *format, ...) {}
 
 #ifndef BTSTACK_PRINTF
-#ifdef __AVR__
-#define BTSTACK_PRINTF(format, ...)          printf_P(PSTR(format), ## __VA_ARGS__)
-#else
-#define BTSTACK_PRINTF(format, ...)          printf(format, ## __VA_ARGS__)
-#endif
+#	ifdef __AVR__
+#		define BTSTACK_PRINTF(format, ...)          printf_P(PSTR(format), ## __VA_ARGS__)
+#	else
+#		define BTSTACK_PRINTF(format, ...)          printf(format, ## __VA_ARGS__)
+#	endif
 #endif
 
-
 #ifdef __AVR__
-#define HCI_DUMP_LOG(log_level, format, ...) hci_dump_log_P(log_level, PSTR(format), ## __VA_ARGS__)
+#	define HCI_DUMP_LOG(log_level, format, ...) hci_dump_log_P(log_level, PSTR(format), ## __VA_ARGS__)
 #else
-#define HCI_DUMP_LOG(log_level, format, ...) hci_dump_log(log_level, format, ## __VA_ARGS__)
+#	define HCI_DUMP_LOG(log_level, format, ...) hci_dump_log(log_level, format, ## __VA_ARGS__)
 #endif
 
 #ifdef ENABLE_LOG_DEBUG
-#define log_debug(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_DEBUG, format,  ## __VA_ARGS__)
+#	define log_debug(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_DEBUG, format,  ## __VA_ARGS__)
 #else
-#define log_debug(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
-#endif
-#else
-#define log_debug(...)		{}
+#	define log_debug(...)
 #endif
 
 #ifdef ENABLE_LOG_INFO
-#define log_info(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_INFO, format,  ## __VA_ARGS__)
+#	define log_info(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_INFO, format,  ## __VA_ARGS__)
 #else
-#define log_info(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
-#endif
-#else
-#define log_info(...)		{}
+#	define log_info(...)
 #endif
 
 #ifdef ENABLE_LOG_ERROR
-#define log_error(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_ERROR, format,  ## __VA_ARGS__)
+#	define log_error(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_ERROR, format,  ## __VA_ARGS__)
 #else
-#define log_error(format, ...)  BTSTACK_PRINTF(format "\n",  ## __VA_ARGS__)
-#endif
-#else
-#define log_error(...)		{}
+#	define log_error(...)
 #endif
 
 /**

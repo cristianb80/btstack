@@ -30,21 +30,21 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
 
 /*
  * avdtp.h
- * 
+ *
  * Audio/Video Distribution Transport Protocol
  *
- * This protocol defines A/V stream negotiation, establishment, and transmission 
- * procedures. Also specified are the message formats that are exchanged between 
+ * This protocol defines A/V stream negotiation, establishment, and transmission
+ * procedures. Also specified are the message formats that are exchanged between
  * such devices to transport their A/V streams in A/V distribution applications.
  *
- * Media packets are unidirectional, they travel downstream from AVDTP Source to AVDTP Sink. 
+ * Media packets are unidirectional, they travel downstream from AVDTP Source to AVDTP Sink.
  */
 
 #ifndef __AVDTP_H
@@ -142,12 +142,12 @@ typedef enum {
 typedef enum{
     AVDTP_AUDIO = 0,
     AVDTP_VIDEO,
-    AVDTP_MULTIMEDIA 
+    AVDTP_MULTIMEDIA
 } avdtp_media_type_t;
 
 typedef enum{
     AVDTP_CODEC_SBC             = 0x00,
-    AVDTP_CODEC_MPEG_1_2_AUDIO  = 0x01, 
+    AVDTP_CODEC_MPEG_1_2_AUDIO  = 0x01,
     AVDTP_CODEC_MPEG_2_4_AAC    = 0x02,
     AVDTP_CODEC_ATRAC_FAMILY    = 0x04,
     AVDTP_CODEC_NON_A2DP        = 0xFF
@@ -180,11 +180,11 @@ typedef struct {
     uint8_t recovery_type;                  // 0x01 = RFC2733
     uint8_t maximum_recovery_window_size;   // 0x01 to 0x18, for a Transport Packet
     uint8_t maximum_number_media_packets;   // 0x01 to 0x18, The maximum number of media packets a specific parity code covers
-} avdtp_recovery_capabilities_t;            
+} avdtp_recovery_capabilities_t;
 
 typedef struct {
-    avdtp_media_type_t       media_type;                     
-    avdtp_media_codec_type_t media_codec_type; 
+    avdtp_media_type_t       media_type;
+    avdtp_media_codec_type_t media_codec_type;
     uint16_t  media_codec_information_len;
     const uint8_t * media_codec_information;
 } adtvp_media_codec_capabilities_t;
@@ -207,7 +207,7 @@ typedef struct{
     uint8_t transport_identifiers_num;
     uint8_t transport_session_identifiers[3];   // byte1, upper 5bits, 0x01 to 0x1E
     // Request/indicate value for TCID for a media, reporting, or transport session
-    uint8_t tcid[3];         // byte2 0x01 to 0x1E 
+    uint8_t tcid[3];         // byte2 0x01 to 0x1E
 } avdtp_multiplexing_mode_capabilities_t;
 
 typedef struct{
@@ -288,8 +288,8 @@ typedef enum {
     AVDTP_STREAM_ENDPOINT_CONFIGURATION_SUBSTATEMACHINE,
     AVDTP_STREAM_ENDPOINT_CONFIGURED,
     AVDTP_STREAM_ENDPOINT_W4_L2CAP_FOR_MEDIA_CONNECTED,
-    AVDTP_STREAM_ENDPOINT_OPENED, 
-    AVDTP_STREAM_ENDPOINT_STREAMING, 
+    AVDTP_STREAM_ENDPOINT_OPENED,
+    AVDTP_STREAM_ENDPOINT_STREAMING,
     AVDTP_STREAM_ENDPOINT_CLOSING,
     AVDTP_STREAM_ENDPOINT_ABORTING,
     AVDTP_STREAM_ENDPOINT_W4_L2CAP_FOR_MEDIA_DISCONNECTED
@@ -316,9 +316,9 @@ typedef enum {
     AVDTP_ACCEPTOR_W2_ANSWER_RECONFIGURE,
     AVDTP_ACCEPTOR_W2_ANSWER_GET_CONFIGURATION,
     AVDTP_ACCEPTOR_W2_ANSWER_OPEN_STREAM,
-    
+
     AVDTP_ACCEPTOR_W4_L2CAP_FOR_MEDIA_CONNECTED,
-    
+
     AVDTP_ACCEPTOR_W2_ANSWER_START_STREAM,
     AVDTP_ACCEPTOR_W2_ANSWER_CLOSE_STREAM,
     AVDTP_ACCEPTOR_W2_ANSWER_ABORT_STREAM,
@@ -388,11 +388,11 @@ typedef struct {
     hci_con_handle_t con_handle;
     uint16_t l2cap_signaling_cid;
     avdtp_service_mode_t service_mode;
-    
+
     avdtp_connection_state_t state;
     avdtp_acceptor_connection_state_t  acceptor_connection_state;
     avdtp_initiator_connection_state_t initiator_connection_state;
-    
+
     // used for fragmentation
     // avdtp_signaling_packet_header_t signaling_header;
     avdtp_signaling_packet_t signaling_packet;
@@ -410,7 +410,7 @@ typedef struct {
     uint8_t wait_to_send_acceptor;
     uint8_t wait_to_send_initiator;
     uint8_t wait_to_send_self;
-    
+
     uint8_t suspended_seids[MAX_NUM_SEPS];
     uint8_t num_suspended_seids;
 
@@ -422,7 +422,7 @@ typedef struct {
 
 typedef struct avdtp_stream_endpoint {
     btstack_linked_item_t    item;
-    
+
     // original capabilities
     avdtp_sep_t sep;
     uint16_t l2cap_media_cid;
@@ -432,7 +432,7 @@ typedef struct avdtp_stream_endpoint {
     avdtp_stream_endpoint_state_t  state;
     avdtp_acceptor_stream_endpoint_state_t  acceptor_config_state;
     avdtp_initiator_stream_endpoint_state_t initiator_config_state;
-    
+
     // active connection
     avdtp_connection_t * connection;
     // store configurations with remote seps

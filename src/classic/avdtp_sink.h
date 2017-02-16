@@ -30,17 +30,17 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
 
 /*
  * avdtp_sink.h
- * 
+ *
  * Audio/Video Distribution Transport Protocol (AVDTP) Sink
  *
- * AVDTP Sink is a device that accepts streamed media data.  
+ * AVDTP Sink is a device that accepts streamed media data.
  */
 
 #ifndef __AVDTP_SINK_H
@@ -56,7 +56,7 @@ extern "C" {
 
 /* API_START */
 /**
- * @brief AVDTP Sink service record. 
+ * @brief AVDTP Sink service record.
  * @param service
  * @param service_record_handle
  * @param supported_features 16-bit bitmap, see AVDTP_SINK_SF_* values in avdtp.h
@@ -84,7 +84,7 @@ void avdtp_sink_register_media_codec_category(uint8_t seid, avdtp_media_type_t m
 void avdtp_sink_register_content_protection_category(uint8_t seid, uint16_t cp_type, const uint8_t * cp_type_value, uint8_t cp_type_value_len);
 
 /**
- * @brief Register callback for the AVDTP Sink client. 
+ * @brief Register callback for the AVDTP Sink client.
  * @param callback
  */
 void avdtp_sink_register_packet_handler(btstack_packet_handler_t callback);
@@ -97,7 +97,7 @@ void avdtp_sink_connect(bd_addr_t bd_addr);
 
 void avdtp_sink_register_media_handler(void (*callback)(avdtp_stream_endpoint_t * stream_endpoint, uint8_t *packet, uint16_t size));
 /**
- * @brief Disconnect from device with connection handle. 
+ * @brief Disconnect from device with connection handle.
  * @param con_handle
  */
 void avdtp_sink_disconnect(uint16_t con_handle);
