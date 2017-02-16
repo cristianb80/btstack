@@ -502,7 +502,7 @@ avdtp_stream_endpoint_t * btstack_memory_avdtp_stream_endpoint_get(void){
 void btstack_memory_avdtp_stream_endpoint_free(avdtp_stream_endpoint_t *avdtp_stream_endpoint){
     // silence compiler warning about unused parameter in a portable way
     (void) avdtp_stream_endpoint;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 avdtp_stream_endpoint_t * btstack_memory_avdtp_stream_endpoint_get(void){
@@ -541,7 +541,7 @@ avdtp_connection_t * btstack_memory_avdtp_connection_get(void){
 void btstack_memory_avdtp_connection_free(avdtp_connection_t *avdtp_connection){
     // silence compiler warning about unused parameter in a portable way
     (void) avdtp_connection;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 avdtp_connection_t * btstack_memory_avdtp_connection_get(void){
