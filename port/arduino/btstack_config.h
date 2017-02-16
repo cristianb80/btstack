@@ -10,7 +10,6 @@
 
 // BTstack features that can be enabled
 #define ENABLE_BLE
-#define ENABLE_LOG_INTO_HCI_DUMP
 #define ENABLE_LOG_INFO 
 #define ENABLE_LOG_ERROR
 #define ENABLE_LE_PERIPHERAL
@@ -20,7 +19,6 @@
 #define HCI_ACL_PAYLOAD_SIZE 200
 #define MAX_NR_BNEP_SERVICES 0
 #define MAX_NR_BNEP_CHANNELS 0
-#define MAX_NR_GATT_SUBCLIENTS 2
 #define MAX_NR_HCI_CONNECTIONS 1
 #define MAX_NR_L2CAP_SERVICES  0
 #define MAX_NR_L2CAP_CHANNELS  0
