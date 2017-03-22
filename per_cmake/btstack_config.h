@@ -26,6 +26,8 @@
 #define ENABLE_LOG_INFO
 #define ENABLE_LOG_ERROR
 
+#define MAX_NR_LE_DEVICE_DB_ENTRIES		1
+
 // BTstack configuration. buffers, sizes, ...
 #define HCI_ACL_PAYLOAD_SIZE 52
 #define MAX_SPP_CONNECTIONS 1
