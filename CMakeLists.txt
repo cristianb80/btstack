@@ -13,11 +13,9 @@ endif ()
 #message(STATUS "linker: " ${CMAKE_LINKER})
 
 
-# Opzioni comuni a c e c++ (-Werror)
+# Opzioni comuni a c e c++
 set(gcc_flags "-Wall -Wextra -Werror")
-	# lo tolgo perche' segnala falsi positivi 
-set(gcc_flags
-	"${gcc_flags} -Wno-missing-field-initializers")
+
 # Altre regole utili
 set(gcc_flags 
 	"${gcc_flags} -fstrict-aliasing -Wshadow")

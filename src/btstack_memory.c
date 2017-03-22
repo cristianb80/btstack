@@ -580,7 +580,7 @@ avrcp_connection_t * btstack_memory_avrcp_connection_get(void){
 void btstack_memory_avrcp_connection_free(avrcp_connection_t *avrcp_connection){
     // silence compiler warning about unused parameter in a portable way
     (void) avrcp_connection;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 avrcp_connection_t * btstack_memory_avrcp_connection_get(void){

@@ -50,6 +50,10 @@
 #include "hci_transport.h"
 #include "btstack_uart_block.h"
 
+// Per le PRIu32 ecc
+#include <inttypes.h>
+
+
 #define ENABLE_LOG_EHCILL
 
 #ifdef ENABLE_EHCILL
@@ -140,7 +144,7 @@ static uint8_t hci_packet_with_pre_buffer[HCI_INCOMING_PRE_BUFFER_SIZE + 1 + HCI
 static uint8_t * hci_packet = &hci_packet_with_pre_buffer[HCI_INCOMING_PRE_BUFFER_SIZE];
 
 static int hci_transport_h4_set_baudrate(uint32_t baudrate){
-    log_info("hci_transport_h4_set_baudrate %u", baudrate);
+    log_info("hci_transport_h4_set_baudrate %" PRIu32, baudrate);
     return btstack_uart->set_baudrate(baudrate);
 }
 

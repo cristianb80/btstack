@@ -3,7 +3,7 @@ set(CODICE
     btstack_linked_list.c
     btstack_memory.c
     btstack_memory_pool.c
-    btstack_ring_buffer.c
+    #btstack_ring_buffer.c : non usato
     btstack_run_loop.c
     btstack_slip.c
     btstack_util.c
@@ -11,7 +11,7 @@ set(CODICE
     hci_cmd.c
     #hci_dump.c : implementation specific
     hci_transport_h4.c
-    hci_transport_h5.c
+    #hci_transport_h5.c : non usato
     l2cap.c
     l2cap_signaling.c
     classic/bnep.c
@@ -47,8 +47,4 @@ set(CODICE
 include_directories("${PROJECT_SOURCE_DIR}/per_cmake")
 include_directories("${PROJECT_SOURCE_DIR}/src")
 
-set(CMAKE_C_FLAGS
-	"${CMAKE_C_FLAGS} -Wno-unused-parameter -Wno-format -Wno-sign-compare")
-
-
-add_library(comuni OBJECT ${CODICE})
+add_library(src OBJECT ${CODICE})

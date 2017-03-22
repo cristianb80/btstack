@@ -253,7 +253,7 @@ void hfp_emit_string_event(btstack_packet_handler_t callback, uint8_t event_subt
     event[0] = HCI_EVENT_HFP_META;
     event[1] = sizeof(event) - 2;
     event[2] = event_subtype;
-    int size = (strlen(value) < sizeof(event) - 4) ? (int) strlen(value) : sizeof(event) - 4;
+    size_t size = (strlen(value) < (size_t) (sizeof(event) - 4)) ? strlen(value) : (size_t) (sizeof(event) - 4);
     strncpy((char*)&event[3], value, size);
     event[3 + size] = 0;
     (*callback)(HCI_EVENT_PACKET, 0, event, sizeof(event));
@@ -1255,7 +1255,7 @@ static void parse_sequence(hfp_connection_t * hfp_connection){
             break;
         case HFP_CMD_SUPPORTED_FEATURES:
             hfp_connection->remote_supported_features = btstack_atoi((char*)hfp_connection->line_buffer);
-            log_info("Parsed supported feature %d\n", hfp_connection->remote_supported_features);
+            log_info("Parsed supported feature %" PRIu32 "\n", hfp_connection->remote_supported_features);
             break;
         case HFP_CMD_AVAILABLE_CODECS:
             log_info("Parsed codec %s\n", hfp_connection->line_buffer);

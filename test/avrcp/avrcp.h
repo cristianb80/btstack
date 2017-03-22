@@ -30,14 +30,14 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
 
 /*
  * avrcp.h
- * 
+ *
  * Audio/Video Remote Control Profile
  *
  */
@@ -154,7 +154,7 @@ typedef enum {
     AVRCP_OPERATION_ID_VOLUME_UP = 0x41,
     AVRCP_OPERATION_ID_VOLUME_DOWN = 0x42,
     AVRCP_OPERATION_ID_MUTE = 0x43,
-    
+
     AVRCP_OPERATION_ID_PLAY = 0x44,
     AVRCP_OPERATION_ID_STOP = 0x45,
     AVRCP_OPERATION_ID_PAUSE = 0x46,
@@ -182,7 +182,7 @@ typedef struct {
     bd_addr_t remote_addr;
     hci_con_handle_t con_handle;
     uint16_t l2cap_signaling_cid;
-    
+
     avctp_connection_state_t state;
     uint8_t wait_to_send;
 
@@ -198,20 +198,20 @@ typedef struct {
 
     uint16_t notifications_enabled;
     uint16_t notifications_to_register;
-    uint16_t notifications_to_deregister; 
+    uint16_t notifications_to_deregister;
 } avrcp_connection_t;
 
  typedef enum {
     AVRCP_PLAY_STATUS_STOPPED = 0x00,
     AVRCP_PLAY_STATUS_PLAYING,
     AVRCP_PLAY_STATUS_PAUSED,
-    AVRCP_PLAY_STATUS_FWD_SEEK, 
-    AVRCP_PLAY_STATUS_REV_SEEK, 
+    AVRCP_PLAY_STATUS_FWD_SEEK,
+    AVRCP_PLAY_STATUS_REV_SEEK,
     AVRCP_PLAY_STATUS_ERROR = 0xFF
  } avrcp_play_status_t;
- 
+
 /**
- * @brief AVDTP Sink service record. 
+ * @brief AVDTP Sink service record.
  * @param service
  * @param service_record_handle
  * @param browsing  1 - supported, 0 - not supported
@@ -222,7 +222,7 @@ typedef struct {
 void avrcp_controller_create_sdp_record(uint8_t * service, uint32_t service_record_handle, uint8_t browsing, uint16_t supported_features, const char * service_name, const char * service_provider_name);
 
 /**
- * @brief AVDTP Sink service record. 
+ * @brief AVDTP Sink service record.
  * @param service
  * @param service_record_handle
  * @param browsing  1 - supported, 0 - not supported
@@ -239,7 +239,7 @@ void avrcp_target_create_sdp_record(uint8_t * service, uint32_t service_record_h
 void avrcp_init(void);
 
 /**
- * @brief Register callback for the AVDTP Sink client. 
+ * @brief Register callback for the AVDTP Sink client.
  * @param callback
  */
 void avrcp_register_packet_handler(btstack_packet_handler_t callback);
@@ -300,7 +300,7 @@ void avrcp_stop_rewind(uint16_t con_handle);
  * @brief Forward.
  * @param con_handle
  */
-void avrcp_forward(uint16_t con_handle); 
+void avrcp_forward(uint16_t con_handle);
 
 /**
  * @brief Backward.
