@@ -169,7 +169,7 @@ int nibble_for_char(char c){
     if (c >= 'A' && c <= 'F') return c - 'A' + 10;
     return -1;
 }
-
+#if 0	// MZ: cosa ci fai qua?
 void printf_hexdump(const void *data, int size){
     if (size <= 0) return;
     int i;
@@ -178,7 +178,7 @@ void printf_hexdump(const void *data, int size){
     }
     printf("\n");
 }
-
+#endif
 void log_info_hexdump(const void *data, int size){
 #ifdef ENABLE_LOG_INFO
 

@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -44,11 +44,11 @@
 #define __BTSTACK_DEFINES_H
 
 #include <stdint.h>
-#include "btstack_linked_list.h" 
+#include "btstack_linked_list.h"
 
-
-// UNUSED macro
-#define UNUSED(x) (void)(sizeof(x))
+#ifndef UNUSED
+#   define UNUSED(x) ((void) sizeof(x))
+#endif
 #define NOT(x)    (~(unsigned int) (x))
 
 // TYPES
@@ -77,7 +77,7 @@ typedef uint8_t sm_key_t[16];
 // DEFINES
 
 #define DAEMON_EVENT_PACKET     0x05
-    
+
 // L2CAP data
 #define L2CAP_DATA_PACKET       0x06
 
@@ -99,7 +99,7 @@ typedef uint8_t sm_key_t[16];
 
 // Unicast Connectionless Data
 #define UCD_DATA_PACKET         0x0c
- 
+
 // debug log messages
 #define LOG_MESSAGE_PACKET      0xfc
 
@@ -132,7 +132,7 @@ typedef uint8_t sm_key_t[16];
 #define L2CAP_DATA_LEN_EXCEEDS_REMOTE_MTU                  0x6A
 #define L2CAP_SERVICE_DOES_NOT_EXIST                       0x6B
 #define L2CAP_LOCAL_CID_DOES_NOT_EXIST                     0x6C
-    
+
 #define RFCOMM_MULTIPLEXER_STOPPED                         0x70
 #define RFCOMM_CHANNEL_ALREADY_REGISTERED                  0x71
 #define RFCOMM_NO_OUTGOING_CREDITS                         0x72
@@ -145,7 +145,7 @@ typedef uint8_t sm_key_t[16];
 #define SDP_HANDLE_INVALID                                 0x83
 #define SDP_QUERY_BUSY                                     0x84
 
-#define ATT_HANDLE_VALUE_INDICATION_IN_PORGRESS            0x90 
+#define ATT_HANDLE_VALUE_INDICATION_IN_PORGRESS            0x90
 #define ATT_HANDLE_VALUE_INDICATION_TIMEOUT                0x91
 
 #define GATT_CLIENT_NOT_CONNECTED                          0x93
@@ -154,7 +154,7 @@ typedef uint8_t sm_key_t[16];
 #define GATT_CLIENT_DIFFERENT_CONTEXT_FOR_ADDRESS_ALREADY_EXISTS 0x96
 #define GATT_CLIENT_VALUE_TOO_LONG                         0x97
 #define GATT_CLIENT_CHARACTERISTIC_NOTIFICATION_NOT_SUPPORTED 0x98
-#define GATT_CLIENT_CHARACTERISTIC_INDICATION_NOT_SUPPORTED   0x99 
+#define GATT_CLIENT_CHARACTERISTIC_INDICATION_NOT_SUPPORTED   0x99
 
 #define BNEP_SERVICE_ALREADY_REGISTERED                    0xA0
 #define BNEP_CHANNEL_NOT_CONNECTED                         0xA1
@@ -166,7 +166,7 @@ typedef uint8_t sm_key_t[16];
 
 #define OGF_BTSTACK 0x3d
 
-// cmds for BTstack 
+// cmds for BTstack
 // get state: @returns HCI_STATE
 #define BTSTACK_GET_STATE                                  0x01
 
@@ -235,11 +235,11 @@ typedef uint8_t sm_key_t[16];
 #define RFCOMM_CREATE_CHANNEL_WITH_CREDITS   0x47
 #define RFCOMM_REGISTER_SERVICE_WITH_CREDITS 0x48
 #define RFCOMM_GRANT_CREDITS                 0x49
-    
+
 // GAP Classic 0x50
 #define GAP_DISCONNECT              0x50
 
-// GAP LE      0x60  
+// GAP LE      0x60
 #define GAP_LE_SCAN_START           0x60
 #define GAP_LE_SCAN_STOP            0x61
 #define GAP_LE_CONNECT              0x62
@@ -281,7 +281,7 @@ typedef uint8_t sm_key_t[16];
 #define BTSTACK_EVENT_NR_CONNECTIONS_CHANGED               0x61
 
 /**
- * @format 
+ * @format
  */
 #define BTSTACK_EVENT_POWERON_FAILED                       0x62
 
@@ -310,7 +310,7 @@ typedef uint8_t sm_key_t[16];
 
 // data: event (8), len(8), status (8) == 0, address (48), name (1984 bits = 248 bytes)
 
-/* 
+/*
  * @format 1BT
  * @param status == 0 to match read_remote_name_request
  * @param address
@@ -367,7 +367,7 @@ typedef uint8_t sm_key_t[16];
 // additional HCI events
 
 /**
- * @brief Outgoing packet 
+ * @brief Outgoing packet
  */
 #define HCI_EVENT_TRANSPORT_PACKET_SENT                    0x6E
 
@@ -379,7 +379,7 @@ typedef uint8_t sm_key_t[16];
 
 
 // L2CAP EVENTS
-    
+
 /**
  * @format 1BH2222221
  * @param status
@@ -426,7 +426,7 @@ typedef uint8_t sm_key_t[16];
 #define L2CAP_EVENT_CONNECTION_PARAMETER_UPDATE_REQUEST    0x76
 
 // data: event(8), len(8), handle(16), result (16) (0 == ok, 1 == fail)
- /** 
+ /**
   * @format H2
   * @param handle
   * @result
@@ -521,7 +521,7 @@ typedef uint8_t sm_key_t[16];
  * @param line_status
  */
 #define RFCOMM_EVENT_REMOTE_LINE_STATUS                    0x83
-        
+
 /**
  * @format 21
  * @param rfcomm_cid
@@ -547,7 +547,7 @@ typedef uint8_t sm_key_t[16];
  * @format 1
  * @param status
  */
-#define SDP_EVENT_QUERY_COMPLETE                                 0x91 
+#define SDP_EVENT_QUERY_COMPLETE                                 0x91
 
 /**
  * @format 1T
@@ -674,18 +674,18 @@ typedef uint8_t sm_key_t[16];
  */
 #define GATT_EVENT_LONG_CHARACTERISTIC_DESCRIPTOR_QUERY_RESULT   0xAA
 
-/** 
+/**
  * @format H2
  * @param handle
  * @param MTU
- */    
+ */
 #define GATT_EVENT_MTU                                           0xAB
 
-/** 
+/**
  * @format H2
  * @param handle
  * @param MTU
- */    
+ */
 #define ATT_EVENT_MTU_EXCHANGE_COMPLETE                          0xB5
 
  /**
@@ -738,8 +738,8 @@ typedef uint8_t sm_key_t[16];
  * @param remote_address
  * @param channel_state
  */
-#define BNEP_EVENT_CHANNEL_TIMEOUT                         0xC3    
-    
+#define BNEP_EVENT_CHANNEL_TIMEOUT                         0xC3
+
 /**
  * @format 222B
  * @param bnep_cid
@@ -763,7 +763,7 @@ typedef uint8_t sm_key_t[16];
   * @param addr_type
   * @param address
   */
-#define SM_EVENT_JUST_WORKS_CANCEL                               0xD1 
+#define SM_EVENT_JUST_WORKS_CANCEL                               0xD1
 
  /**
   * @format H1B4
@@ -1187,7 +1187,7 @@ typedef uint8_t sm_key_t[16];
  * @format 1H
  * @param subevent_code
  * @param handle
- */ 
+ */
 #define ANCS_SUBEVENT_CLIENT_CONNECTED                              0xF0
 
 /**
@@ -1196,14 +1196,14 @@ typedef uint8_t sm_key_t[16];
  * @param handle
  * @param attribute_id
  * @param text
- */ 
+ */
 #define ANCS_SUBEVENT_CLIENT_NOTIFICATION                           0xF1
 
 /**
  * @format 1H
  * @param subevent_code
  * @param handle
- */ 
+ */
 #define ANCS_SUBEVENT_CLIENT_DISCONNECTED                           0xF2
 
 
@@ -1222,7 +1222,7 @@ typedef uint8_t sm_key_t[16];
  * @format 1H1
  * @param subevent_code
  * @param con_handle
- * @param signal_identifier 
+ * @param signal_identifier
  */
 #define AVDTP_SUBEVENT_SIGNALING_REJECT                     0x02
 

@@ -55,8 +55,6 @@
 #include "hci_dump.h"
 #include "l2cap.h"
 
-extern bool mz_l2cap_request_can_send_now_event(uint16_t local_cid) ;
-
 // workaround for missing PRIxPTR on mspgcc (16/20-bit MCU)
 #ifndef PRIxPTR
 #if defined(__MSP430X__)  &&  defined(__MSP430X_LARGE__)
@@ -2048,21 +2046,6 @@ void rfcomm_request_can_send_now_event(uint16_t rfcomm_cid){
     l2cap_request_can_send_now_event(channel->multiplexer->l2cap_cid);
 }
 
-bool mz_rfcomm_request_can_send_now_event(uint16_t rfcomm_cid)
-{
-    rfcomm_channel_t * channel = rfcomm_channel_for_rfcomm_cid(rfcomm_cid);
-    if (!channel){
-        log_error("rfcomm_send cid 0x%02x doesn't exist!", rfcomm_cid);
-        return false ;
-    }
-    else {
-		channel->waiting_for_can_send_now = 1;
-
-		return mz_l2cap_request_can_send_now_event(channel->multiplexer->l2cap_cid) ;
-    }
-}
-
-
 static int rfcomm_assert_send_valid(rfcomm_channel_t * channel , uint16_t len){
     if (len > channel->max_frame_size){
         log_error("rfcomm_send cid 0x%02x, rfcomm data lenght exceeds MTU!", channel->rfcomm_cid);
@@ -2287,22 +2270,6 @@ void rfcomm_disconnect(uint16_t rfcomm_cid){
 
     channel->state = RFCOMM_CHANNEL_SEND_DISC;
     l2cap_request_can_send_now_event(channel->multiplexer->l2cap_cid);
-}
-
-bool mz_rfcomm_disconnect(uint16_t rfcomm_cid)
-{
-    log_info("RFCOMM_DISCONNECT cid 0x%02x", rfcomm_cid);
-    rfcomm_channel_t * channel = rfcomm_channel_for_rfcomm_cid(rfcomm_cid);
-    if (!channel) {
-    	// Ottimo
-    	return true ;
-    }
-    else {
-        channel->state = RFCOMM_CHANNEL_SEND_DISC;
-        l2cap_request_can_send_now_event(channel->multiplexer->l2cap_cid);
-
-        return false ;
-    }
 }
 
 static uint8_t rfcomm_register_service_internal(btstack_packet_handler_t packet_handler,

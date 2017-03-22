@@ -364,20 +364,6 @@ void l2cap_request_can_send_now_event(uint16_t local_cid){
     l2cap_notify_channel_can_send();
 }
 
-bool mz_l2cap_request_can_send_now_event(uint16_t local_cid)
-{
-    l2cap_channel_t *channel = l2cap_get_channel_for_local_cid(local_cid);
-    if (!channel)
-    	return false ;
-    else {
-		channel->waiting_for_can_send_now = 1;
-		l2cap_notify_channel_can_send();
-
-		return true ;
-    }
-}
-
-
 int  l2cap_can_send_packet_now(uint16_t local_cid){
     l2cap_channel_t *channel = l2cap_get_channel_for_local_cid(local_cid);
     if (!channel) return 0;

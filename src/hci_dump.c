@@ -30,7 +30,7 @@
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Please inquire about commercial licensing options at 
+ * Please inquire about commercial licensing options at
  * contact@bluekitchen-gmbh.com
  *
  */
@@ -49,6 +49,8 @@
 
 #include "btstack_config.h"
 
+#if defined(ENABLE_LOG_DEBUG) || defined(ENABLE_LOG_INFO) || defined(ENABLE_LOG_ERROR)
+
 #include "hci_dump.h"
 #include "hci.h"
 #include "hci_transport.h"
@@ -58,7 +60,7 @@
 
 #ifdef HAVE_POSIX_FILE_IO
 #include <fcntl.h>        // open
-#include <unistd.h>       // write 
+#include <unistd.h>       // write
 #include <time.h>
 #include <sys/time.h>     // for timestamps
 #include <sys/stat.h>     // for mode flags
@@ -114,13 +116,13 @@ void hci_dump_open(const char *filename, hci_dump_format_t format){
 
         dump_file = open(filename, oflags, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
         if (dump_file < 0){
-            printf("hci_dump_open: failed to open file %s\n", filename);
+            BTSTACK_PRINTF("hci_dump_open: failed to open file %s\n", filename);
         }
     }
 #else
     UNUSED(filename);
     UNUSED(format);
-    
+
     dump_file = 1;
 #endif
 }
@@ -131,52 +133,61 @@ void hci_dump_set_max_packets(int packets){
 }
 #endif
 
+void printf_hexdump(const void *data, int size){
+    if (size <= 0) return;
+    int i;
+    for (i=0; i<size;i++){
+        BTSTACK_PRINTF("%02X ", ((uint8_t *)data)[i]);
+    }
+    BTSTACK_PRINTF("\n");
+}
+
 static void printf_packet(uint8_t packet_type, uint8_t in, uint8_t * packet, uint16_t len){
     switch (packet_type){
         case HCI_COMMAND_DATA_PACKET:
-            printf("CMD => ");
+            BTSTACK_PRINTF("CMD => ");
             break;
         case HCI_EVENT_PACKET:
-            printf("EVT <= ");
+            BTSTACK_PRINTF("EVT <= ");
             break;
         case HCI_ACL_DATA_PACKET:
             if (in) {
-                printf("ACL <= ");
+                BTSTACK_PRINTF("ACL <= ");
             } else {
-                printf("ACL => ");
+                BTSTACK_PRINTF("ACL => ");
             }
             break;
         case HCI_SCO_DATA_PACKET:
             if (in) {
-                printf("SCO <= ");
+                BTSTACK_PRINTF("SCO <= ");
             } else {
-                printf("SCO => ");
+                BTSTACK_PRINTF("SCO => ");
             }
             break;
         case LOG_MESSAGE_PACKET:
-            printf("LOG -- %s\n", (char*) packet);
+            BTSTACK_PRINTF("LOG -- %s\n", (char*) packet);
             return;
         default:
             return;
     }
-    printf_hexdump(packet, len);  
+    printf_hexdump(packet, len);
 }
 
 #ifndef HAVE_POSIX_FILE_IO
 static void printf_timestamp(void){
-    uint32_t time_ms = btstack_run_loop_get_time_ms();
-    int      seconds = time_ms / 1000;
-    int      minutes = seconds / 60;
-    unsigned int hours   = minutes / 60;
+	uint32_t time_ms = btstack_run_loop_get_time_ms();
+	int      seconds = time_ms / 1000;
+	int      minutes = seconds / 60;
+	unsigned int hours   = minutes / 60;
 
-    uint16_t p_ms      = time_ms - (seconds * 1000);
-    uint16_t p_seconds = seconds - (minutes * 60);
-    uint16_t p_minutes = minutes - (hours   * 60);     
-    printf("[%02u:%02u:%02u.%03u] ", hours, p_minutes, p_seconds, p_ms);
+	uint16_t p_ms      = time_ms - (seconds * 1000);
+	uint16_t p_seconds = seconds - (minutes * 60);
+	uint16_t p_minutes = minutes - (hours   * 60);
+	BTSTACK_PRINTF("[%02u:%02d:%02d.%03d] ", hours, p_minutes, p_seconds, p_ms);
 }
 #endif
 
-void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t len) {    
+void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t len) {
 
     if (dump_file < 0) return; // not activated yet
 
@@ -191,7 +202,7 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
         }
         nr_packets++;
     }
-    
+
     // get time
     struct timeval curr_time;
     struct tm* ptm;
@@ -209,11 +220,11 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
             /* Compute milliseconds from microseconds. */
             uint16_t milliseconds = curr_time.tv_usec / 1000;
             /* Print the formatted time, in seconds, followed by a decimal point and the milliseconds. */
-            printf ("%s.%03u] ", time_string, milliseconds);
+            BTSTACK_PRINTF ("%s.%03u] ", time_string, milliseconds);
             printf_packet(packet_type, in, packet, len);
             break;
         }
-            
+
         case HCI_DUMP_BLUEZ:
             little_endian_store_16( header_bluez, 0, 1 + len);
             header_bluez[2] = in;
@@ -224,7 +235,7 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
             write (dump_file, header_bluez, HCIDUMP_HDR_SIZE);
             write (dump_file, packet, len );
             break;
-            
+
         case HCI_DUMP_PACKETLOGGER:
             big_endian_store_32( header_packetlogger, 0, PKTLOG_HDR_SIZE - 4 + len);
             big_endian_store_32( header_packetlogger, 4,  (uint32_t) curr_time.tv_sec);
@@ -259,7 +270,7 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
             write (dump_file, &header_packetlogger, PKTLOG_HDR_SIZE);
             write (dump_file, packet, len );
             break;
-            
+
         default:
             break;
     }
@@ -284,9 +295,9 @@ void hci_dump_log_va_arg(int log_level, const char * format, va_list argptr){
         hci_dump_packet(LOG_MESSAGE_PACKET, 0, (uint8_t*) log_message_buffer, len);
 #else
         printf_timestamp();
-        printf("LOG -- ");
-        vprintf(format, argptr);
-        printf("\n");
+        BTSTACK_PRINTF("LOG -- ");
+        BTSTACK_VPRINTF(format, argptr);
+        BTSTACK_PRINTF("\n");
 #endif
     }
 }
@@ -323,3 +334,4 @@ void hci_dump_enable_log_level(int log_level, int enable){
     log_level_enabled[log_level] = enable;
 }
 
+#endif

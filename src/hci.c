@@ -228,7 +228,7 @@ static int hci_number_sco_connections(void){
         hci_connection_t * connection = (hci_connection_t *) btstack_linked_list_iterator_next(&it);
         if (connection->address_type != BD_ADDR_TYPE_SCO) continue;
         connections++;
-    } 
+    }
     return connections;
 }
 #endif
@@ -883,7 +883,7 @@ static int hci_le_supported(void){
 #ifdef ENABLE_BLE
 
 /**
- * @brief Get addr type and address used for LE in Advertisements, Scan Responses, 
+ * @brief Get addr type and address used for LE in Advertisements, Scan Responses,
  */
 void gap_le_get_own_address(uint8_t * addr_type, bd_addr_t addr){
     *addr_type = hci_stack->le_own_addr_type;
@@ -1108,7 +1108,7 @@ static void hci_initializing_run(void){
                     btstack_run_loop_set_timer_handler(&hci_stack->timeout, hci_initialization_timeout_handler);
                     btstack_run_loop_add_timer(&hci_stack->timeout);
                     break;
-                }                
+                }
                         }
             // otherwise continue
             hci_stack->substate = HCI_INIT_W4_READ_LOCAL_SUPPORTED_COMMANDS;
@@ -1464,7 +1464,7 @@ static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
                 return;
             }
             break;
-#ifdef ENABLE_BLE            
+#ifdef ENABLE_BLE
         case HCI_INIT_W4_LE_READ_BUFFER_SIZE:
             // skip write le host if not supported (e.g. on LE only EM9301)
             if (hci_stack->local_supported_commands[0] & 0x02) break;
@@ -1777,7 +1777,7 @@ static void event_handler(uint8_t *packet, int size){
                 break;
             }
             conn->state = OPEN;
-            conn->con_handle = little_endian_read_16(packet, 3);            
+            conn->con_handle = little_endian_read_16(packet, 3);
 
 #ifdef ENABLE_SCO_OVER_HCI
             // update SCO
