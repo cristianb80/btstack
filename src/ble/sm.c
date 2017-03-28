@@ -387,9 +387,13 @@ static sm_connection_t * sm_get_connection_for_handle(hci_con_handle_t con_handl
 static inline int sm_calc_actual_encryption_key_size(int other);
 static int sm_validate_stk_generation_method(void);
 
+#ifdef ENABLE_LOG_INFO
 static void log_info_hex16(const char * name, uint16_t value){
     log_info("%-6s 0x%04x", name, value);
 }
+#else
+#   define log_info_hex16(a, b)
+#endif
 
 // @returns 1 if all bytes are 0
 static int sm_is_null(uint8_t * data, int size){
@@ -1076,7 +1080,7 @@ static void sm_trigger_user_response(sm_connection_t * sm_conn){
             break;
         case PK_INIT_INPUT:
             if (IS_RESPONDER(sm_conn->sm_role)){
-                sm_notify_client_passkey(SM_EVENT_PASSKEY_DISPLAY_NUMBER, sm_conn->sm_handle, sm_conn->sm_peer_addr_type, sm_conn->sm_peer_address, big_endian_read_32(setup->sm_tk, 12)); 
+                sm_notify_client_passkey(SM_EVENT_PASSKEY_DISPLAY_NUMBER, sm_conn->sm_handle, sm_conn->sm_peer_addr_type, sm_conn->sm_peer_address, big_endian_read_32(setup->sm_tk, 12));
             } else {
                 setup->sm_user_response = SM_USER_RESPONSE_PENDING;
                 sm_notify_client_base(SM_EVENT_PASSKEY_INPUT_NUMBER, sm_conn->sm_handle, sm_conn->sm_peer_addr_type, sm_conn->sm_peer_address);
@@ -1320,7 +1324,7 @@ static void sm_key_distribution_handle_all_received(sm_connection_t * sm_conn){
 
     sm_notify_client_index(SM_EVENT_IDENTITY_CREATED, sm_conn->sm_handle, setup->sm_peer_addr_type, setup->sm_peer_address, le_db_index);
 
-    if (le_db_index >= 0){       
+    if (le_db_index >= 0){
 #ifdef ENABLE_LE_SIGNED_WRITE
         // store local CSRK
         if (setup->sm_key_distribution_send_set & SM_KEYDIST_FLAG_SIGNING_IDENTIFICATION){
@@ -1507,12 +1511,12 @@ static void sm_sc_cmac_done(uint8_t * hash){
 #ifdef ENABLE_CLASSIC
                 gap_store_link_key_for_bd_addr(setup->sm_m_address, setup->sm_t, link_key_type);
 #endif
-                sm_conn->sm_engine_state = SM_RESPONDER_IDLE; 
+                sm_conn->sm_engine_state = SM_RESPONDER_IDLE;
             } else {
 #ifdef ENABLE_CLASSIC
                 gap_store_link_key_for_bd_addr(setup->sm_s_address, setup->sm_t, link_key_type);
 #endif
-                sm_conn->sm_engine_state = SM_INITIATOR_CONNECTED; 
+                sm_conn->sm_engine_state = SM_INITIATOR_CONNECTED;
             }
             sm_done_for_handle(sm_conn->sm_handle);
             break;
@@ -1663,7 +1667,7 @@ static void g2_engine(sm_connection_t * sm_conn, const sm_key256_t u, const sm_k
 static void g2_calculate(sm_connection_t * sm_conn) {
     // calc Va if numeric comparison
     if (IS_RESPONDER(sm_conn->sm_role)){
-        // responder  
+        // responder
         g2_engine(sm_conn, setup->sm_peer_qx, ec_qx, setup->sm_peer_nonce, setup->sm_local_nonce);;
     } else {
         // initiator
@@ -1865,7 +1869,7 @@ static void sm_run(void){
         ec_key_generation_state = EC_KEY_GENERATION_W4_KEY;
         hci_send_cmd(&hci_le_read_local_p256_public_key);
 #endif
-        return; 
+        return;
     }
 #endif
 
@@ -2751,14 +2755,14 @@ static void sm_handle_encryption_result(uint8_t * data){
                     }
                 }
             }
-            return;                                
+            return;
 #ifdef ENABLE_LE_PERIPHERAL
         case SM_RESPONDER_PH4_LTK_W4_ENC:
             reverse_128(data, setup->sm_ltk);
             sm_truncate_key(setup->sm_ltk, connection->sm_actual_encryption_key_size);
             log_info_key("ltk", setup->sm_ltk);
             connection->sm_engine_state = SM_RESPONDER_PH4_SEND_LTK_REPLY;
-            return;                                
+            return;
 #endif
         default:
             break;
@@ -2969,7 +2973,7 @@ static void sm_event_packet_handler (uint8_t packet_type, uint16_t channel, uint
                             case GAP_RANDOM_ADDRESS_TYPE_OFF:
                                 rau_state = RAU_IDLE;
                                 break;
-                            case GAP_RANDOM_ADDRESS_TYPE_STATIC:                         
+                            case GAP_RANDOM_ADDRESS_TYPE_STATIC:
                                 rau_state = RAU_SET_ADDRESS;
                                 break;
                             default:
@@ -3701,7 +3705,7 @@ void sm_init(void){
 
     sm_max_encryption_key_size = 16;
     sm_min_encryption_key_size = 7;
-    
+
 #ifdef ENABLE_CMAC_ENGINE
     sm_cmac_state  = CMAC_IDLE;
 #endif

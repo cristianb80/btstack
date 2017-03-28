@@ -1511,7 +1511,7 @@ static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
 #else /* !ENABLE_SCO_OVER_HCI */
 
         case HCI_INIT_W4_WRITE_SCAN_ENABLE:
-#ifdef ENABLE_BLE            
+#ifdef ENABLE_BLE
             if (hci_le_supported()){
                 hci_stack->substate = HCI_INIT_LE_READ_BUFFER_SIZE;
                 return;
@@ -2674,12 +2674,12 @@ static void hci_run(void){
             log_info("hci_run: gap_le: adv todo: %x", hci_stack->le_advertisements_todo );
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_DISABLE){
-            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_DISABLE;
+            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_DISABLE) ;
             hci_send_cmd(&hci_le_set_advertise_enable, 0);
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_PARAMS){
-            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_PARAMS;
+            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_SET_PARAMS) ;
             hci_send_cmd(&hci_le_set_advertising_parameters,
                  hci_stack->le_advertisements_interval_min,
                  hci_stack->le_advertisements_interval_max,
@@ -2692,18 +2692,18 @@ static void hci_run(void){
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_ADV_DATA){
-            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_ADV_DATA;
+            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_SET_ADV_DATA) ;
             hci_send_cmd(&hci_le_set_advertising_data, hci_stack->le_advertisements_data_len, hci_stack->le_advertisements_data);
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA){
-            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA;
+            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA) ;
             hci_send_cmd(&hci_le_set_scan_response_data, hci_stack->le_scan_response_data_len,
                 hci_stack->le_scan_response_data);
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_ENABLE){
-            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_ENABLE;
+            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_ENABLE) ;
             hci_send_cmd(&hci_le_set_advertise_enable, 1);
             return;
         }

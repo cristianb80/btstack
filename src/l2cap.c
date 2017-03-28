@@ -571,10 +571,11 @@ static void l2cap_run(void){
 
         uint8_t  sig_id        = signaling_responses[0].sig_id;
         uint8_t  response_code = signaling_responses[0].code;
+#ifdef ENABLE_CLASSIC
         uint16_t source_cid    = signaling_responses[0].cid;   // CONNECTION_REQUEST
         uint16_t infoType      = signaling_responses[0].data;  // INFORMATION_REQUEST
+#endif
         uint16_t result        = signaling_responses[0].data;  // CONNECTION_REQUEST, COMMAND_REJECT
-        UNUSED(infoType);
 
         // remove first item before sending (to avoid sending response mutliple times)
         signaling_responses_pending--;
@@ -1086,7 +1087,7 @@ static void l2cap_hci_event_handler(uint8_t packet_type, uint16_t cid, uint8_t *
     UNUSED(packet_type);
     UNUSED(cid);
     UNUSED(size);
-    
+
     bd_addr_t address;
     hci_con_handle_t handle;
     int hci_con_used;
@@ -1097,7 +1098,7 @@ static void l2cap_hci_event_handler(uint8_t packet_type, uint16_t cid, uint8_t *
     UNUSED(hci_con_used);
     UNUSED(it);
     UNUSED(handle);
-    
+
     switch(hci_event_packet_get_type(packet)){
 
         // Notify channel packet handler if they can send now
@@ -1718,7 +1719,7 @@ static int l2cap_le_signaling_handler_dispatch(hci_con_handle_t handle, uint8_t 
                 // security: check encryption
                 if (service->required_security_level >= LEVEL_2){
                     if (sm_encryption_key_size(handle) == 0){
-                        // 0x0008 Connection refused - insufficient encryption 
+                        // 0x0008 Connection refused - insufficient encryption
                         l2cap_register_signaling_response(handle, LE_CREDIT_BASED_CONNECTION_REQUEST, sig_id, source_cid, 0x0008);
                         return 1;
                     }
@@ -1863,7 +1864,7 @@ static int l2cap_le_signaling_handler_dispatch(hci_con_handle_t handle, uint8_t 
 static void l2cap_acl_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size ){
     UNUSED(packet_type);
     UNUSED(channel);
-            
+
     l2cap_channel_t * l2cap_channel;
     UNUSED(l2cap_channel);
 
