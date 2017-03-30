@@ -18,6 +18,11 @@ set(CODICE
     classic/rfcomm.c
     classic/sdp_server.c
     classic/sdp_util.c
+	ble/att_db.c
+	ble/att_dispatch.c
+	ble/att_server.c
+	ble/sm.c
+	
 )
 
 include_directories("${PROJECT_SOURCE_DIR}/per_cmake")
