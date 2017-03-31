@@ -1042,7 +1042,7 @@ static void handle_write_command(att_connection_t * att_connection, uint8_t * re
 // MARK: helper for ATT_HANDLE_VALUE_NOTIFICATION and ATT_HANDLE_VALUE_INDICATION
 static uint16_t prepare_handle_value(att_connection_t * att_connection,
                                      uint16_t handle,
-                                     uint8_t *value,
+                                     const uint8_t *value,
                                      uint16_t value_len, 
                                      uint8_t * response_buffer){
     little_endian_store_16(response_buffer, 1, handle);
@@ -1056,7 +1056,7 @@ static uint16_t prepare_handle_value(att_connection_t * att_connection,
 // MARK: ATT_HANDLE_VALUE_NOTIFICATION 0x1b
 uint16_t att_prepare_handle_value_notification(att_connection_t * att_connection,
                                                uint16_t handle,
-                                               uint8_t *value,
+                                               const uint8_t *value,
                                                uint16_t value_len, 
                                                uint8_t * response_buffer){
 

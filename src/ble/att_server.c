@@ -498,7 +498,7 @@ void att_server_register_can_send_now_callback(btstack_context_callback_registra
 }
 
 
-int att_server_notify(hci_con_handle_t con_handle, uint16_t attribute_handle, uint8_t *value, uint16_t value_len){
+int att_server_notify(hci_con_handle_t con_handle, uint16_t attribute_handle, const uint8_t *value, uint16_t value_len){
     att_server_t * att_server = att_server_for_handle(con_handle);
     if (!att_server) return ERROR_CODE_UNKNOWN_CONNECTION_IDENTIFIER;
 

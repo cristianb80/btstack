@@ -56,8 +56,7 @@ if __name__ == '__main__':
             if len(ntf):
                 c.write('// Le mie notifiche\n')
                 for crt in ntf:
-                    crth = 'ATT_CHARACTERISTIC_' + crt + '_CLIENT_CONFIGURATION_HANDLE'
-                    c.write('static bool ntf_%s = false ;\n' % crth)
+                    c.write('static bool ntf_%s = false ;\n' % crt)
                 c.write('\n')
 
             if len(let):
