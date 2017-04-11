@@ -239,7 +239,7 @@ void gap_random_address_set(bd_addr_t addr);
  * @param advertising_data (max 31 octets)
  * @note data is not copied, pointer has to stay valid
  */
-void gap_advertisements_set_data(uint8_t advertising_data_length, uint8_t * advertising_data);
+void gap_advertisements_set_data(uint8_t advertising_data_length, const uint8_t * advertising_data);
 
 /**
  * @brief Set Advertisement Paramters
@@ -270,7 +270,7 @@ void gap_advertisements_enable(int enabled);
  * @param advertising_data (max 31 octets)
  * @note data is not copied, pointer has to stay valid
  */
-void gap_scan_response_set_data(uint8_t scan_response_data_length, uint8_t * scan_response_data);
+void gap_scan_response_set_data(uint8_t scan_response_data_length, const uint8_t * scan_response_data);
 
 /**
  * @brief Request an update of the connection parameter for a given LE connection

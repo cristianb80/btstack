@@ -3668,11 +3668,11 @@ void sm_set_request_security(int enable){
 }
 #endif
 
-void sm_set_er(sm_key_t er){
+void sm_set_er(const sm_key_t er){
     memcpy(sm_persistent_er, er, 16);
 }
 
-void sm_set_ir(sm_key_t ir){
+void sm_set_ir(const sm_key_t ir){
     memcpy(sm_persistent_ir, ir, 16);
 }
 

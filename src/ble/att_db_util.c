@@ -50,7 +50,7 @@
 #ifdef MAX_ATT_DB_SIZE
 static uint8_t att_db_storage[MAX_ATT_DB_SIZE];
 #else
-#error Neither HAVE_MALLOC] nor MAX_ATT_DB_SIZE is defined. 
+#error Neither HAVE_MALLOC nor MAX_ATT_DB_SIZE is defined.
 #endif
 #endif
 

@@ -108,12 +108,12 @@ void sm_init(void);
  * @brief Set secret ER key for key generation as described in Core V4.0, Vol 3, Part G, 5.2.2 
  * @param er
  */
-void sm_set_er(sm_key_t er);
+void sm_set_er(const sm_key_t er);
 
 /**
  * @brief Set secret IR key for key generation as described in Core V4.0, Vol 3, Part G, 5.2.2 
  */
-void sm_set_ir(sm_key_t ir);
+void sm_set_ir(const sm_key_t ir);
 
 /**
  *

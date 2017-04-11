@@ -730,10 +730,10 @@ typedef struct {
     le_connection_parameter_range_t le_connection_parameter_range;
 
 #ifdef ENABLE_LE_PERIPHERAL
-    uint8_t  * le_advertisements_data;
+    const uint8_t  * le_advertisements_data;
     uint8_t    le_advertisements_data_len;
 
-    uint8_t  * le_scan_response_data;
+    const uint8_t  * le_scan_response_data;
     uint8_t    le_scan_response_data_len;
 
     uint8_t  le_advertisements_active;

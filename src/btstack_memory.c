@@ -77,7 +77,7 @@ hci_connection_t * btstack_memory_hci_connection_get(void){
 void btstack_memory_hci_connection_free(hci_connection_t *hci_connection){
     // silence compiler warning about unused parameter in a portable way
     (void) hci_connection;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 hci_connection_t * btstack_memory_hci_connection_get(void){
@@ -116,7 +116,7 @@ l2cap_service_t * btstack_memory_l2cap_service_get(void){
 void btstack_memory_l2cap_service_free(l2cap_service_t *l2cap_service){
     // silence compiler warning about unused parameter in a portable way
     (void) l2cap_service;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 l2cap_service_t * btstack_memory_l2cap_service_get(void){
@@ -154,7 +154,7 @@ l2cap_channel_t * btstack_memory_l2cap_channel_get(void){
 void btstack_memory_l2cap_channel_free(l2cap_channel_t *l2cap_channel){
     // silence compiler warning about unused parameter in a portable way
     (void) l2cap_channel;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 l2cap_channel_t * btstack_memory_l2cap_channel_get(void){
@@ -193,7 +193,7 @@ rfcomm_multiplexer_t * btstack_memory_rfcomm_multiplexer_get(void){
 void btstack_memory_rfcomm_multiplexer_free(rfcomm_multiplexer_t *rfcomm_multiplexer){
     // silence compiler warning about unused parameter in a portable way
     (void) rfcomm_multiplexer;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 rfcomm_multiplexer_t * btstack_memory_rfcomm_multiplexer_get(void){
@@ -231,7 +231,7 @@ rfcomm_service_t * btstack_memory_rfcomm_service_get(void){
 void btstack_memory_rfcomm_service_free(rfcomm_service_t *rfcomm_service){
     // silence compiler warning about unused parameter in a portable way
     (void) rfcomm_service;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 rfcomm_service_t * btstack_memory_rfcomm_service_get(void){
@@ -269,7 +269,7 @@ rfcomm_channel_t * btstack_memory_rfcomm_channel_get(void){
 void btstack_memory_rfcomm_channel_free(rfcomm_channel_t *rfcomm_channel){
     // silence compiler warning about unused parameter in a portable way
     (void) rfcomm_channel;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 rfcomm_channel_t * btstack_memory_rfcomm_channel_get(void){
@@ -308,7 +308,7 @@ btstack_link_key_db_memory_entry_t * btstack_memory_btstack_link_key_db_memory_e
 void btstack_memory_btstack_link_key_db_memory_entry_free(btstack_link_key_db_memory_entry_t *btstack_link_key_db_memory_entry){
     // silence compiler warning about unused parameter in a portable way
     (void) btstack_link_key_db_memory_entry;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 btstack_link_key_db_memory_entry_t * btstack_memory_btstack_link_key_db_memory_entry_get(void){
@@ -463,7 +463,7 @@ service_record_item_t * btstack_memory_service_record_item_get(void){
 void btstack_memory_service_record_item_free(service_record_item_t *service_record_item){
     // silence compiler warning about unused parameter in a portable way
     (void) service_record_item;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 service_record_item_t * btstack_memory_service_record_item_get(void){
@@ -658,7 +658,7 @@ whitelist_entry_t * btstack_memory_whitelist_entry_get(void){
 void btstack_memory_whitelist_entry_free(whitelist_entry_t *whitelist_entry){
     // silence compiler warning about unused parameter in a portable way
     (void) whitelist_entry;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 whitelist_entry_t * btstack_memory_whitelist_entry_get(void){
@@ -696,7 +696,7 @@ sm_lookup_entry_t * btstack_memory_sm_lookup_entry_get(void){
 void btstack_memory_sm_lookup_entry_free(sm_lookup_entry_t *sm_lookup_entry){
     // silence compiler warning about unused parameter in a portable way
     (void) sm_lookup_entry;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 sm_lookup_entry_t * btstack_memory_sm_lookup_entry_get(void){

@@ -1,0 +1,35 @@
+// Profilo: {{ProfileName}}
+// --------------------------------------
+
+{%- for service in Services -%}
+PRIMARY_SERVICE, {{service.UUID}}
+{%- for characteristic in service.Characteristics -%}
+{%- if characteristic.Properties[0].Read == 'Mandatory' -%}
+{%- assign leggi = "READ | " -%}
+{%- else -%}
+{%- assign leggi = "" -%}
+{%- endif -%}
+{%- if characteristic.Properties[0].Write == 'Mandatory' -%}
+{%- assign scrivi = "WRITE | " -%}
+{%- else -%}
+{%- assign scrivi = "" -%}
+{%- endif -%}
+{%- if characteristic.Properties[0].WriteWithoutResponse == 'Mandatory' -%}
+{%- assign scriviwr = "WRITE_WITHOUT_RESPONSE | " -%}
+{%- else -%}
+{%- assign scriviwr = "" -%}
+{%- endif -%}
+{%- if characteristic.Properties[0].Notify == 'Mandatory' -%}
+{%- assign notif = "NOTIFY | " -%}
+{%- else -%}
+{%- assign notif = "" -%}
+{%- endif -%}
+{%- if characteristic.Properties[0].Indicate == 'Mandatory' -%}
+{%- assign indic = "INDICATE | " -%}
+{%- else -%}
+{%- assign indic = "" -%}
+{%- endif -%}
+CHARACTERISTIC, {{characteristic.UUID}}, {{leggi}}{{scrivi}}{{scriviwr}}{{notif}}DYNAMIC
+{%- endfor -%}
+
+{%- endfor -%}

@@ -3720,7 +3720,7 @@ static void gap_advertisments_changed(void){
  * @param advertising_data (max 31 octets)
  * @note data is not copied, pointer has to stay valid
  */
-void gap_advertisements_set_data(uint8_t advertising_data_length, uint8_t * advertising_data){
+void gap_advertisements_set_data(uint8_t advertising_data_length, const uint8_t * advertising_data){
     hci_stack->le_advertisements_data_len = advertising_data_length;
     hci_stack->le_advertisements_data = advertising_data;
     hci_stack->le_advertisements_todo |= LE_ADVERTISEMENT_TASKS_SET_ADV_DATA;
@@ -3733,7 +3733,7 @@ void gap_advertisements_set_data(uint8_t advertising_data_length, uint8_t * adve
  * @param advertising_data (max 31 octets)
  * @note data is not copied, pointer has to stay valid
  */
-void gap_scan_response_set_data(uint8_t scan_response_data_length, uint8_t * scan_response_data){
+void gap_scan_response_set_data(uint8_t scan_response_data_length, const uint8_t * scan_response_data){
     hci_stack->le_scan_response_data_len = scan_response_data_length;
     hci_stack->le_scan_response_data = scan_response_data;
     hci_stack->le_advertisements_todo |= LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA;
