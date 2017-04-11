@@ -36,6 +36,8 @@
  *
  */
 
+#define __BTSTACK_FILE__ "hfp_hf_demo.c"
+
 /*
  * hfp_hs_demo.c
  */
@@ -77,7 +79,11 @@ static void show_usage(void);
 #endif
 static hci_con_handle_t acl_handle = -1;
 static hci_con_handle_t sco_handle;
+#ifdef ENABLE_HFP_WIDE_BAND_SPEECH
 static uint8_t codecs[] = {HFP_CODEC_CVSD, HFP_CODEC_MSBC};
+#else
+static uint8_t codecs[] = {HFP_CODEC_CVSD};
+#endif
 static uint16_t indicators[1] = {0x01};
 static uint8_t  negotiated_codec = HFP_CODEC_CVSD;
 static btstack_packet_callback_registration_t hci_event_callback_registration;

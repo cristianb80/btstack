@@ -8,6 +8,30 @@ import os
 
 import btstack_parser as parser
 
+meta_events = [
+    'ANCS',
+    'AVDTP',
+    'AVRCP',
+    'GOEP',
+    'HFP',
+    'HSP',
+    'PBAP',
+    'LE'
+]
+
+supported_event_groups = meta_events + [
+    'BTSTACK',
+    'GAP',
+    'HCI',
+    'SDP',
+    'SM',
+    'L2CAP',
+    'RFCOMM',
+    'GATT',
+    'BNEP',
+    'ATT',
+]
+
 program_info = '''
 BTstack Event Getter Generator for BTstack
 Copyright 2016, BlueKitchen GmbH
@@ -232,21 +256,23 @@ def create_events(events):
         fout.write(copyright)
         fout.write(hfile_header_begin)
 
-        meta_events = ['HSP', 'HFP', 'ANCS', 'LE'];
         for meta_event in meta_events:
             fout.write(meta_event_template.format(meta_event=meta_event.lower()))
 
         for event_type, event_name, format, args in events:
             parts = event_name.split("_")
             event_group = parts[0]
-            if not event_group in [ 'BTSTACK', 'GAP', 'HCI', 'HSP', 'HFP', 'SDP', 'ANCS', 'SM', 'L2CAP', 'RFCOMM', 'GATT', 'BNEP', 'ATT', 'AVDTP', 'AVRCP']:
+            if not event_group in supported_event_groups:
                 print("// %s " % event_name)
                 continue
             # print(event_name)
             base_name = format_function_name(event_name)
             length_name = ''
             offset = 2
+            offset_is_number = 1
+            offset_unknown = 0
             supported = all_fields_supported(format)
+            last_variable_length_field_pos = ""
             if is_le_event(event_group):
                 fout.write("#ifdef ENABLE_BLE\n")
             if len(format) != len(args):
@@ -258,12 +284,33 @@ def create_events(events):
                 if field_name.lower() == 'subevent_code':
                     offset += 1
                     continue
+                if offset_unknown:
+                    print("Param after variable length field without preceding 'J' lenght field")
+                    break
                 field_type = f 
                 text = create_getter(base_name, field_name, field_type, offset, supported)
                 fout.write(text)
                 if field_type in 'RT':
                     break
-                offset += size_for_type(field_type)
+                if field_type in 'J':
+                    if offset_is_number:
+                        last_variable_length_field_pos = '%u' % offset
+                    else:
+                        last_variable_length_field_pos = offset
+                if field_type in 'V':
+                    if last_variable_length_field_pos >= 0:
+                        if offset_is_number:
+                            # convert to string
+                            offset = '%u' % offset
+                            offset_is_number = 0
+                        offset = offset + ' + event[%s]' % last_variable_length_field_pos
+                    else:
+                        offset_unknown = 1
+                else:
+                    if offset_is_number:
+                        offset += size_for_type(field_type)
+                    else:
+                        offset = offset + ' + %u' % size_for_type(field_type)
             if is_le_event(event_group):
                 fout.write("#endif\n")
             fout.write("\n")

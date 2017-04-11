@@ -35,6 +35,8 @@
  *
  */
 
+#define __BTSTACK_FILE__ "l2cap.c"
+
 /*
  *  l2cap.c
  *
@@ -46,6 +48,7 @@
 #include "l2cap.h"
 #include "hci.h"
 #include "hci_dump.h"
+#include "bluetooth_sdp.h"
 #include "btstack_debug.h"
 #include "btstack_event.h"
 #include "btstack_memory.h"
@@ -277,7 +280,7 @@ int l2cap_send_connectionless(hci_con_handle_t con_handle, uint16_t cid, uint8_t
 }
 
 static void l2cap_emit_can_send_now(btstack_packet_handler_t packet_handler, uint16_t channel) {
-    log_info("L2CAP_EVENT_CHANNEL_CAN_SEND_NOW local_cid 0x%x", channel);
+    log_debug("L2CAP_EVENT_CHANNEL_CAN_SEND_NOW local_cid 0x%x", channel);
     uint8_t event[4];
     event[0] = L2CAP_EVENT_CAN_SEND_NOW;
     event[1] = sizeof(event) - 2;
@@ -438,7 +441,7 @@ void l2cap_require_security_level_2_for_outgoing_sdp(void){
 }
 
 static int l2cap_security_level_0_allowed_for_PSM(uint16_t psm){
-    return (psm == PSM_SDP) && (!require_security_level2_for_outgoing_sdp);
+    return (psm == BLUETOOTH_PROTOCOL_SDP) && (!require_security_level2_for_outgoing_sdp);
 }
 
 static int l2cap_send_signaling_packet(hci_con_handle_t handle, L2CAP_SIGNALING_COMMANDS cmd, uint8_t identifier, ...){
@@ -1601,6 +1604,7 @@ static int l2cap_le_signaling_handler_dispatch(hci_con_handle_t handle, uint8_t 
     uint16_t new_credits;
     uint16_t credits_before;
     l2cap_service_t * service;
+    uint16_t source_cid;
 #endif
 
     uint8_t code   = command[L2CAP_SIGNALING_COMMAND_CODE_OFFSET];
@@ -1695,10 +1699,9 @@ static int l2cap_le_signaling_handler_dispatch(hci_con_handle_t handle, uint8_t 
             // check if service registered
             le_psm  = little_endian_read_16(command, 4);
             service = l2cap_le_get_service(le_psm);
-
+            source_cid = little_endian_read_16(command, 6);
+                
             if (service){
-
-                uint16_t source_cid = little_endian_read_16(command, 6);
                 if (source_cid < 0x40){
                     // 0x0009 Connection refused - Invalid Source CID
                     l2cap_register_signaling_response(handle, LE_CREDIT_BASED_CONNECTION_REQUEST, sig_id, source_cid, 0x0009);

@@ -90,7 +90,7 @@ typedef uint8_t sm_key_t[16];
 // Security Manager protocol data
 #define SM_DATA_PACKET          0x09
 
-// SDP query result
+// SDP query result - only used by daemon
 // format: type (8), record_id (16), attribute_id (16), attribute_length (16), attribute_value (max 1k)
 #define SDP_CLIENT_PACKET       0x0a
 
@@ -100,6 +100,12 @@ typedef uint8_t sm_key_t[16];
 // Unicast Connectionless Data
 #define UCD_DATA_PACKET         0x0c
 
+// GOEP data
+#define GOEP_DATA_PACKET        0x0d
+
+// PBAP data
+#define PBAP_DATA_PACKET        0x0e
+ 
 // debug log messages
 #define LOG_MESSAGE_PACKET      0xfc
 
@@ -159,8 +165,6 @@ typedef uint8_t sm_key_t[16];
 #define BNEP_SERVICE_ALREADY_REGISTERED                    0xA0
 #define BNEP_CHANNEL_NOT_CONNECTED                         0xA1
 #define BNEP_DATA_LEN_EXCEEDS_MTU                          0xA2
-
-
 
 // DAEMON COMMANDS
 
@@ -267,7 +271,11 @@ typedef uint8_t sm_key_t[16];
 #define GATT_WRITE_CLIENT_CHARACTERISTIC_CONFIGURATION           0X81
 #define GATT_GET_MTU                                             0x82
 
-
+// OBEX ERRORS
+#define OBEX_UNKNOWN_ERROR       0x90
+#define OBEX_CONNECT_FAILED      0x91
+#define OBEX_DISCONNECTED        0x92
+#define OBEX_NOT_FOUND           0x93
 
 // EVENTS
 
@@ -277,7 +285,10 @@ typedef uint8_t sm_key_t[16];
  */
 #define BTSTACK_EVENT_STATE                                0x60
 
-// data: event(8), len(8), nr hci connections
+/**
+ * @format 1
+ * @param number_connections
+ */
 #define BTSTACK_EVENT_NR_CONNECTIONS_CHANGED               0x61
 
 /**
@@ -367,7 +378,14 @@ typedef uint8_t sm_key_t[16];
 // additional HCI events
 
 /**
- * @brief Outgoing packet
+ * @brief Indicates HCI transport enters/exits Sleep mode
+ * @format 1
+ * @param active
+ */
+#define HCI_EVENT_TRANSPORT_SLEEP_MODE                     0x69
+
+/**
+ * @brief Outgoing packet 
  */
 #define HCI_EVENT_TRANSPORT_PACKET_SENT                    0x6E
 
@@ -916,6 +934,8 @@ typedef uint8_t sm_key_t[16];
 #define HCI_EVENT_ANCS_META                                0xEA
 #define HCI_EVENT_AVDTP_META                               0xEB
 #define HCI_EVENT_AVRCP_META                               0xEC
+#define HCI_EVENT_GOEP_META                                0xED
+#define HCI_EVENT_PBAP_META                                0xEE
 
 // Potential other meta groups
  // #define HCI_EVENT_BNEP_META                                0xxx
@@ -1246,8 +1266,9 @@ typedef uint8_t sm_key_t[16];
 #define AVDTP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED     0x04
 
 /**
- * @format 1
+ * @format 1H
  * @param subevent_code
+ * @param con_handle
  */
 #define AVDTP_SUBEVENT_SIGNALING_CONNECTION_RELEASED        0x05
 
@@ -1315,33 +1336,52 @@ typedef uint8_t sm_key_t[16];
  * @param media_codec_information_len
  * @param media_codec_information
  */
-#define AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_OTHER_CONFIGURATION      0x0A
-
-
-/** AVRCP Subevent */
+#define AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_OTHER_CONFIGURATION        0x0A
 
 /**
- * @format 1H2B1
+ * @format 1H1
  * @param subevent_code
  * @param con_handle
- * @param local_cid
- * @param bd_addr
  * @param status 0 == OK
  */
-#define AVRCP_SUBEVENT_CONNECTION_ESTABLISHED     0x01
+#define AVDTP_SUBEVENT_STREAMING_CONNECTION_ESTABLISHED     0x0B
 
 /**
  * @format 1H
  * @param subevent_code
  * @param con_handle
  */
-#define AVRCP_SUBEVENT_CONNECTION_CLOSED        0x02
+#define AVDTP_SUBEVENT_STREAMING_CONNECTION_RELEASED        0x0C
 
-#define AVRCP_NOW_PLAYING_INFO                  0x03
+
+
+/** AVRCP Subevent */
+
 /**
- * @format 1HJVJVJVJV114
+ * @format 1H12B
  * @param subevent_code
  * @param con_handle
+ * @param status 0 == OK
+ * @param local_cid
+ * @param bd_addr
+ */
+#define AVRCP_SUBEVENT_CONNECTION_ESTABLISHED                           0x01
+
+/**
+ * @format 1H
+ * @param subevent_code
+ * @param con_handle
+ */
+#define AVRCP_SUBEVENT_CONNECTION_RELEASED                              0x02
+
+/**
+ * @format 1H1114JVJVJVJV
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param track
+ * @param total_tracks
+ * @param song_length in ms
  * @param title_len
  * @param title
  * @param artist_len
@@ -1350,10 +1390,166 @@ typedef uint8_t sm_key_t[16];
  * @param album
  * @param genre_len
  * @param genre
- * @param track
- * @param total_tracks
- * @param song_length in ms
  */
+#define AVRCP_SUBEVENT_NOW_PLAYING_INFO                                 0x03
 
+/**
+ * @format 1H111
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param repeat_mode
+ * @param shuffle_mode
+ */
+#define AVRCP_SUBEVENT_SHUFFLE_AND_REPEAT_MODE                          0x04
+
+/**
+ * @format 1H1441
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param song_length
+ * @param song_position
+ * @param play_status
+ */
+ #define AVRCP_SUBEVENT_PLAY_STATUS                                     0x05
+
+/**
+ * @format 1H11
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param playback_status
+ */
+#define AVRCP_SUBEVENT_NOTIFICATION_PLAYBACK_STATUS_CHANGED             0x06
+
+/**
+ * @format 1H11
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param track_status
+ */
+#define AVRCP_SUBEVENT_NOTIFICATION_TRACK_CHANGED                       0x07
+  
+/**
+ * @format 1H1
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ */
+#define AVRCP_SUBEVENT_NOTIFICATION_NOW_PLAYING_CONTENT_CHANGED          0x08
+
+/**
+ * @format 1H1
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ */
+#define AVRCP_SUBEVENT_NOTIFICATION_AVAILABLE_PLAYERS_CHANGED            0x09
+
+/**
+ * @format 1H11
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param absolute_volume
+ */
+#define AVRCP_SUBEVENT_NOTIFICATION_VOLUME_CHANGED                       0x0A
+
+/**
+ * @format 1H11
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param absolute_volume
+ */
+#define AVRCP_SUBEVENT_SET_ABSOLUTE_VOLUME_RESPONSE                      0x0B
+
+/**
+ * @format 1H11
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param notification_id
+ */
+#define AVRCP_SUBEVENT_ENABLE_NOTIFICATION_COMPLETE                       0x0C
+
+/**
+ * @format 1H11
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param operation_id
+ */
+#define AVRCP_SUBEVENT_OPERATION_START                                    0x0D
+
+/**
+ * @format 1H11
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ * @param operation_id
+ */
+#define AVRCP_SUBEVENT_OPERATION_COMPLETE                                 0x0E
+
+/**
+ * @format 1H1
+ * @param subevent_code
+ * @param con_handle
+ * @param status
+ */
+#define AVRCP_SUBEVENT_PLAYER_APPLICATION_VALUE_RESPONSE                   0x0F
+
+/**
+ * @format 121BH1
+ * @param subevent_code
+ * @param goep_cid
+ * @param status
+ * @param bd_addr
+ * @param con_handle
+ * @param incoming
+ */
+#define GOEP_SUBEVENT_CONNECTION_OPENED                                    0x01
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param goep_cid
+*/
+#define GOEP_SUBEVENT_CONNECTION_CLOSED                                    0x02
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param goep_cid
+*/
+#define GOEP_SUBEVENT_CAN_SEND_NOW                                         0x03
+
+/**
+ * @format 121BH1
+ * @param subevent_code
+ * @param pbap_cid
+ * @param status
+ * @param bd_addr
+ * @param con_handle
+ * @param incoming
+ */
+#define PBAP_SUBEVENT_CONNECTION_OPENED                                    0x01
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param goep_cid
+*/
+#define PBAP_SUBEVENT_CONNECTION_CLOSED                                    0x02
+
+/**
+ * @format 121
+ * @param subevent_code
+ * @param goep_cid
+ * @param status
+ */
+#define PBAP_SUBEVENT_OPERATION_COMPLETED                                  0x03
 
 #endif

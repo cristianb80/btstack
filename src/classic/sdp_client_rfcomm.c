@@ -35,6 +35,8 @@
  *
  */
 
+#define __BTSTACK_FILE__ "sdp_client_rfcomm.c"
+
 /*
  *  sdp_rfcomm_query.c
  */
@@ -44,6 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "bluetooth_sdp.h"
 #include "btstack_debug.h"
 #include "btstack_event.h"
 #include "classic/core.h"
@@ -67,9 +70,8 @@ typedef enum {
 
 // higher layer query - get rfcomm channel and name
 
-const uint8_t des_attributeIDList[]    = { 0x35, 0x05, 0x0A, 0x00, 0x01, 0x01, 0x00};  // Arribute: 0x0001 - 0x0100
-
-static uint8_t des_service_search_pattern[5] = {0x35, 0x03, 0x19, 0x00, 0x00};
+// All attributes: 0x0001 - 0x0100
+static const uint8_t des_attributeIDList[]    = { 0x35, 0x05, 0x0A, 0x00, 0x01, 0x01, 0x00};  
 
 static uint8_t sdp_service_name[SDP_SERVICE_NAME_LEN+1];
 static uint8_t sdp_service_name_len = 0;
@@ -179,7 +181,7 @@ static void sdp_client_query_rfcomm_handle_protocol_descriptor_list_data(uint32_
 
             if (protocol_value_bytes_received < protocol_value_size) break;
 
-            if (protocol_id == 0x0003){
+            if (protocol_id == BLUETOOTH_PROTOCOL_RFCOMM){
                 //  log_info("\n\n *******  Data ***** %02x\n\n", data);
                 sdp_rfcomm_channel_nr = data;
             }
@@ -262,7 +264,7 @@ static void sdp_client_query_rfcomm_handle_sdp_parser_event(uint8_t packet_type,
             //          ve->attribute_id, sdp_event_query_attribute_byte_get_attribute_length(packet),
             //          sdp_event_query_attribute_byte_get_data_offset(packet), sdp_event_query_attribute_byte_get_data(packet));
             switch (sdp_event_query_attribute_byte_get_attribute_id(packet)){
-                case SDP_ProtocolDescriptorList:
+                case BLUETOOTH_ATTRIBUTE_PROTOCOL_DESCRIPTOR_LIST:
                     // find rfcomm channel
                     sdp_client_query_rfcomm_handle_protocol_descriptor_list_data(sdp_event_query_attribute_byte_get_attribute_length(packet),
                         sdp_event_query_attribute_byte_get_data_offset(packet),
@@ -302,7 +304,7 @@ void sdp_client_query_rfcomm_init(void){
 
 // Public API
 
-uint8_t sdp_client_query_rfcomm_channel_and_name_for_search_pattern(btstack_packet_handler_t callback, bd_addr_t remote, uint8_t * service_search_pattern){
+uint8_t sdp_client_query_rfcomm_channel_and_name_for_search_pattern(btstack_packet_handler_t callback, bd_addr_t remote, const uint8_t * service_search_pattern){
 
     if (!sdp_client_ready()) return SDP_QUERY_BUSY;
 
@@ -312,11 +314,20 @@ uint8_t sdp_client_query_rfcomm_channel_and_name_for_search_pattern(btstack_pack
     return 0;
 }
 
-uint8_t sdp_client_query_rfcomm_channel_and_name_for_uuid(btstack_packet_handler_t callback, bd_addr_t remote, uint16_t uuid){
+uint8_t sdp_client_query_rfcomm_channel_and_name_for_uuid(btstack_packet_handler_t callback, bd_addr_t remote, uint16_t uuid16){
 
     if (!sdp_client_ready()) return SDP_QUERY_BUSY;
 
-    big_endian_store_16(des_service_search_pattern, 3, uuid);
-    sdp_client_query_rfcomm_channel_and_name_for_search_pattern(callback, remote, (uint8_t*)des_service_search_pattern);
+    uint8_t * service_search_pattern = sdp_service_search_pattern_for_uuid16(uuid16);
+    sdp_client_query_rfcomm_channel_and_name_for_search_pattern(callback, remote, service_search_pattern);
+    return 0;
+}
+
+uint8_t sdp_client_query_rfcomm_channel_and_name_for_uuid128(btstack_packet_handler_t callback, bd_addr_t remote, const uint8_t * uuid128){
+
+    if (!sdp_client_ready()) return SDP_QUERY_BUSY;
+
+    uint8_t * service_search_pattern = sdp_service_search_pattern_for_uuid128(uuid128);
+    sdp_client_query_rfcomm_channel_and_name_for_search_pattern(callback, remote, service_search_pattern);
     return 0;
 }

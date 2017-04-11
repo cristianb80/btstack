@@ -35,6 +35,8 @@
  *
  */
 
+#define __BTSTACK_FILE__ "hci_cmd.c"
+
 /*
  *  hci_cmd.c
  *
@@ -46,6 +48,7 @@
 #include "classic/sdp_util.h"
 #include "hci.h"
 #include "hci_cmd.h"
+#include "btstack_debug.h"
 
 #include <string.h>
 
@@ -578,12 +581,14 @@ const hci_cmd_t hci_delete_stored_link_key = {
 OPCODE(OGF_CONTROLLER_BASEBAND, 0x12), "B1"
 };
 
+#ifdef ENABLE_CLASSIC
 /**
  * @param local_name (UTF-8, Null Terminated, max 248 octets)
  */
 const hci_cmd_t hci_write_local_name = {
 OPCODE(OGF_CONTROLLER_BASEBAND, 0x13), "N"
 };
+#endif
 
 /**
  */
@@ -639,6 +644,15 @@ const hci_cmd_t hci_write_synchronous_flow_control_enable = {
 OPCODE(OGF_CONTROLLER_BASEBAND, 0x2f), "1"
 };
 
+#ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
+
+/**
+ * @param flow_control_enable - 0: off, 1: ACL only, 2: SCO only, 3: ACL + SCO
+ */
+const hci_cmd_t hci_set_controller_to_host_flow_control = {
+OPCODE(OGF_CONTROLLER_BASEBAND, 0x31), "1"
+};
+
 /**
  * @param host_acl_data_packet_length
  * @param host_synchronous_data_packet_length
@@ -648,6 +662,23 @@ OPCODE(OGF_CONTROLLER_BASEBAND, 0x2f), "1"
 const hci_cmd_t hci_host_buffer_size = {
 OPCODE(OGF_CONTROLLER_BASEBAND, 0x33), "2122"
 };
+
+#if 0
+//
+// command sent manually sent by hci_host_num_completed_packets
+//
+/**
+ * @note only single handle supported by BTstack command generator
+ * @param number_of_handles must be 1
+ * @param connection_handle
+ * @param host_num_of_completed_packets for the given connection handle
+ */
+const hci_cmd_t hci_host_number_of_completed_packets = {
+OPCODE(OGF_CONTROLLER_BASEBAND, 0x35), "1H2"
+};
+#endif
+
+#endif
 
 /**
  * @param handle
@@ -1052,6 +1083,7 @@ OPCODE(OGF_LE_CONTROLLER, 0x25), ""
 //  LE Read Local P-256 Public Key Complete is generated on completion
 };
 
+#ifdef HAVE_HCI_CONTROLLER_DHKEY_SUPPORT
 /**
  * @param end_test_cmd
  */
@@ -1059,6 +1091,7 @@ const hci_cmd_t hci_le_generate_dhkey = {
 OPCODE(OGF_LE_CONTROLLER, 0x26), "QQ"
 // LE Generate DHKey Complete is generated on completion
 };
+#endif
 
 #endif
 

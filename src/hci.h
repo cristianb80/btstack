@@ -69,10 +69,26 @@ extern "C" {
 #endif
      
 // packet buffer sizes
+
+// Max HCI Commadn LE payload size:
+// 64 from LE Generate DHKey command
+// 32 from LE Encrypt command
+#if defined(ENABLE_LE_SECURE_CONNECTIONS) && !defined(HAVE_HCI_CONTROLLER_DHKEY_SUPPORT)
+#define HCI_CMD_PAYLOAD_SIZE_LE 64
+#else
+#define HCI_CMD_PAYLOAD_SIZE_LE 32
+#endif
+
 // HCI_ACL_PAYLOAD_SIZE is configurable and defined in config.h
 // addition byte in even to terminate remote name request with '\0'
 #define HCI_EVENT_BUFFER_SIZE      (HCI_EVENT_HEADER_SIZE + HCI_EVENT_PAYLOAD_SIZE + 1)
+
+#ifdef ENABLE_CLASSIC
 #define HCI_CMD_BUFFER_SIZE        (HCI_CMD_HEADER_SIZE   + HCI_CMD_PAYLOAD_SIZE)
+#else
+#define HCI_CMD_BUFFER_SIZE        (HCI_CMD_HEADER_SIZE   + HCI_CMD_PAYLOAD_SIZE_LE)
+#endif
+
 #define HCI_ACL_BUFFER_SIZE        (HCI_ACL_HEADER_SIZE   + HCI_ACL_PAYLOAD_SIZE)
     
 // size of hci buffers, big enough for command, event, or acl packet without H4 packet type
@@ -93,11 +109,19 @@ extern "C" {
 #endif
 
 // additional pre-buffer space for packets to Bluetooth module, for now, used for HCI Transport H4 DMA
+#ifdef HAVE_HOST_CONTROLLER_API
+#define HCI_OUTGOING_PRE_BUFFER_SIZE 0
+#else
 #define HCI_OUTGOING_PRE_BUFFER_SIZE 1
+#endif
 
 // BNEP may uncompress the IP Header by 16 bytes
 #ifndef HCI_INCOMING_PRE_BUFFER_SIZE
+#ifdef ENABLE_CLASSIC
 #define HCI_INCOMING_PRE_BUFFER_SIZE (16 - HCI_ACL_HEADER_SIZE - 4)
+#else
+#define HCI_INCOMING_PRE_BUFFER_SIZE 0
+#endif
 #endif
 
 // 
@@ -112,6 +136,7 @@ extern "C" {
 
 // ACL Packet
 #define READ_ACL_CONNECTION_HANDLE( buffer ) ( little_endian_read_16(buffer,0) & 0x0fff)
+#define READ_SCO_CONNECTION_HANDLE( buffer ) ( little_endian_read_16(buffer,0) & 0x0fff)
 #define READ_ACL_FLAGS( buffer )      ( buffer[1] >> 4 )
 #define READ_ACL_LENGTH( buffer )     (little_endian_read_16(buffer, 2))
 
@@ -470,6 +495,10 @@ typedef struct {
     uint8_t num_acl_packets_sent;
     uint8_t num_sco_packets_sent;
 
+#ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
+    uint8_t num_packets_completed;
+#endif
+
     // LE Connection parameter update
     le_con_parameter_update_state_t le_con_parameter_update_state;
     uint8_t  le_con_param_update_identifier;
@@ -528,8 +557,17 @@ typedef enum hci_init_state{
     HCI_INIT_W4_READ_BUFFER_SIZE,
     HCI_INIT_READ_LOCAL_SUPPORTED_FEATURES,
     HCI_INIT_W4_READ_LOCAL_SUPPORTED_FEATURES,
+
+#ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
+    HCI_INIT_HOST_BUFFER_SIZE,
+    HCI_INIT_W4_HOST_BUFFER_SIZE,
+    HCI_INIT_SET_CONTROLLER_TO_HOST_FLOW_CONTROL,
+    HCI_INIT_W4_SET_CONTROLLER_TO_HOST_FLOW_CONTROL,
+#endif
+
     HCI_INIT_SET_EVENT_MASK,
     HCI_INIT_W4_SET_EVENT_MASK,
+
     HCI_INIT_WRITE_SIMPLE_PAIRING_MODE,
     HCI_INIT_W4_WRITE_SIMPLE_PAIRING_MODE,
     HCI_INIT_WRITE_PAGE_TIMEOUT,
@@ -706,6 +744,10 @@ typedef struct {
     // buffer for single connection decline
     uint8_t   decline_reason;
     bd_addr_t decline_addr;
+
+#ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
+    uint8_t   host_completed_packets;
+#endif
 
 #ifdef ENABLE_BLE
     uint8_t   le_own_addr_type;
