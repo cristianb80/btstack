@@ -180,6 +180,7 @@ static uint8_t sm_min_encryption_key_size;
 static uint8_t sm_auth_req = 0;
 static uint8_t sm_io_capabilities = IO_CAPABILITY_NO_INPUT_NO_OUTPUT;
 static uint8_t sm_slave_request_security;
+static uint32_t sm_fixed_legacy_pairing_passkey_in_display_role = 0xffffffff;
 #ifdef ENABLE_LE_SECURE_CONNECTIONS
 static uint8_t sm_have_ec_keypair;
 #endif
@@ -2890,13 +2891,20 @@ static void sm_handle_random_result(uint8_t * data){
 
         case SM_PH2_W4_RANDOM_TK:
         {
-            // map random to 0-999999 without speding much cycles on a modulus operation
-            uint32_t tk = little_endian_read_32(data,0);
-            tk = tk & 0xfffff;  // 1048575
-            if (tk >= 999999){
-                tk = tk - 999999;
-            }
-            sm_reset_tk();
+        	sm_reset_tk();
+        	uint32_t tk;
+        	if (sm_fixed_legacy_pairing_passkey_in_display_role == 0xffffffff){
+        		// map random to 0-999999 without speding much cycles on a modulus operation
+        		tk = little_endian_read_32(data,0);
+        		tk = tk & 0xfffff;  // 1048575
+        		if (tk >= 999999){
+        			tk = tk - 999999;
+        		}
+        	} else {
+        		// override with pre-defined passkey
+        		tk = sm_fixed_legacy_pairing_passkey_in_display_role;
+        	}
+
             big_endian_store_32(setup->sm_tk, 12, tk);
             if (IS_RESPONDER(connection->sm_role)){
                 connection->sm_engine_state = SM_RESPONDER_PH1_SEND_PAIRING_RESPONSE;
@@ -3794,6 +3802,10 @@ static sm_connection_t * sm_get_connection_for_handle(hci_con_handle_t con_handl
     hci_connection_t * hci_con = hci_connection_for_handle(con_handle);
     if (!hci_con) return NULL;
     return &hci_con->sm_connection;
+}
+
+void sm_use_fixed_legacy_pairing_passkey_in_display_role(uint32_t passkey){
+	sm_fixed_legacy_pairing_passkey_in_display_role = passkey;
 }
 
 // @returns 0 if not encrypted, 7-16 otherwise
