@@ -47,7 +47,7 @@
  * @text This example implements a HSP Headset device that sends and receives 
  * audio signal over HCI SCO. It demonstrates how to receive 
  * an output from a remote audio gateway (AG), and, 
- * if HAVE_POSIX_STDIN is defined, how to control the AG. 
+ * if HAVE_BTSTACK_STDIN is defined, how to control the AG. 
  */
 // *****************************************************************************
 
@@ -57,12 +57,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "btstack.h"
 #include "sco_demo_util.h"
-#ifdef HAVE_POSIX_STDIN
-#include "stdin_support.h"
+#ifdef HAVE_BTSTACK_STDIN
+#include "btstack_stdin.h"
 #endif
 
 static btstack_packet_callback_registration_t hci_event_callback_registration;
@@ -116,19 +115,12 @@ static void show_usage(void){
     printf("o - set speaker gain 0\n");
     printf("s - set speaker gain 8\n");
     printf("S - set speaker gain 15\n");
-    printf("---\n");
-    printf("Ctrl-c - exit\n");
-    printf("---\n");
+    printf("\n");
 }
 
-#ifdef HAVE_POSIX_STDIN
-static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callback_type_t callback_type){
-    UNUSED(ds);
-    UNUSED(callback_type);
-
-    char buffer = btstack_stdin_read();
-
-    switch (buffer){
+#ifdef HAVE_BTSTACK_STDIN
+static void stdin_process(char c){
+    switch (c){
         case 'c':
             printf("Connect to %s\n", bd_addr_to_str(device_addr));
             hsp_hs_connect(device_addr);
@@ -242,7 +234,7 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * even
                             break;
                         case HSP_SUBEVENT_AG_INDICATION: {
                             memset(hs_cmd_buffer, 0, sizeof(hs_cmd_buffer));
-                            int size = hsp_subevent_ag_indication_get_value_length(event);
+                            unsigned int size = hsp_subevent_ag_indication_get_value_length(event);
                             if (size >= sizeof(hs_cmd_buffer)-1){
                                 size =  sizeof(hs_cmd_buffer)-1;
                             }
@@ -303,11 +295,11 @@ int btstack_main(int argc, const char * argv[]){
     hsp_hs_init(rfcomm_channel_nr);
     hsp_hs_register_packet_handler(packet_handler);
 
-#ifdef HAVE_POSIX_STDIN
+#ifdef HAVE_BTSTACK_STDIN
     btstack_stdin_setup(stdin_process);
 #endif
 
-    gap_set_local_name("BTstack HSP HS");
+    gap_set_local_name("HSP HS Demo 00:00:00:00:00:00");
     gap_discoverable_control(1);
     gap_ssp_set_io_capability(SSP_IO_CAPABILITY_DISPLAY_YES_NO);
     gap_set_class_of_device(0x240404);

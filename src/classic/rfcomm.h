@@ -45,6 +45,8 @@
 #include "btstack_util.h"
 
 #include <stdint.h>
+#include "btstack_run_loop.h"
+#include "gap.h"
 
 #if defined __cplusplus
 extern "C" {
@@ -390,13 +392,6 @@ int       rfcomm_reserve_packet_buffer(void);
 uint8_t * rfcomm_get_outgoing_buffer(void);
 int       rfcomm_send_prepared(uint16_t rfcomm_cid, uint16_t len);
 void      rfcomm_release_packet_buffer(void);
-
-/**
- * CRC8 functions using ETSI TS 101 369 V6.3.0.
- * Only used by RFCOMM
- */
-uint8_t crc8_check(uint8_t *data, uint16_t len, uint8_t check_sum);
-uint8_t crc8_calc(uint8_t *data, uint16_t len);
 
 /* API_END */
 

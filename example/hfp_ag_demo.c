@@ -46,7 +46,7 @@
  *
  * @text This HFP Audio Gateway example demonstrates how to receive 
  * an output from a remote HFP Hands-Free (HF) unit, and, 
- * if HAVE_POSIX_STDIN is defined, how to control the HFP HF. 
+ * if HAVE_BTSTACK_STDIN is defined, how to control the HFP HF. 
  */
 // *****************************************************************************
 
@@ -55,20 +55,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "btstack.h"
 #include "sco_demo_util.h"
-#ifdef HAVE_POSIX_STDIN
-#include "stdin_support.h"
+#ifdef HAVE_BTSTACK_STDIN
+#include "btstack_stdin.h"
 #endif
 
 uint8_t hfp_service_buffer[150];
 const uint8_t    rfcomm_channel_nr = 1;
-const char hfp_ag_service_name[] = "BTstack HFP AG Test";
+const char hfp_ag_service_name[] = "HFP AG Demo";
 
 static bd_addr_t device_addr;
-static const char * device_addr_string = "00:15:83:5F:9D:46";
+static const char * device_addr_string = "00:21:3C:AC:F7:38";
 
 #ifdef ENABLE_HFP_WIDE_BAND_SPEECH
 static uint8_t codecs[] = {HFP_CODEC_CVSD, HFP_CODEC_MSBC};
@@ -104,31 +103,13 @@ static hfp_generic_status_indicator_t hf_indicators[] = {
     {2, 1},
 };
 
-char cmd;
-
-// GAP INQUIRY
-
-#define MAX_DEVICES 10
-enum DEVICE_STATE { REMOTE_NAME_REQUEST, REMOTE_NAME_INQUIRED, REMOTE_NAME_FETCHED };
-struct device {
-    bd_addr_t  address;
-    uint16_t   clockOffset;
-    uint32_t   classOfDevice;
-    uint8_t    pageScanRepetitionMode;
-    uint8_t    rssi;
-    enum DEVICE_STATE  state; 
-};
-
 #define INQUIRY_INTERVAL 5
-struct device devices[MAX_DEVICES];
-int deviceCount = 0;
-
 
 enum STATE {INIT, W4_INQUIRY_MODE_COMPLETE, ACTIVE} ;
 enum STATE state = INIT;
 
 static void dump_supported_codecs(void){
-    int i;
+    unsigned int i;
     int mSBC_skipped = 0;
     printf("Supported codecs: ");
     for (i = 0; i < sizeof(codecs); i++){
@@ -151,149 +132,7 @@ static void dump_supported_codecs(void){
     }
 }
 
-static int getDeviceIndexForAddress( bd_addr_t addr){
-    int j;
-    for (j=0; j< deviceCount; j++){
-        if (bd_addr_cmp(addr, devices[j].address) == 0){
-            return j;
-        }
-    }
-    return -1;
-}
-
-#ifdef HAVE_POSIX_STDIN
-static void start_scan(void){
-    printf("Starting inquiry scan..\n");
-    hci_send_cmd(&hci_inquiry, HCI_INQUIRY_LAP, INQUIRY_INTERVAL, 0);
-}
-#endif
-
-static int has_more_remote_name_requests(void){
-    int i;
-    for (i=0;i<deviceCount;i++) {
-        if (devices[i].state == REMOTE_NAME_REQUEST) return 1;
-    }
-    return 0;
-}
-
-static void do_next_remote_name_request(void){
-    int i;
-    for (i=0;i<deviceCount;i++) {
-        // remote name request
-        if (devices[i].state == REMOTE_NAME_REQUEST){
-            devices[i].state = REMOTE_NAME_INQUIRED;
-            printf("Get remote name of %s...\n", bd_addr_to_str(devices[i].address));
-            hci_send_cmd(&hci_remote_name_request, devices[i].address,
-                        devices[i].pageScanRepetitionMode, 0, devices[i].clockOffset | 0x8000);
-            return;
-        }
-    }
-}
-
-static void continue_remote_names(void){
-    // don't get remote names for testing
-    if (has_more_remote_name_requests()){
-        do_next_remote_name_request();
-        return;
-    } 
-    // try to find PTS
-    int i;
-    for (i=0;i<deviceCount;i++){
-        if (memcmp(devices[i].address, device_addr, 6) == 0){
-            printf("Inquiry scan over, successfully found PTS at index %u\nReady to connect to it.\n", i);
-            return;
-        }
-    }
-    printf("Inquiry scan over but PTS not found :(\n");
-}
-
-static void inquiry_packet_handler (uint8_t packet_type, uint8_t *packet, uint16_t size){
-    UNUSED(size);
-
-    bd_addr_t addr;
-    int i;
-    int numResponses;
-    int index;
-
-    // printf("packet_handler: pt: 0x%02x, packet[0]: 0x%02x\n", packet_type, packet[0]);
-    if (packet_type != HCI_EVENT_PACKET) return;
-
-    uint8_t event = packet[0];
-
-    switch(event){
-        case HCI_EVENT_INQUIRY_RESULT:
-        case HCI_EVENT_INQUIRY_RESULT_WITH_RSSI:{
-            numResponses = hci_event_inquiry_result_get_num_responses(packet);
-            int offset = 3;
-            for (i=0; i<numResponses && deviceCount < MAX_DEVICES;i++){
-                reverse_bd_addr(&packet[offset], addr);
-                offset += 6;
-                index = getDeviceIndexForAddress(addr);
-                if (index >= 0) continue;   // already in our list
-                memcpy(devices[deviceCount].address, addr, 6);
-
-                devices[deviceCount].pageScanRepetitionMode = packet[offset];
-                offset += 1;
-
-                if (event == HCI_EVENT_INQUIRY_RESULT){
-                    offset += 2; // Reserved + Reserved
-                    devices[deviceCount].classOfDevice = little_endian_read_24(packet, offset);
-                    offset += 3;
-                    devices[deviceCount].clockOffset =   little_endian_read_16(packet, offset) & 0x7fff;
-                    offset += 2;
-                    devices[deviceCount].rssi  = 0;
-                } else {
-                    offset += 1; // Reserved
-                    devices[deviceCount].classOfDevice = little_endian_read_24(packet, offset);
-                    offset += 3;
-                    devices[deviceCount].clockOffset =   little_endian_read_16(packet, offset) & 0x7fff;
-                    offset += 2;
-                    devices[deviceCount].rssi  = packet[offset];
-                    offset += 1;
-                }
-                devices[deviceCount].state = REMOTE_NAME_REQUEST;
-                printf("Device #%u found: %s with COD: 0x%06x, pageScan %d, clock offset 0x%04x, rssi 0x%02x\n",
-                    deviceCount, bd_addr_to_str(addr),
-                    devices[deviceCount].classOfDevice, devices[deviceCount].pageScanRepetitionMode,
-                    devices[deviceCount].clockOffset, devices[deviceCount].rssi);
-                deviceCount++;
-            }
-
-            break;
-        }
-        case HCI_EVENT_INQUIRY_COMPLETE:
-            for (i=0;i<deviceCount;i++) {
-                // retry remote name request
-                if (devices[i].state == REMOTE_NAME_INQUIRED)
-                    devices[i].state = REMOTE_NAME_REQUEST;
-            }
-            continue_remote_names();
-            break;
-
-        case HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE:
-            reverse_bd_addr(&packet[3], addr);
-            index = getDeviceIndexForAddress(addr);
-            if (index >= 0) {
-                if (packet[2] == 0) {
-                    printf("Name: '%s'\n", &packet[9]);
-                    devices[index].state = REMOTE_NAME_FETCHED;
-                } else {
-                    printf("Failed to get name: page timeout\n");
-                }
-            }
-            continue_remote_names();
-            break;
-
-        default:
-            break;
-    }
-}
-// GAP INQUIRY END
-#ifdef HAVE_POSIX_STDIN
-
-// prototypes
-static void show_usage(void);
-
+#ifdef HAVE_BTSTACK_STDIN
 // Testig User Interface 
 static void show_usage(void){
     bd_addr_t iut_address;
@@ -302,8 +141,8 @@ static void show_usage(void){
     printf("\n--- Bluetooth HFP Audiogateway (AG) unit Test Console %s ---\n", bd_addr_to_str(iut_address));
     printf("\n");
     
-    printf("a - establish HFP connection to PTS module %s\n", bd_addr_to_str(device_addr));
-    // printf("A - release HFP connection to PTS module\n");
+    printf("a - establish HFP connection to %s\n", bd_addr_to_str(device_addr));
+    // printf("A - release HFP connection\n");
     
     printf("b - establish AUDIO connection          | B - release AUDIO connection\n");
     printf("c - simulate incoming call from 1234567 | C - simulate call from 1234567 dropped\n");
@@ -330,21 +169,14 @@ static void show_usage(void){
     printf("w - put incoming call on hold (Response and Hold)\n");
     printf("x - accept held incoming call (Response and Hold)\n");
     printf("X - reject held incoming call (Response and Hold)\n");
-
-    printf("---\n");
-    printf("Ctrl-c - exit\n");
     printf("---\n");
 }
 
-static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callback_type_t callback_type){
-    UNUSED(ds);
-    UNUSED(callback_type);
-
-    cmd = btstack_stdin_read();
+static void stdin_process(char cmd){
     switch (cmd){
         case 'a':
             log_info("USER:\'%c\'", cmd);
-            printf("Establish HFP service level connection to PTS module %s...\n", bd_addr_to_str(device_addr));
+            printf("Establish HFP service level connection to %s...\n", bd_addr_to_str(device_addr));
             hfp_ag_establish_service_level_connection(device_addr);
             break;
         case 'A':
@@ -535,7 +367,8 @@ static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callbac
             hfp_ag_join_held_call();
             break;
         case 'v':
-            start_scan();
+            printf("Start scanning...\n");
+            gap_inquiry_start(INQUIRY_INTERVAL);
             break;
         case 'w':
             log_info("USER:\'%c\'", cmd);
@@ -561,15 +394,37 @@ static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callbac
 
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * event, uint16_t event_size){
     UNUSED(channel);
-
+    bd_addr_t addr;
+    uint8_t status;
     switch (packet_type){
         case HCI_EVENT_PACKET:
-            switch (event[0]){
-                case HCI_EVENT_INQUIRY_RESULT:
-                case HCI_EVENT_INQUIRY_RESULT_WITH_RSSI:
-                case HCI_EVENT_INQUIRY_COMPLETE:
-                case HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE:
-                    inquiry_packet_handler(HCI_EVENT_PACKET, event, event_size);
+            switch(hci_event_packet_get_type(event)){
+#ifndef HAVE_BTSTACK_STDIN
+                case BTSTACK_EVENT_STATE:
+                    if (btstack_event_state_get_state(event) != HCI_STATE_WORKING) break;
+                    printf("Establish HFP AG service level connection to %s...\n", bd_addr_to_str(device_addr));
+                    hfp_ag_establish_service_level_connection(device_addr);
+                    break;
+#endif
+                case GAP_EVENT_INQUIRY_RESULT:
+                    gap_event_inquiry_result_get_bd_addr(event, addr);
+                    // print info
+                    printf("Device found: %s ",  bd_addr_to_str(addr));
+                    printf("with COD: 0x%06x, ", (unsigned int) gap_event_inquiry_result_get_class_of_device(event));
+                    if (gap_event_inquiry_result_get_rssi_available(event)){
+                        printf(", rssi %d dBm", (int8_t) gap_event_inquiry_result_get_rssi(event));
+                    }
+                    if (gap_event_inquiry_result_get_name_available(event)){
+                        char name_buffer[240];
+                        int name_len = gap_event_inquiry_result_get_name_len(event);
+                        memcpy(name_buffer, gap_event_inquiry_result_get_name(event), name_len);
+                        name_buffer[name_len] = 0;
+                        printf(", name '%s'", name_buffer);
+                    }
+                    printf("\n");
+                    break;
+                case GAP_EVENT_INQUIRY_COMPLETE:
+                    printf("Inquiry scan complete.\n");
                     break;
                 case HCI_EVENT_SCO_CAN_SEND_NOW:
                     sco_demo_send(sco_handle); 
@@ -583,23 +438,33 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * even
                     break;
             }
 
-            if (event[0] != HCI_EVENT_HFP_META) return;
+            if (hci_event_packet_get_type(event) != HCI_EVENT_HFP_META) return;
 
             if (event[3]
-                && event[2] != HFP_SUBEVENT_PLACE_CALL_WITH_NUMBER
-                && event[2] != HFP_SUBEVENT_ATTACH_NUMBER_TO_VOICE_TAG 
-                && event[2] != HFP_SUBEVENT_TRANSMIT_DTMF_CODES){
+                && hci_event_hfp_meta_get_subevent_code(event) != HFP_SUBEVENT_PLACE_CALL_WITH_NUMBER
+                && hci_event_hfp_meta_get_subevent_code(event) != HFP_SUBEVENT_ATTACH_NUMBER_TO_VOICE_TAG 
+                && hci_event_hfp_meta_get_subevent_code(event) != HFP_SUBEVENT_TRANSMIT_DTMF_CODES){
                 printf("ERROR, status: %u\n", event[3]);
                 return;
             }
 
-            switch (event[2]) {   
+            switch (hci_event_hfp_meta_get_subevent_code(event)) {   
                 case HFP_SUBEVENT_SERVICE_LEVEL_CONNECTION_ESTABLISHED:
+                    status = hfp_subevent_service_level_connection_established_get_status(event);
+                    if (status){
+                        printf("Connection failed, staus 0x%02x\n", status);
+                        break;
+                    }
                     acl_handle = hfp_subevent_service_level_connection_established_get_con_handle(event);
                     hfp_subevent_service_level_connection_established_get_bd_addr(event, device_addr);
-                    printf("Service level connection established from %s.\n", bd_addr_to_str(device_addr));
+                    printf("Service level connection established to %s.\n", bd_addr_to_str(device_addr));
                     dump_supported_codecs();
-                   break;
+#ifndef HAVE_BTSTACK_STDIN
+                    log_info("Establish Audio connection %s", bd_addr_to_str(device_addr));
+                    printf("Establish Audio connection %s...\n", bd_addr_to_str(device_addr));
+                    hfp_ag_establish_audio_connection(acl_handle);
+#endif
+                    break;
                 case HFP_SUBEVENT_SERVICE_LEVEL_CONNECTION_RELEASED:
                     printf("Service level connection released.\n");
                     sco_handle = 0;
@@ -664,9 +529,10 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t * even
                     printf("Call answered by HF\n");
                     break;
                 default:
-                    printf("Event not handled %u\n", event[2]);
+                    printf("Event not handled %u\n", hci_event_hfp_meta_get_subevent_code(event));
                     break;
             }
+            break;
         case HCI_SCO_DATA_PACKET:
             sco_demo_receive(event, event_size);
             break;
@@ -702,6 +568,7 @@ int btstack_main(int argc, const char * argv[]){
     hci_add_event_handler(&hci_event_callback_registration);
     hci_register_sco_packet_handler(&packet_handler);
 
+    gap_set_local_name("HFP AG Demo 00:00:00:00:00:00");
     gap_discoverable_control(1);
 
     // L2CAP
@@ -742,7 +609,7 @@ int btstack_main(int argc, const char * argv[]){
     // parse humand readable Bluetooth address
     sscanf_bd_addr(device_addr_string, device_addr);
 
-#ifdef HAVE_POSIX_STDIN
+#ifdef HAVE_BTSTACK_STDIN
     btstack_stdin_setup(stdin_process);
 #endif  
     // turn on!

@@ -10,7 +10,8 @@ CORE += \
 	hci_transport_h4.c \
 	le_device_db_fs.c \
 	main.c \
-	stdin_support.c \
+	wav_util.c 					\
+	btstack_stdin_posix.c \
 
 # examples
 include ${BTSTACK_ROOT}/example/Makefile.inc

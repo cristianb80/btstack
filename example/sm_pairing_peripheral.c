@@ -50,6 +50,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "sm_pairing_peripheral.h"
 #include "btstack.h"
@@ -74,9 +75,9 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 
 const uint8_t adv_data[] = {
     // Flags general discoverable, BR/EDR not supported
-    0x02, 0x01, 0x06, 
+    0x02, BLUETOOTH_DATA_TYPE_FLAGS, 0x06, 
     // Name
-    0x0b, 0x09, 'S', 'M', ' ', 'P', 'a', 'i', 'r', 'i', 'n', 'g', 
+    0x0b, BLUETOOTH_DATA_TYPE_COMPLETE_LOCAL_NAME, 'S', 'M', ' ', 'P', 'a', 'i', 'r', 'i', 'n', 'g', 
 };
 const uint8_t adv_data_len = sizeof(adv_data);
 
@@ -161,11 +162,11 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
                     sm_just_works_confirm(sm_event_just_works_request_get_handle(packet));
                     break;
                 case SM_EVENT_NUMERIC_COMPARISON_REQUEST:
-                    printf("Confirming numeric comparison: %u\n", sm_event_numeric_comparison_request_get_passkey(packet));
+                    printf("Confirming numeric comparison: %"PRIu32"\n", sm_event_numeric_comparison_request_get_passkey(packet));
                     sm_numeric_comparison_confirm(sm_event_passkey_display_number_get_handle(packet));
                     break;
                 case SM_EVENT_PASSKEY_DISPLAY_NUMBER:
-                    printf("Display Passkey: %u\n", sm_event_passkey_display_number_get_passkey(packet));
+                    printf("Display Passkey: %"PRIu32"\n", sm_event_passkey_display_number_get_passkey(packet));
                     break;
                 case SM_EVENT_IDENTITY_CREATED:
                     sm_event_identity_created_get_identity_address(packet, addr);

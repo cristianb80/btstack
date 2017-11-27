@@ -1,7 +1,7 @@
 # Makefile for windows-h4 examples
 BTSTACK_ROOT = ../..
 
-CORE += main.c stdin_support.c
+CORE += main.c btstack_stdin_windows.c
 
 COMMON  += \
 			btstack_run_loop_windows.c   \
@@ -9,13 +9,14 @@ COMMON  += \
 			btstack_uart_block_windows.c \
 			le_device_db_fs.c            \
 			btstack_link_key_db_fs.c     \
-			bluetooth_init_cc2564B_1.5_BT_Spec_4.1.c \
+			bluetooth_init_cc2564B_1.6_BT_Spec_4.1.c \
 			btstack_chipset_cc256x.c \
 			btstack_chipset_csr.c \
 			btstack_chipset_em9301.c \
 			btstack_chipset_stlc2500d.c \
 			btstack_chipset_tc3566x.c \
 			btstack_chipset_bcm.c \
+			wav_util.c 					\
 
 # examples
 include ${BTSTACK_ROOT}/example/Makefile.inc

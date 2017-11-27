@@ -85,10 +85,11 @@ static btstack_packet_callback_registration_t hci_event_callback_registration;
 /* LISTING_START(advertisements): Advertisement data: Flag 0x06 indicates LE-only device */
 const uint8_t adv_data[] = {
     // Flags general discoverable, BR/EDR not supported
-    0x02, 0x01, 0x06, 
-
+    0x02, BLUETOOTH_DATA_TYPE_FLAGS, 0x06, 
     // Name
-    0x0b, 0x09, 'L', 'E', ' ', 'C', 'o', 'u', 'n', 't', 'e', 'r', 
+    0x0b, BLUETOOTH_DATA_TYPE_COMPLETE_LOCAL_NAME, 'L', 'E', ' ', 'C', 'o', 'u', 'n', 't', 'e', 'r', 
+    // Incomplete List of 16-bit Service Class UUIDs -- FF10 - only valid for testing!
+    0x03, BLUETOOTH_DATA_TYPE_INCOMPLETE_LIST_OF_16_BIT_SERVICE_CLASS_UUIDS, 0x10, 0xff,
 };
 /* LISTING_END */
 uint8_t adv_data_len = sizeof(adv_data);
@@ -111,12 +112,12 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 	switch (packet_type) {
 		case HCI_EVENT_PACKET:
 			switch (hci_event_packet_get_type(packet)) {
-				case HCI_EVENT_PIN_CODE_REQUEST:
-					// inform about pin code request
+                case HCI_EVENT_PIN_CODE_REQUEST:
+                    // inform about pin code request
                     printf("Pin code request - using '0000'\n");
                     hci_event_pin_code_request_get_bd_addr(packet, event_addr);
-					hci_send_cmd(&hci_pin_code_request_reply, &event_addr, 4, "0000");
-					break;
+                    gap_pin_code_response(event_addr, "0000");
+                    break;
 
                 case HCI_EVENT_USER_CONFIRMATION_REQUEST:
                     // inform about user confirmation request
@@ -187,12 +188,7 @@ static uint16_t att_read_callback(hci_con_handle_t con_handle, uint16_t att_hand
     UNUSED(con_handle);
 
     if (att_handle == ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE){
-        if (buffer){
-            memcpy(buffer, &counter_string[offset], buffer_size);
-            return buffer_size;
-        } else {
-            return counter_string_len;
-        }
+        return att_read_callback_handle_blob((const uint8_t *)counter_string, buffer_size, offset, buffer, buffer_size);
     }
     return 0;
 }
@@ -261,7 +257,6 @@ static void heartbeat_handler(struct btstack_timer_source *ts){
 int btstack_main(void);
 int btstack_main(void)
 {
-    gap_discoverable_control(1);
 
     // register for HCI events
     hci_event_callback_registration.callback = &packet_handler;
@@ -279,7 +274,9 @@ int btstack_main(void)
     sdp_register_service(spp_service_buffer);
     printf("SDP service record size: %u\n", de_get_len(spp_service_buffer));
 
+    gap_set_local_name("SPP and LE Counter 00:00:00:00:00:00");
     gap_ssp_set_io_capability(SSP_IO_CAPABILITY_DISPLAY_YES_NO);
+    gap_discoverable_control(1);
 
     // setup le device db
     le_device_db_init();

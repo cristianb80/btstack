@@ -8,7 +8,7 @@
 // Port related features
 #define HAVE_MALLOC
 #define HAVE_POSIX_FILE_IO
-#define HAVE_POSIX_STDIN
+#define HAVE_BTSTACK_STDIN
 #define HAVE_POSIX_TIME
 
 // BTstack features that can be enabled
@@ -18,6 +18,8 @@
 #define ENABLE_LE_CENTRAL
 #define ENABLE_LE_PERIPHERAL
 #define ENABLE_LE_SECURE_CONNECTIONS
+#define ENABLE_MICRO_ECC_FOR_LE_SECURE_CONNECTIONS
+#define ENABLE_LE_DATA_LENGTH_EXTENSION
 #define ENABLE_LOG_ERROR
 #define ENABLE_LOG_INFO 
 #define ENABLE_SCO_OVER_HCI

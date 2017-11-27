@@ -29,7 +29,7 @@ The file *btstack_config.h* contains three parts:
 
 - \#define HAVE_* directives [listed here](#sec:haveDirectives). These directives describe available system properties, similar to config.h in a autoconf setup.
 - \#define ENABLE_* directives [listed here](#sec:enableDirectives). These directives list enabled properties, most importantly ENABLE_CLASSIC and ENABLE_BLE.
-- other #define directives for BTstack configuration, most notably static memory, [see next section](#sec:memoryConfigurationHowTo).
+- other #define directives for BTstack configuration, most notably static memory, [see next section](#sec:memoryConfigurationHowTo) and [NVM configuration](#sec:nvmConfiguration).
 
 <!-- a name "lst:platformConfiguration"></a-->
 <!-- -->
@@ -40,6 +40,9 @@ System properties:
 #define | Description
 -----------------------------------|-------------------------------------
 HAVE_MALLOC                        | Use dynamic memory
+HAVE_AES128                        | Use platform AES128 engine - not needed usually
+HAVE_BTSTACK_STDIN                 | STDIN is available for CLI interface
+HAVE_MBEDTLS_ECC_P256              | mbedTLS provides NIST P-256 operations e.g. for LE Secure Connections
 
 Embedded platform properties:
 
@@ -55,7 +58,6 @@ POSIX platform properties:
 HAVE_POSIX_B300_MAPPED_TO_2000000  | Workaround to use serial port with 2 mbps
 HAVE_POSIX_B600_MAPPED_TO_3000000  | Workaround to use serial port with 3 mpbs
 HAVE_POSIX_FILE_IO                 | POSIX File i/o used for hci dump
-HAVE_POSIX_STDIN                   | STDIN is available for CLI interface
 HAVE_POSIX_TIME                    | System provides time function
 LINK_KEY_PATH                      | Path to stored link keys
 LE_DEVICE_DB_PATH                  | Path to stored LE device information
@@ -65,23 +67,29 @@ LE_DEVICE_DB_PATH                  | Path to stored LE device information
 ### ENABLE_* directives {#sec:enableDirectives}
 BTstack properties:
 
-#define                      | Description
------------------------------|---------------------------------------------
-ENABLE_CLASSIC               | Enable Classic related code in HCI and L2CAP
-ENABLE_BLE                   | Enable BLE related code in HCI and L2CAP
-ENABLE_EHCILL                | Enable eHCILL low power mode on TI CC256x/WL18xx chipsets
-ENABLE_LOG_DEBUG             | Enable log_debug messages
-ENABLE_LOG_ERROR             | Enable log_error messages
-ENABLE_LOG_INFO              | Enable log_info messages
-ENABLE_SCO_OVER_HCI          | Enable SCO over HCI for chipsets (only TI CC256x/WL18xx, CSR + Broadcom H2/USB))
-ENABLE_HFP_WIDE_BAND_SPEECH  | Enable support for mSBC codec used in HFP profile for Wide-Band Speech
-ENBALE_LE_PERIPHERAL         | Enable support for LE Peripheral Role in HCI and Security Manager
-ENBALE_LE_CENTRAL            | Enable support for LE Central Role in HCI and Security Manager
-ENABLE_LE_SECURE_CONNECTIONS | Enable LE Secure Connections using [mbed TLS library](https://tls.mbed.org)
-ENABLE_LE_DATA_CHANNELS      | Enable LE Data Channels in credit-based flow control mode
-ENABLE_LE_SIGNED_WRITE       | Enable LE Signed Writes in ATT/GATT
+#define                         | Description
+--------------------------------|---------------------------------------------
+ENABLE_CLASSIC                  | Enable Classic related code in HCI and L2CAP
+ENABLE_BLE                      | Enable BLE related code in HCI and L2CAP
+ENABLE_EHCILL                   | Enable eHCILL low power mode on TI CC256x/WL18xx chipsets
+ENABLE_LOG_DEBUG                | Enable log_debug messages
+ENABLE_LOG_ERROR                | Enable log_error messages
+ENABLE_LOG_INFO                 | Enable log_info messages
+ENABLE_SCO_OVER_HCI             | Enable SCO over HCI for chipsets (only TI CC256x/WL18xx, CSR + Broadcom H2/USB))
+ENABLE_HFP_WIDE_BAND_SPEECH     | Enable support for mSBC codec used in HFP profile for Wide-Band Speech
+ENBALE_LE_PERIPHERAL            | Enable support for LE Peripheral Role in HCI and Security Manager
+ENBALE_LE_CENTRAL               | Enable support for LE Central Role in HCI and Security Manager
+ENABLE_LE_SECURE_CONNECTIONS    | Enable LE Secure Connections
+ENABLE_MICRO_ECC_FOR_LE_SECURE_CONNECTIONS | Use [micro-ecc library](https://github.com/kmackay/micro-ecc) for ECC operations
+ENABLE_LE_DATA_CHANNELS         | Enable LE Data Channels in credit-based flow control mode
+ENABLE_LE_DATA_LENGTH_EXTENSION | Enable LE Data Length Extension support
+ENABLE_LE_SIGNED_WRITE          | Enable LE Signed Writes in ATT/GATT
+ENABLE_L2CAP_ENHANCED_RETRANSMISSION_MODE | Enable L2CAP Enhanced Retransmission Mode. Mandatory for AVRCP Browsing
 ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL | Enable HCI Controller to Host Flow Control, see below
+ENABLE_CC256X_BAUDRATE_CHANGE_FLOWCONTROL_BUG_WORKAROUND | Enable workaround for bug in CC256x Flow Control during baud rate change, see chipset docs.
 
+Notes:
+- ENABLE_MICRO_ECC_FOR_LE_SECURE_CONNECTIONS: Only some Bluetooth 4.2+ controllers (e.g., EM9304, ESP32) support the necessary HCI commands. Others reasons to enable the ECC software implementations are if the Host is much faster or if the micro-ecc library is already provided (e.g., ESP32, WICED)
 
 ### HCI Controller to Host Flow Control
 In general, BTstack relies on flow control of the HCI transport, either via Hardware CTS/RTS flow control for UART or regular USB flow control. If this is not possible, e.g on an SoC, BTstack can use HCI Controller to Host Flow Control by defining ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL. If enabled, the HCI Transport implementation must be able to buffer the specified packets. In addition, it also need to be able to buffer a few HCI Events. Using a low number of host buffers might result in less throughput.
@@ -158,6 +166,19 @@ Listing: Memory configuration for a basic SPP server. {#lst:memoryConfigurationS
 In this example, the size of ACL packets is limited to the minimum of 52 bytes, resulting in an L2CAP MTU of 48 bytes. Only a singleHCI connection can be established at any time. On it, two L2CAP services are provided, which can be active at the same time. Here, these two can be RFCOMM and SDP. Then, memory for one RFCOMM multiplexer is reserved over which one connection can be active. Finally, up to three link keys can be cached in RAM.
 
 <!-- -->
+
+### Non-volatile memory (NVM) directives {#sec:nvmConfiguration}
+
+If implemented, bonding information is stored in Non-volatile memory. For Classic, a single link keys and its type is stored. For LE, the bonding information contains various values (long term key, random number, EDIV, signing counter, identity, ...)Often, this implemented using Flash memory. Then, the number of stored entries are limited by:
+
+<!-- a name "lst:nvmDefines"></a-->
+<!-- -->
+
+#define                   | Description
+--------------------------|------------
+NVM_NUM_LINK_KEYS         | Max number of Classic Link Keys that can be stored 
+NVM_NUM_DEVICE_DB_ENTRIES | Max number of LE Device DB entries that can be stored
+
 
 ## Source tree structure {#sec:sourceTreeHowTo}
 

@@ -128,7 +128,8 @@ static void att_emit_can_send_now_event(void){
 }
 
 static void att_handle_value_indication_timeout(btstack_timer_source_t *ts){
-    hci_con_handle_t con_handle = (hci_con_handle_t) (uintptr_t) btstack_run_loop_get_timer_context(ts);
+    void * context = btstack_run_loop_get_timer_context(ts);
+    hci_con_handle_t con_handle = (hci_con_handle_t) (uintptr_t) context;
     att_server_t * att_server = att_server_for_handle(con_handle);
     if (!att_server) return;
     uint16_t att_handle = att_server->value_indication_handle;
@@ -137,8 +138,8 @@ static void att_handle_value_indication_timeout(btstack_timer_source_t *ts){
 
 static void att_event_packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
 
-    UNUSED(channel);
-    UNUSED(size);
+    UNUSED(channel); // ok: there is no channel
+    UNUSED(size);    // ok: handling own l2cap events
     
     att_server_t * att_server;
     hci_con_handle_t con_handle;
@@ -516,7 +517,7 @@ int att_server_indicate(hci_con_handle_t con_handle, uint16_t attribute_handle, 
     att_server_t * att_server = att_server_for_handle(con_handle);
     if (!att_server) return ERROR_CODE_UNKNOWN_CONNECTION_IDENTIFIER;
 
-    if (att_server->value_indication_handle) return ATT_HANDLE_VALUE_INDICATION_IN_PORGRESS;
+    if (att_server->value_indication_handle) return ATT_HANDLE_VALUE_INDICATION_IN_PROGRESS;
     if (!att_dispatch_server_can_send_now(con_handle)) return BTSTACK_ACL_BUFFERS_FULL;
 
     // track indication

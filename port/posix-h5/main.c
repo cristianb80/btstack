@@ -60,9 +60,8 @@
 #include "bluetooth_company_id.h"
 #include "hci.h"
 #include "hci_dump.h"
-#include "stdin_support.h"
+#include "btstack_stdin.h"
 
-#include "btstack_chipset_bcm.h"
 #include "btstack_chipset_csr.h"
 #include "btstack_chipset_cc256x.h"
 #include "btstack_chipset_em9301.h"
@@ -79,8 +78,6 @@ static hci_transport_config_uart_t config = {
     1,  // flow control
     NULL,
 };
-
-int is_bcm;
 
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 static void local_version_information_handler(uint8_t * packet);
@@ -113,9 +110,9 @@ static void use_fast_uart(void){
 
 static void local_version_information_handler(uint8_t * packet){
     printf("Local version information:\n");
-    uint16_t hci_version    = little_endian_read_16(packet, 4);
-    uint16_t hci_revision   = little_endian_read_16(packet, 6);
-    uint16_t lmp_version    = little_endian_read_16(packet, 8);
+    uint16_t hci_version    = packet[6];
+    uint16_t hci_revision   = little_endian_read_16(packet, 7);
+    uint16_t lmp_version    = packet[9];
     uint16_t manufacturer   = little_endian_read_16(packet, 10);
     uint16_t lmp_subversion = little_endian_read_16(packet, 12);
     printf("- HCI Version  0x%04x\n", hci_version);
@@ -135,8 +132,8 @@ static void local_version_information_handler(uint8_t * packet){
             hci_set_chipset(btstack_chipset_cc256x_instance());
             break;
         case BLUETOOTH_COMPANY_ID_BROADCOM_CORPORATION:   
-            printf("Broadcom chipset. Not supported yet\n");
-            // hci_set_chipset(btstack_chipset_bcm_instance());
+            printf("Broadcom chipset. Not supported by posix-h5 port, please use port/posix-h5-bcm\n");
+            exit(10);
             break;
         case BLUETOOTH_COMPANY_ID_ST_MICROELECTRONICS:   
             printf("ST Microelectronics - using STLC2500d driver.\n");
@@ -153,12 +150,14 @@ static void local_version_information_handler(uint8_t * packet){
     }
 }
 
-static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
+static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
+    bd_addr_t addr;
     if (packet_type != HCI_EVENT_PACKET) return;
     switch (hci_event_packet_get_type(packet)){
         case BTSTACK_EVENT_STATE:
             if (btstack_event_state_get_state(packet) != HCI_STATE_WORKING) break;
-            printf("BTstack up and running.\n");
+            gap_local_bd_addr(addr);
+            printf("BTstack up and running at %s\n",  bd_addr_to_str(addr));
             break;
         case HCI_EVENT_COMMAND_COMPLETE:
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_local_name)){
@@ -166,9 +165,6 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                 // terminate, name 248 chars
                 packet[6+248] = 0;
                 printf("Local name: %s\n", &packet[6]);
-                if (is_bcm){
-                    btstack_chipset_bcm_set_device_name((const char *)&packet[6]);
-                }
             }        
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_local_version_information)){
                 local_version_information_handler(packet);
@@ -189,7 +185,10 @@ int main(int argc, const char * argv[]){
     hci_dump_open("/tmp/hci_dump.pklg", HCI_DUMP_PACKETLOGGER);
 
     // pick serial port
-    config.device_name = "/dev/tty.usbserial-A900K0VK";
+    // config.device_name = "/dev/tty.usbserial-A900K2WS"; // DFROBOT
+    // config.device_name = "/dev/tty.usbserial-A50285BI"; // BOOST-CC2564MODA New
+    // config.device_name = "/dev/tty.usbserial-A9OVNX5P"; // RedBear IoT pHAT breakout board
+    config.device_name = "/dev/tty.usbserial-A900K0VK"; // CSR8811 breakout board
 
     // init HCI
     const btstack_uart_block_t * uart_driver = btstack_uart_block_posix_instance();
@@ -200,6 +199,10 @@ int main(int argc, const char * argv[]){
 
     // enable BCSP mode for CSR chipsets - auto detect might not work
     // hci_transport_h5_enable_bcsp_mode();
+
+    // set BD_ADDR for CSR without Flash/unique address
+    // bd_addr_t own_address = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+    // btstack_chipset_csr_set_bd_addr(own_address);
 
     // enable auto-sleep mode
     // hci_transport_h5_set_auto_sleep(300);

@@ -4,8 +4,8 @@
 #
 
 # init scripts
-CC2560B = bluetooth_init_cc2560B_1.4_BT_Spec_4.1.o
-CC2564B = bluetooth_init_cc2564B_1.4_BT_Spec_4.1.o
+CC2560B = bluetooth_init_cc2560B_1.6_BT_Spec_4.1.o
+CC2564B = bluetooth_init_cc2564B_1.6_BT_Spec_4.1.o
 CC2567  = CC256x_BT_Service_Pack_2.8_ANT_1.16.o
 
 BTSTACK_ROOT = ../..
@@ -52,13 +52,14 @@ CORE   = \
     btstack_util.c			          \
 
 COMMON = \
-    hal_uart_dma.c            \
-	btstack_chipset_cc256x.c       \
-    hci.c			          \
-    hci_cmd.c		          \
-    btstack_uart_block_embedded.c \
-    hci_transport_h4_ehcill_embedded.c \
-	btstack_link_key_db_memory.c \
+	ad_parser.c                        \
+	btstack_chipset_cc256x.c           \
+	btstack_link_key_db_memory.c       \
+    btstack_uart_block_embedded.c      \
+    hal_uart_dma.c            		   \
+    hci.c			          		   \
+    hci_cmd.c		          		   \
+    hci_transport_h4.c                 \
 
 SPP = \
     l2cap.c			          \

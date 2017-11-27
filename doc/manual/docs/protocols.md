@@ -331,6 +331,26 @@ for the Serial Port Profile and other profiles used for
 telecommunication like Head-Set Profile, Hands-Free Profile, Object
 Exchange (OBEX) etc.
 
+### No RFCOMM packet boundaries {#sec:noRfcommPacketBoundaries}
+
+As RFCOMM emulates a serial port, it does not preserve packet boundaries. 
+
+On most operating systems, RFCOMM/SPP will be modeled as a pipe that allows
+to write a block of bytes. The OS and the Bluetooth Stack are free to buffer
+and chunk this data in any way it seems fit. In your BTstack application, you will
+therefore receive this data in the same order, but there are no guarantees as
+how it might be fragmented into multiple chunks.
+
+If you need to preserve the concept of sending a packet with a specific size
+over RFCOMM, the simplest way is to prefix the data with a 2 or 4 byte length field
+and then reconstruct the packet on the receiving side.
+
+Please note, that due to BTstack's 'no buffers' policy, BTstack will send outgoing RFCOMM data immediately 
+and implicitly preserve the packet boundaries, i.e., it will send the data as a single
+RFCOMM packet in a single L2CAP packet, which will arrive in one piece. 
+While this will hold between two BTstack instances, it's not a good idea to rely on implementation details
+and rather prefix the data as described.
+
 ### RFCOMM flow control {#sec:flowControlProtocols}
 
 RFCOMM has a mandatory credit-based flow-control. This means that two
@@ -797,12 +817,9 @@ Long Term Key (LTK) is generated based on the local keypair and the remote publi
 To facilitate the creation of such a keypairs and the calculation of the LTK,
 the Bluetooth Core V4.2 specification introduced appropriate commands for the Bluetooth controller.
 
-As an alternative for controllers that don't provide these primitives, BTstack provides the relevant cryptographic functions in software via the Apache 2.0 licensed [mbed TLS library](https://tls.mbed.org).
+As an alternative for controllers that don't provide these primitives, BTstack provides the relevant cryptographic functions in software via the BSD-2-Clause licensed [micro-ecc library](https://github.com/kmackay/micro-ecc/tree/static).
 
-There are two details to be aware about using LE Secure Connections:
-
- - More RAM: It requires an additional 1.5 kB RAM when using mbed TLS instead of hardware support by the Bluetooth controller.
- - Peripheral must store LTK: Even an LE Peripheral needs to store the LTK in non-volatile memory.
+When using using LE Secure Connections, the Peripheral must store LTK in non-volatile memory.
 
 
 ### Initialization

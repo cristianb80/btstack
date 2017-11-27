@@ -233,7 +233,7 @@ void btstack_run_loop_embedded_execute_once(void) {
         uint32_t timeout_low = ts->timeout;
         int      timeout_high = btstack_run_loop_embedded_reconstruct_higher_bits(now, timeout_low);
         if (timeout_high > 0 || ((timeout_high == 0) && (timeout_low > now))) break;
-        btstack_run_loop_remove_timer(ts);
+        btstack_run_loop_embedded_remove_timer(ts);
         ts->process(ts);
     }
 #endif
@@ -273,13 +273,13 @@ uint32_t btstack_run_loop_embedded_ticks_for_ms(uint32_t time_in_ms){
 #endif
 
 static uint32_t btstack_run_loop_embedded_get_time_ms(void){
-#ifdef HAVE_EMBEDDED_TIME_MS
+#if   defined(HAVE_EMBEDDED_TIME_MS)
     return hal_time_ms();
-#endif
-#ifdef HAVE_EMBEDDED_TICK
+#elif defined(HAVE_EMBEDDED_TICK)
     return system_ticks * hal_tick_get_tick_period_in_ms();
-#endif
+#else
     return 0;
+#endif
 }
 
 

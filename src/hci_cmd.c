@@ -775,6 +775,31 @@ OPCODE(OGF_TESTING, 0x02), "1"
 // return: status
 };
 
+/**
+ */
+const hci_cmd_t hci_enable_device_under_test_mode = {
+OPCODE(OGF_TESTING, 0x03), ""
+// return: status
+};
+
+/**
+ * @param simple_pairing_debug_mode
+ */
+const hci_cmd_t hci_write_simple_pairing_debug_mode = {
+OPCODE(OGF_TESTING, 0x04), "1"
+// return: status
+};
+
+/**
+ * @param handle
+ * @param dm1_acl_u_mode
+ * @param esco_loopback_mode
+ */
+const hci_cmd_t hci_write_secure_connections_test_mode = {
+OPCODE(OGF_TESTING, 0x0a), "H11"
+// return: status
+};
+
 
 /**
  * Informational Parameters
@@ -1077,21 +1102,54 @@ OPCODE(OGF_LE_CONTROLLER, 0x1f), "1"
 };
 
 /**
+ * @param con_handle
+ * @param tx_octets
+ * @param tx_time
+ */
+const hci_cmd_t hci_le_set_data_length = {
+OPCODE(OGF_LE_CONTROLLER, 0x22), "H22"
+// return: status, connection handle
+};
+
+
+/**
+ */
+const hci_cmd_t hci_le_read_suggested_default_data_length = {
+OPCODE(OGF_LE_CONTROLLER, 0x23), ""
+// return: status, suggested max tx octets, suggested max tx time
+};
+
+/**
+ * @param suggested_max_tx_octets
+ * @param suggested_max_tx_time
+ */
+const hci_cmd_t hci_le_write_suggested_default_data_length = {
+OPCODE(OGF_LE_CONTROLLER, 0x24), "22"
+// return: status
+};
+
+/**
  */
 const hci_cmd_t hci_le_read_local_p256_public_key = {
 OPCODE(OGF_LE_CONTROLLER, 0x25), ""
 //  LE Read Local P-256 Public Key Complete is generated on completion
 };
 
-#ifdef HAVE_HCI_CONTROLLER_DHKEY_SUPPORT
 /**
- * @param end_test_cmd
+ * @param public key
+ * @param private key
  */
 const hci_cmd_t hci_le_generate_dhkey = {
 OPCODE(OGF_LE_CONTROLLER, 0x26), "QQ"
 // LE Generate DHKey Complete is generated on completion
 };
-#endif
+
+/**
+ */
+const hci_cmd_t hci_le_read_maximum_data_length = {
+OPCODE(OGF_LE_CONTROLLER, 0x2F), ""
+// return: status, supported max tx octets, supported max tx time, supported max rx octets, supported max rx time
+};
 
 #endif
 

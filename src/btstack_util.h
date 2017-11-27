@@ -135,7 +135,7 @@ void big_endian_store_32(uint8_t *buffer, uint16_t pos, uint32_t value);
  * @brief Swap bytes in 16 bit integer
  */
 static inline uint16_t btstack_flip_16(uint16_t value){
-    return ((value & 0xff) << 8) | (value >> 8);
+    return (uint16_t)((value & 0xff) << 8) | (value >> 8);
 }
 
 /** 
@@ -252,6 +252,27 @@ int  uuid_has_bluetooth_prefix(const uint8_t * uuid128);
  * @return value
  */
 uint32_t btstack_atoi(const char *str);
+
+/**
+ * @brief Return number of digits of a uint32 number
+ * @param uint32_number
+ * @return num_digits
+ */
+int string_len_for_uint32(uint32_t i);
+
+/**
+ * @brief Return number of set bits in a uint32 number
+ * @param uint32_number
+ * @return num_set_bits
+ */
+int count_set_bits_uint32(uint32_t x);
+
+/**
+ * CRC8 functions using ETSI TS 101 369 V6.3.0.
+ * Only used by RFCOMM
+ */
+uint8_t btstack_crc8_check(uint8_t *data, uint16_t len, uint8_t check_sum);
+uint8_t btstack_crc8_calc(uint8_t *data, uint16_t len);
 
 /* API_END */
 

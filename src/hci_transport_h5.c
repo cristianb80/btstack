@@ -42,8 +42,13 @@
  *
  *  HCI Transport API implementation for basic H5 protocol
  *
- *  Created by Matthias Ringwald on 4/29/09.
+ *  Created by Matthias Ringw ald on 4/29/09.
  */
+
+#include "btstack_config.h"
+#define ENABLE_LOG_DEBUG
+
+#include <inttypes.h>
 
 #include "hci.h"
 #include "btstack_slip.h"
@@ -58,16 +63,17 @@ typedef enum {
 } hci_transport_link_state_t;
 
 typedef enum {
-    HCI_TRANSPORT_LINK_SEND_SYNC            = 1 << 0,
-    HCI_TRANSPORT_LINK_SEND_SYNC_RESPONSE   = 1 << 1,
-    HCI_TRANSPORT_LINK_SEND_CONFIG          = 1 << 2,
-    HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE = 1 << 3,
-    HCI_TRANSPORT_LINK_SEND_SLEEP           = 1 << 4,
-    HCI_TRANSPORT_LINK_SEND_WOKEN           = 1 << 5,
-    HCI_TRANSPORT_LINK_SEND_WAKEUP          = 1 << 6,
-    HCI_TRANSPORT_LINK_SEND_QUEUED_PACKET   = 1 << 7,
-    HCI_TRANSPORT_LINK_SEND_ACK_PACKET      = 1 << 8,
-    HCI_TRANSPORT_LINK_ENTER_SLEEP          = 1 << 9,
+    HCI_TRANSPORT_LINK_SEND_SYNC                  = 1 <<  0,
+    HCI_TRANSPORT_LINK_SEND_SYNC_RESPONSE         = 1 <<  1,
+    HCI_TRANSPORT_LINK_SEND_CONFIG                = 1 <<  2,
+    HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE_EMPTY = 1 <<  3,
+    HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE       = 1 <<  4,
+    HCI_TRANSPORT_LINK_SEND_SLEEP                 = 1 <<  5,
+    HCI_TRANSPORT_LINK_SEND_WOKEN                 = 1 <<  6,
+    HCI_TRANSPORT_LINK_SEND_WAKEUP                = 1 <<  7,
+    HCI_TRANSPORT_LINK_SEND_QUEUED_PACKET         = 1 <<  8,
+    HCI_TRANSPORT_LINK_SEND_ACK_PACKET            = 1 <<  9,
+    HCI_TRANSPORT_LINK_ENTER_SLEEP                = 1 << 10,
 
 } hci_transport_link_actions_t;
 
@@ -96,6 +102,7 @@ static const uint8_t link_control_sync[] =   { 0x01, 0x7e};
 static const uint8_t link_control_sync_response[] = { 0x02, 0x7d};
 static const uint8_t link_control_config[] = { 0x03, 0xfc, LINK_CONFIG_FIELD};
 static const uint8_t link_control_config_prefix_len  = 2;
+static const uint8_t link_control_config_response_empty[] = { 0x04, 0x7b};
 static const uint8_t link_control_config_response[] = { 0x04, 0x7b, LINK_CONFIG_FIELD};
 static const uint8_t link_control_config_response_prefix_len  = 2;
 static const uint8_t link_control_wakeup[] = { 0x05, 0xfa};
@@ -193,7 +200,7 @@ static uint16_t crc16_calc_for_slip_frame(const uint8_t * header, const uint8_t 
 
 // -----------------------------
 static void hci_transport_inactivity_timeout_handler(btstack_timer_source_t * ts){
-    log_info("h5: inactivity timeout. link state %d, peer asleep %u, actions 0x%02x, outgoing packet %u",
+    log_info("inactivity timeout. link state %d, peer asleep %u, actions 0x%02x, outgoing packet %u",
         link_state, link_peer_asleep, hci_transport_link_actions, hci_transport_link_have_outgoing_packet());
     if (hci_transport_link_have_outgoing_packet()) return;
     if (link_state != LINK_ACTIVE) return;
@@ -235,7 +242,7 @@ static void hci_transport_slip_encode_chunk_and_send(int pos){
         slip_outgoing_buffer[pos++] = BTSTACK_SLIP_SOF;
     }
     slip_write_active = 1;
-    log_info("hci_transport_slip: send %d bytes", pos);
+    log_debug("slip: send %d bytes", pos);
     btstack_uart->send_block(slip_outgoing_buffer, pos);
 }
 
@@ -298,43 +305,48 @@ static void hci_transport_link_send_control(const uint8_t * message, int message
     if (link_peer_supports_data_integrity_check){
         data_integrity_check = crc16_calc_for_slip_frame(header, message, message_len);
     }
-    log_info("hci_transport_link_send_control: size %u, append dic %u", message_len, link_peer_supports_data_integrity_check);
-    log_info_hexdump(message, message_len);
+    log_debug("hci_transport_link_send_control: size %u, append dic %u", message_len, link_peer_supports_data_integrity_check);
+    log_debug_hexdump(message, message_len);
     hci_transport_slip_send_frame(header, message, message_len, data_integrity_check);
 }
 
 static void hci_transport_link_send_sync(void){
-    log_info("link: send sync");
+    log_debug("link send sync");
     hci_transport_link_send_control(link_control_sync, sizeof(link_control_sync));
 }
 
 static void hci_transport_link_send_sync_response(void){
-    log_info("link: send sync response");
+    log_debug("link send sync response");
     hci_transport_link_send_control(link_control_sync_response, sizeof(link_control_sync_response));
 }
 
 static void hci_transport_link_send_config(void){
-    log_info("link: send config");
+    log_debug("link send config");
     hci_transport_link_send_control(link_control_config, sizeof(link_control_config));
 }
 
 static void hci_transport_link_send_config_response(void){
-    log_info("link: send config response");
+    log_debug("link send config response");
     hci_transport_link_send_control(link_control_config_response, sizeof(link_control_config_response));
 }
 
+static void hci_transport_link_send_config_response_empty(void){
+    log_debug("link send config response empty");
+    hci_transport_link_send_control(link_control_config_response_empty, sizeof(link_control_config_response_empty));
+}
+
 static void hci_transport_link_send_woken(void){
-    log_info("link: send woken");
+    log_debug("link send woken");
     hci_transport_link_send_control(link_control_woken, sizeof(link_control_woken));
 }
 
 static void hci_transport_link_send_wakeup(void){
-    log_info("link: send wakeup");
+    log_debug("link send wakeup");
     hci_transport_link_send_control(link_control_wakeup, sizeof(link_control_wakeup));
 }
 
 static void hci_transport_link_send_sleep(void){
-    log_info("link: send sleep");
+    log_debug("link send sleep");
     hci_transport_link_send_control(link_control_sleep, sizeof(link_control_sleep));
 }
 
@@ -347,8 +359,8 @@ static void hci_transport_link_send_queued_packet(void){
     if (link_peer_supports_data_integrity_check){
         data_integrity_check = crc16_calc_for_slip_frame(header, hci_packet, hci_packet_size);
     }
-    log_info("hci_transport_link_send_queued_packet: seq %u, ack %u, size %u. Append dic %u, dic = 0x%04x", link_seq_nr, link_ack_nr, hci_packet_size, link_peer_supports_data_integrity_check, data_integrity_check);
-    log_info_hexdump(hci_packet, hci_packet_size);
+    log_debug("hci_transport_link_send_queued_packet: seq %u, ack %u, size %u. Append dic %u, dic = 0x%04x", link_seq_nr, link_ack_nr, hci_packet_size, link_peer_supports_data_integrity_check, data_integrity_check);
+    log_debug_hexdump(hci_packet, hci_packet_size);
 
     hci_transport_slip_send_frame(header, hci_packet, hci_packet_size, data_integrity_check);
 
@@ -358,7 +370,7 @@ static void hci_transport_link_send_queued_packet(void){
 
 static void hci_transport_link_send_ack_packet(void){
     // Pure ACK package is without DIC as there is no payload either
-    log_info("link: send ack %u", link_ack_nr);
+    log_debug("send ack %u", link_ack_nr);
     uint8_t header[4];
     hci_transport_link_calc_header(header, 0, link_ack_nr, 0, 0, LINK_ACKNOWLEDGEMENT_TYPE, 0);
     hci_transport_slip_send_frame(header, NULL, 0, 0);
@@ -387,6 +399,11 @@ static void hci_transport_link_run(void){
     if (hci_transport_link_actions & HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE){
         hci_transport_link_actions &= ~HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE;
         hci_transport_link_send_config_response();
+        return;
+    }
+    if (hci_transport_link_actions & HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE_EMPTY){
+        hci_transport_link_actions &= ~HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE_EMPTY;
+        hci_transport_link_send_config_response_empty();
         return;
     }
     if (hci_transport_link_actions & HCI_TRANSPORT_LINK_SEND_WOKEN){
@@ -492,7 +509,7 @@ static void hci_transport_h5_emit_sleep_state(int sleep_active){
     if (sleep_active == last_state) return;
     last_state = sleep_active;
     
-    log_info("hci_transport_h5_emit_sleep_state: %u", sleep_active);
+    log_info("emit_sleep_state: %u", sleep_active);
     uint8_t event[3];
     event[0] = HCI_EVENT_TRANSPORT_SLEEP_MODE;
     event[1] = sizeof(event) - 2;
@@ -515,15 +532,15 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
     uint8_t  link_packet_type = slip_header[1] & 0x0f;
     uint16_t link_payload_len = (slip_header[1] >> 4) | (slip_header[2] << 4);
 
-    log_info("hci_transport_h5_process_frame, reliable %u, packet type %u, seq_nr %u, ack_nr %u , dic %u", reliable_packet, link_packet_type, seq_nr, ack_nr, data_integrity_check_present);
-    log_info_hexdump(slip_header, 4);
-    log_info_hexdump(slip_payload, frame_size_without_header);
+    log_debug("process_frame, reliable %u, packet type %u, seq_nr %u, ack_nr %u , dic %u, payload 0x%04x bytes", reliable_packet, link_packet_type, seq_nr, ack_nr, data_integrity_check_present, frame_size_without_header);
+    log_debug_hexdump(slip_header, 4);
+    log_debug_hexdump(slip_payload, frame_size_without_header);
 
     // CSR 8811 does not seem to auto-detect H5 mode and sends data with even parity.
     // if this byte sequence is detected, just enable even parity
     const uint8_t sync_response_bcsp[] = {0x01, 0x7a, 0x06, 0x10};
     if (memcmp(sync_response_bcsp, slip_header, 4) == 0){
-        log_info("h5: detected BSCP SYNC sent with Even Parity -> discard frame and enable Even Parity");
+        log_info("detected BSCP SYNC sent with Even Parity -> discard frame and enable Even Parity");
         btstack_uart->set_parity(1);
         return;
     }
@@ -531,7 +548,7 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
     // validate header checksum
     uint8_t header_checksum = slip_header[0] + slip_header[1] + slip_header[2] + slip_header[3];
     if (header_checksum != 0xff){
-        log_info("h5: header checksum 0x%02x (instead of 0xff)", header_checksum);
+        log_info("header checksum 0x%02x (instead of 0xff)", header_checksum);
         return;
     }
 
@@ -539,7 +556,7 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
     int data_integrity_len = data_integrity_check_present ? 2 : 0;
     uint16_t received_payload_len = frame_size_without_header - data_integrity_len;
     if (link_payload_len != received_payload_len){
-        log_info("h5: expected payload len %u but got %u", link_payload_len, received_payload_len);
+        log_info("expected payload len %u but got %u", link_payload_len, received_payload_len);
         return;
     }
 
@@ -548,7 +565,7 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
         uint16_t dic_packet = big_endian_read_16(slip_payload, received_payload_len);
         uint16_t dic_calculate = crc16_calc_for_slip_frame(slip_header, slip_payload, received_payload_len);
         if (dic_packet != dic_calculate){
-            log_info("h5: expected dic value 0x%04x but got 0x%04x", dic_calculate, dic_packet);
+            log_info("expected dic value 0x%04x but got 0x%04x", dic_calculate, dic_packet);
             return;
         }
     }
@@ -557,33 +574,42 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
         case LINK_UNINITIALIZED:
             if (link_packet_type != LINK_CONTROL_PACKET_TYPE) break;
             if (memcmp(slip_payload, link_control_sync, sizeof(link_control_sync)) == 0){
-                log_info("link: received sync");
+                log_debug("link received sync");
                 hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_SYNC_RESPONSE;
+                break;
             }
             if (memcmp(slip_payload, link_control_sync_response, sizeof(link_control_sync_response)) == 0){
-                log_info("link: received sync response");
+                log_debug("link received sync response");
                 link_state = LINK_INITIALIZED;
                 btstack_run_loop_remove_timer(&link_timer);
                 log_info("link initialized");
                 //
                 hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_CONFIG;
                 hci_transport_link_set_timer(LINK_PERIOD_MS);
+                break;
             }
             break;
         case LINK_INITIALIZED:
             if (link_packet_type != LINK_CONTROL_PACKET_TYPE) break;
             if (memcmp(slip_payload, link_control_sync, sizeof(link_control_sync)) == 0){
-                log_info("link: received sync");
+                log_debug("link received sync");
                 hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_SYNC_RESPONSE;
+                break;
             }
             if (memcmp(slip_payload, link_control_config, link_control_config_prefix_len) == 0){
-                log_info("link: received config, 0x%02x", slip_payload[2]);
-                hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE;
+                if (link_payload_len == link_control_config_prefix_len){
+                    log_debug("link received config, no config field");
+                    hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE_EMPTY;
+                } else {
+                    log_debug("link received config, 0x%02x", slip_payload[2]);
+                    hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE;
+                }
+                break;
             }
             if (memcmp(slip_payload, link_control_config_response, link_control_config_response_prefix_len) == 0){
                 uint8_t config = slip_payload[2];
                 link_peer_supports_data_integrity_check = (config & 0x10) != 0;
-                log_info("link: received config response 0x%02x, data integrity check supported %u", config, link_peer_supports_data_integrity_check);
+                log_info("link received config response 0x%02x, data integrity check supported %u", config, link_peer_supports_data_integrity_check);
                 link_state = LINK_ACTIVE;
                 btstack_run_loop_remove_timer(&link_timer);
                 log_info("link activated");
@@ -593,6 +619,7 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
                 // notify upper stack that it can start
                 uint8_t event[] = { HCI_EVENT_TRANSPORT_PACKET_SENT, 0};
                 packet_handler(HCI_EVENT_PACKET, &event[0], sizeof(event));
+                break;
             }
             break;
         case LINK_ACTIVE:
@@ -608,13 +635,13 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
                 link_ack_nr = hci_transport_link_inc_seq_nr(link_ack_nr);
                 hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_ACK_PACKET;
             }
-          
+
             // Process ACKs in reliable packet and explicit ack packets
             if (reliable_packet || link_packet_type == LINK_ACKNOWLEDGEMENT_TYPE){
                 // our packet is good if the remote expects our seq nr + 1
                 int next_seq_nr = hci_transport_link_inc_seq_nr(link_seq_nr);
                 if (hci_transport_link_have_outgoing_packet() && next_seq_nr == ack_nr){
-                    log_info("h5: outoing packet with seq %u ack'ed", link_seq_nr);
+                    log_debug("outoing packet with seq %u ack'ed", link_seq_nr);
                     link_seq_nr = next_seq_nr;
                     hci_transport_link_clear_queue();
 
@@ -627,12 +654,17 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
             switch (link_packet_type){
                 case LINK_CONTROL_PACKET_TYPE:
                     if (memcmp(slip_payload, link_control_config, sizeof(link_control_config)) == 0){
-                        log_info("link: received config");
-                        hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE;
+                        if (link_payload_len == link_control_config_prefix_len){
+                            log_debug("link received config, no config field");
+                            hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE_EMPTY;
+                        } else {
+                            log_debug("link received config, 0x%02x", slip_payload[2]);
+                            hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_CONFIG_RESPONSE;
+                        }
                         break;
                     }
                     if (memcmp(slip_payload, link_control_sync, sizeof(link_control_sync)) == 0){
-                        log_info("link: received sync in ACTIVE STATE!");
+                        log_debug("link received sync in ACTIVE STATE!");
                         // TODO sync during active indicates peer reset -> full upper layer reset necessary
                         break;
                     }
@@ -684,7 +716,11 @@ static void hci_transport_h5_process_frame(uint16_t frame_size){
 static uint16_t hci_transport_link_calc_resend_timeout(uint32_t baudrate){
     uint32_t max_packet_size_in_bit = (HCI_PACKET_BUFFER_SIZE + 6) << 3;
     uint32_t t_max_x3_ms = max_packet_size_in_bit * 3000 / baudrate;
-    log_info("resend timeout for %u baud: %u ms", baudrate, t_max_x3_ms);
+
+    // allow for BTstack logging and other delays
+    t_max_x3_ms += 50;
+
+    log_info("resend timeout for %"PRIu32" baud: %u ms", baudrate, (int) t_max_x3_ms);
     return t_max_x3_ms;
 }
 
@@ -697,15 +733,26 @@ static void hci_transport_link_update_resend_timeout(uint32_t baudrate){
 static uint8_t hci_transport_link_read_byte;
 
 static void hci_transport_h5_read_next_byte(void){
-    log_debug("h5: rx nxt");
     btstack_uart->receive_block(&hci_transport_link_read_byte, 1);    
 }
 
+// track time receiving SLIP frame
+static uint32_t hci_transport_h5_receive_start;
 static void hci_transport_h5_block_received(){
-    log_debug("slip: process 0x%02x", hci_transport_link_read_byte);
+    // track start time when receiving first byte // a bit hackish
+    if (hci_transport_h5_receive_start == 0 && hci_transport_link_read_byte != BTSTACK_SLIP_SOF){
+        hci_transport_h5_receive_start = btstack_run_loop_get_time_ms();
+    }
     btstack_slip_decoder_process(hci_transport_link_read_byte);
     uint16_t frame_size = btstack_slip_decoder_frame_size();
     if (frame_size) {
+        // track time
+        uint32_t packet_receive_time = btstack_run_loop_get_time_ms() - hci_transport_h5_receive_start;
+        uint32_t nominmal_time = (frame_size + 6) * 10 * 1000 / uart_config.baudrate;
+        log_info("slip frame time %u ms for %u decoded bytes. nomimal time %u ms", (int) packet_receive_time, frame_size, (int) nominmal_time);
+        // reset state
+        hci_transport_h5_receive_start = 0;
+        // 
         hci_transport_h5_process_frame(frame_size);
         hci_transport_slip_init();
     }
@@ -769,7 +816,7 @@ static int hci_transport_h5_open(void){
     
     // 
     if (hci_transport_bcsp_mode){
-        log_info("H5: enable even parity for BCSP mode");
+        log_info("enable even parity for BCSP mode");
         btstack_uart->set_parity(1);
     }
 
@@ -780,10 +827,10 @@ static int hci_transport_h5_open(void){
         supported_sleep_modes = btstack_uart->get_supported_sleep_modes();
     }
     if (supported_sleep_modes & BTSTACK_UART_SLEEP_MASK_RTS_LOW_WAKE_ON_RX_EDGE){
-        log_info("H5: using wake on RX");
+        log_info("using wake on RX");
         btstack_uart_sleep_mode = BTSTACK_UART_SLEEP_RTS_LOW_WAKE_ON_RX_EDGE;
     } else {
-        log_info("H5: UART driver does not provide compatible sleep mode");
+        log_info("UART driver does not provide compatible sleep mode");
     }
 
     // setup resend timeout
@@ -811,7 +858,7 @@ static void hci_transport_h5_register_packet_handler(void (*handler)(uint8_t pac
 
 static int hci_transport_h5_can_send_packet_now(uint8_t packet_type){
     int res = !hci_transport_link_have_outgoing_packet() && link_state == LINK_ACTIVE;
-    // log_info("hci_transport_h5_can_send_packet_now: %u", res);
+    // log_info("can_send_packet_now: %u", res);
     return res;
 }
 
@@ -828,7 +875,7 @@ static int hci_transport_h5_send_packet(uint8_t packet_type, uint8_t *packet, in
     if (link_peer_asleep){
         hci_transport_h5_emit_sleep_state(0);
         if (btstack_uart_sleep_mode){
-            log_info("h5: disable UART sleep");
+            log_info("disable UART sleep");
             btstack_uart->set_sleep(BTSTACK_UART_SLEEP_OFF);
         }
         hci_transport_link_actions |= HCI_TRANSPORT_LINK_SEND_WAKEUP;
@@ -843,7 +890,7 @@ static int hci_transport_h5_send_packet(uint8_t packet_type, uint8_t *packet, in
 
 static int hci_transport_h5_set_baudrate(uint32_t baudrate){
 
-    log_info("hci_transport_h5_set_baudrate %u", baudrate);
+    log_info("set_baudrate %"PRIu32, baudrate);
     int res = btstack_uart->set_baudrate(baudrate);
 
     if (res) return res;
@@ -853,7 +900,7 @@ static int hci_transport_h5_set_baudrate(uint32_t baudrate){
 
 static void hci_transport_h5_reset_link(void){
 
-    log_info("hci_transport_h5_reset_link");
+    log_info("reset_link");
 
     // clear outgoing queue
     hci_transport_link_clear_queue();

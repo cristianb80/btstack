@@ -2,8 +2,7 @@
 BTSTACK_ROOT = ../..
 
 CORE += \
-	bluetooth_init_cc2564B_1.5_BT_Spec_4.1.c \
-	btstack_chipset_bcm.c \
+	bluetooth_init_cc2564B_1.6_BT_Spec_4.1.c \
 	btstack_chipset_cc256x.c \
 	btstack_chipset_csr.c \
 	btstack_chipset_em9301.c \
@@ -16,8 +15,8 @@ CORE += \
 	hci_transport_h5.c \
 	le_device_db_fs.c \
 	main.c \
-	stdin_support.c \
-#	btstack_chipset_bcm.c \
+	wav_util.c 					\
+	btstack_stdin_posix.c \
 
 # TI-WL183x requires TIInit_11.8.32.c
 
@@ -30,7 +29,6 @@ include ${BTSTACK_ROOT}/chipset/cc256x/Makefile.inc
 CFLAGS  += -g -Wall -Werror \
 	-I$(BTSTACK_ROOT)/platform/embedded \
 	-I$(BTSTACK_ROOT)/platform/posix \
-	-I$(BTSTACK_ROOT)/chipset/bcm \
 	-I$(BTSTACK_ROOT)/chipset/cc256x \
 	-I$(BTSTACK_ROOT)/chipset/csr \
 	-I$(BTSTACK_ROOT)/chipset/em9301 \
@@ -40,7 +38,6 @@ CFLAGS  += -g -Wall -Werror \
 VPATH += ${BTSTACK_ROOT}/platform/posix
 VPATH += ${BTSTACK_ROOT}/platform/embedded
 
-VPATH += ${BTSTACK_ROOT}/chipset/bcm	
 VPATH += ${BTSTACK_ROOT}/chipset/cc256x
 VPATH += ${BTSTACK_ROOT}/chipset/csr
 VPATH += ${BTSTACK_ROOT}/chipset/em9301

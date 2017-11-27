@@ -8,12 +8,13 @@ CFLAGS  = -DUNIT_TEST -g
 CPPFLAGS =  -x c++ -Wall -Wno-unused
 CFLAGS += -I. -I.. -I${BTSTACK_ROOT}/src -I${BTSTACK_ROOT}/ble -I${BTSTACK_ROOT}/platform/posix
 CFLAGS += -I${BTSTACK_ROOT}/3rd-party/mbedtls/include
+CFLAGS += -I${BTSTACK_ROOT}/3rd-party/micro-ecc
 LDFLAGS +=  -lCppUTest -lCppUTestExt
 
 VPATH += ${BTSTACK_ROOT}/src
 VPATH += ${BTSTACK_ROOT}/src/ble 
 VPATH += ${BTSTACK_ROOT}/platform/posix
-VPATH += ${BTSTACK_ROOT}/3rd-party/mbedtls/library
+VPATH += ${BTSTACK_ROOT}/3rd-party/micro-ecc
 
 COMMON = \
     btstack_linked_list.c		\
@@ -36,7 +37,10 @@ MBEDTLS = \
 	ecp_curves.c \
 	bignum.c \
 
-all: security_manager aestest ectest aes_cmac_test
+MICROECC = \
+	uECC.c
+
+all: security_manager aestest ecc_micro_ecc aes_cmac_test
 # sm_mbedtls_allocator_test
 
 security_manager: ${CORE_OBJ} ${COMMON_OBJ} security_manager.c
@@ -45,8 +49,7 @@ security_manager: ${CORE_OBJ} ${COMMON_OBJ} security_manager.c
 aestest: aestest.o rijndael.o
 	${CC} ${CFLAGS} $^ -o $@
 
-ectest: ectest.o ${MBEDTLS} rijndael.o
-	echo "compiling ectest"
+ecc_micro_ecc: ecc_micro_ecc.o ${MICROECC}
 	gcc ${CFLAGS} $^ -o $@ 
 
 aes_cmac_test: aes_cmac_test.o aes_cmac.o rijndael.o
@@ -59,11 +62,11 @@ test: all
 	./security_manager
 	./aes_cmac_test
 	./aestest
-	./ectest
+	./ecc_micro_ecc
 	./aes_cmac_test
 	
 clean:
-	rm -f  security_manager
+	rm -f  security_manager aestest ecc_micro_ecc aes_cmac_test
 	rm -f  *.o
 	rm -rf *.dSYM
 	

@@ -71,10 +71,12 @@
 #include "btstack_linked_list.h"
 #include "btstack_memory.h"
 #include "bluetooth_company_id.h"
+#include "bluetooth_data_types.h"
 #include "gap.h"
 #include "hci.h"
 #include "hci_cmd.h"
 #include "hci_dump.h"
+#include "ad_parser.h"
 
 #ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
 #ifndef HCI_HOST_ACL_PACKET_NUM
@@ -94,6 +96,34 @@
 #define HCI_CONNECTION_TIMEOUT_MS 10000
 #define HCI_RESET_RESEND_TIMEOUT_MS 200
 
+// Names are arbitrarily shortened to 32 bytes if not requested otherwise
+#ifndef GAP_INQUIRY_MAX_NAME_LEN
+#define GAP_INQUIRY_MAX_NAME_LEN 32
+#endif
+
+// GAP inquiry state: 0 = off, 0x01 - 0x30 = requested duration, 0xfe = active, 0xff = stop requested
+#define GAP_INQUIRY_DURATION_MIN 0x01
+#define GAP_INQUIRY_DURATION_MAX 0x30
+#define GAP_INQUIRY_STATE_ACTIVE 0x80
+#define GAP_INQUIRY_STATE_IDLE 0
+#define GAP_INQUIRY_STATE_W2_CANCEL 0x81
+#define GAP_INQUIRY_STATE_W4_CANCELLED 0x82
+
+// GAP Remote Name Request
+#define GAP_REMOTE_NAME_STATE_IDLE 0
+#define GAP_REMOTE_NAME_STATE_W2_SEND 1
+#define GAP_REMOTE_NAME_STATE_W4_COMPLETE 2
+
+// GAP Pairing
+#define GAP_PAIRING_STATE_IDLE                       0
+#define GAP_PAIRING_STATE_SEND_PIN                   1
+#define GAP_PAIRING_STATE_SEND_PIN_NEGATIVE          2
+#define GAP_PAIRING_STATE_SEND_PASSKEY               3
+#define GAP_PAIRING_STATE_SEND_PASSKEY_NEGATIVE      4
+#define GAP_PAIRING_STATE_SEND_CONFIRMATION          5
+#define GAP_PAIRING_STATE_SEND_CONFIRMATION_NEGATIVE 6
+
+
 // prototypes
 #ifdef ENABLE_CLASSIC
 static void hci_update_scan_enable(void);
@@ -107,7 +137,9 @@ static void hci_emit_security_level(hci_con_handle_t con_handle, gap_security_le
 static void hci_connection_timeout_handler(btstack_timer_source_t *timer);
 static void hci_connection_timestamp(hci_connection_t *connection);
 static void hci_emit_l2cap_check_timeout(hci_connection_t *conn);
+static void gap_inquiry_explode(uint8_t * packet);
 #endif
+
 static int  hci_power_control_on(void);
 static void hci_power_control_off(void);
 static void hci_state_reset(void);
@@ -124,7 +156,7 @@ static int  hci_number_free_acl_slots_for_connection_type( bd_addr_type_t addres
 #ifdef ENABLE_BLE
 #ifdef ENABLE_LE_CENTRAL
 // called from test/ble_client/advertising_data_parser.c
-void le_handle_advertisement_report(uint8_t *packet, int size);
+void le_handle_advertisement_report(uint8_t *packet, uint16_t size);
 static void hci_remove_from_whitelist(bd_addr_type_t address_type, bd_addr_t address);
 #endif
 #endif
@@ -136,6 +168,9 @@ static hci_stack_t   hci_stack_static;
 static hci_stack_t * hci_stack = NULL;
 
 #ifdef ENABLE_CLASSIC
+// default name
+static const char * default_classic_name = "BTstack 00:00:00:00:00:00";
+
 // test helper
 static uint8_t disable_l2cap_timeouts = 0;
 #endif
@@ -790,8 +825,10 @@ static void acl_handler(uint8_t *packet, int size){
 static void hci_shutdown_connection(hci_connection_t *conn){
     log_info("Connection closed: handle 0x%x, %s", conn->con_handle, bd_addr_to_str(conn->address));
 
+#ifdef ENABLE_CLASSIC
 #ifdef ENABLE_SCO_OVER_HCI
     int addr_type = conn->address_type;
+#endif
 #endif
 
     btstack_run_loop_remove_timer(&conn->timeout);
@@ -802,11 +839,13 @@ static void hci_shutdown_connection(hci_connection_t *conn){
     // now it's gone
     hci_emit_nr_connections_changed();
 
+#ifdef ENABLE_CLASSIC
 #ifdef ENABLE_SCO_OVER_HCI
     // update SCO
     if (addr_type == BD_ADDR_TYPE_SCO && hci_stack->hci_transport && hci_stack->hci_transport->set_sco_config){
         hci_stack->hci_transport->set_sco_config(hci_stack->sco_voice_setting_active, hci_number_sco_connections());
     }
+#endif
 #endif
 }
 
@@ -922,9 +961,7 @@ void gap_le_get_own_address(uint8_t * addr_type, bd_addr_t addr){
 }
 
 #ifdef ENABLE_LE_CENTRAL
-void le_handle_advertisement_report(uint8_t *packet, int size){
-
-    UNUSED(size);
+void le_handle_advertisement_report(uint8_t *packet, uint16_t size){
 
     int offset = 3;
     int num_reports = packet[offset];
@@ -933,8 +970,8 @@ void le_handle_advertisement_report(uint8_t *packet, int size){
     int i;
     // log_info("HCI: handle adv report with num reports: %d", num_reports);
     uint8_t event[12 + LE_ADVERTISING_DATA_SIZE]; // use upper bound to avoid var size automatic var
-    for (i=0; i<num_reports;i++){
-        uint8_t data_length = packet[offset + 8];
+    for (i=0; i<num_reports && offset < size;i++){
+        uint8_t data_length = btstack_min( packet[offset + 8], LE_ADVERTISING_DATA_SIZE);
         uint8_t event_size = 10 + data_length;
         int pos = 0;
         event[pos++] = GAP_EVENT_ADVERTISING_REPORT;
@@ -1017,6 +1054,22 @@ static void hci_initialization_timeout_handler(btstack_timer_source_t * ds){
 static void hci_initializing_next_state(void){
     hci_stack->substate = (hci_substate_t )( ((int) hci_stack->substate) + 1);
 }
+
+#if defined(ENABLE_CLASSIC) || defined(ENABLE_LE_PERIPHERAL)
+static void hci_replace_bd_addr_placeholder(uint8_t * data, uint16_t size){
+    const int bd_addr_string_len = 17;
+    int i = 0;
+    while (i < size - bd_addr_string_len){
+        if (memcmp(&data[i], "00:00:00:00:00:00", bd_addr_string_len)) {
+            i++;
+            continue;
+        }
+        // set real address
+        memcpy(&data[i], bd_addr_to_str(hci_stack->local_bd_addr), bd_addr_string_len);
+        i += bd_addr_string_len;
+    }
+}
+#endif
 
 // assumption: hci_can_send_command_packet_now() == true
 static void hci_initializing_run(void){
@@ -1207,24 +1260,48 @@ static void hci_initializing_run(void){
             hci_stack->substate = HCI_INIT_W4_WRITE_CLASS_OF_DEVICE;
             hci_send_cmd(&hci_write_class_of_device, hci_stack->class_of_device);
             break;
-        case HCI_INIT_WRITE_LOCAL_NAME:
+        case HCI_INIT_WRITE_LOCAL_NAME: {
             hci_stack->substate = HCI_INIT_W4_WRITE_LOCAL_NAME;
-            if (hci_stack->local_name){
-                hci_send_cmd(&hci_write_local_name, hci_stack->local_name);
-            } else {
-                char local_name[8+17+1];
-                // BTstack 11:22:33:44:55:66
-                memcpy(local_name, "BTstack ", 8);
-                memcpy(&local_name[8], bd_addr_to_str(hci_stack->local_bd_addr), 17);   // strlen(bd_addr_to_str(...)) = 17
-                local_name[8+17] = '\0';
-                log_info("---> Name %s", local_name);
-                hci_send_cmd(&hci_write_local_name, local_name);
-            }
+            hci_reserve_packet_buffer();
+            uint8_t * packet = hci_stack->hci_packet_buffer;
+            // construct HCI Command and send
+            uint16_t opcode = hci_write_local_name.opcode;
+            hci_stack->last_cmd_opcode = opcode;
+            packet[0] = opcode & 0xff;
+            packet[1] = opcode >> 8;
+            packet[2] = DEVICE_NAME_LEN;
+            memset(&packet[3], 0, DEVICE_NAME_LEN);
+            memcpy(&packet[3], hci_stack->local_name, strlen(hci_stack->local_name));
+            // expand '00:00:00:00:00:00' in name with bd_addr
+            hci_replace_bd_addr_placeholder(&packet[3], DEVICE_NAME_LEN);
+            hci_send_cmd_packet(packet, HCI_CMD_HEADER_SIZE + DEVICE_NAME_LEN);
             break;
-        case HCI_INIT_WRITE_EIR_DATA:
+        }
+        case HCI_INIT_WRITE_EIR_DATA: {
             hci_stack->substate = HCI_INIT_W4_WRITE_EIR_DATA;
-            hci_send_cmd(&hci_write_extended_inquiry_response, 0, hci_stack->eir_data);
+            hci_reserve_packet_buffer();
+            uint8_t * packet = hci_stack->hci_packet_buffer;
+            // construct HCI Command and send
+            uint16_t opcode = hci_write_extended_inquiry_response.opcode;
+            hci_stack->last_cmd_opcode = opcode;
+            packet[0] = opcode & 0xff;
+            packet[1] = opcode >> 8;
+            packet[2] = 1 + 240;
+            packet[3] = 0;  // FEC not required
+            if (hci_stack->eir_data){
+                memcpy(&packet[4], hci_stack->eir_data, 240);
+            } else {
+                memset(&packet[4], 0, 240);
+                int name_len = strlen(hci_stack->local_name);
+                packet[4] = name_len + 1;
+                packet[5] = BLUETOOTH_DATA_TYPE_COMPLETE_LOCAL_NAME;
+                memcpy(&packet[6], hci_stack->local_name, name_len);
+            }
+            // expand '00:00:00:00:00:00' in name with bd_addr
+            hci_replace_bd_addr_placeholder(&packet[4], 240);
+            hci_send_cmd_packet(packet, HCI_CMD_HEADER_SIZE + 1 + 240);
             break;
+        }
         case HCI_INIT_WRITE_INQUIRY_MODE:
             hci_stack->substate = HCI_INIT_W4_WRITE_INQUIRY_MODE;
             hci_send_cmd(&hci_write_inquiry_mode, (int) hci_stack->inquiry_mode);
@@ -1256,11 +1333,28 @@ static void hci_initializing_run(void){
             hci_stack->substate = HCI_INIT_W4_LE_READ_BUFFER_SIZE;
             hci_send_cmd(&hci_le_read_buffer_size);
             break;
+        case HCI_INIT_LE_SET_EVENT_MASK:
+            hci_stack->substate = HCI_INIT_W4_LE_SET_EVENT_MASK;
+            hci_send_cmd(&hci_le_set_event_mask, 0x1FF, 0x0);
+            break;
         case HCI_INIT_WRITE_LE_HOST_SUPPORTED:
             // LE Supported Host = 1, Simultaneous Host = 0
             hci_stack->substate = HCI_INIT_W4_WRITE_LE_HOST_SUPPORTED;
             hci_send_cmd(&hci_write_le_host_supported, 1, 0);
             break;
+#endif
+
+#ifdef ENABLE_LE_DATA_LENGTH_EXTENSION
+        case HCI_INIT_LE_READ_MAX_DATA_LENGTH:
+            hci_stack->substate = HCI_INIT_W4_LE_READ_MAX_DATA_LENGTH;
+            hci_send_cmd(&hci_le_read_maximum_data_length);
+            break;
+        case HCI_INIT_LE_WRITE_SUGGESTED_DATA_LENGTH:
+            hci_stack->substate = HCI_INIT_W4_LE_WRITE_SUGGESTED_DATA_LENGTH;
+            hci_send_cmd(&hci_le_write_suggested_default_data_length, hci_stack->le_supported_max_tx_octets, hci_stack->le_supported_max_tx_time);
+            break;
+#endif
+
 #ifdef ENABLE_LE_CENTRAL
         case HCI_INIT_READ_WHITE_LIST_SIZE:
             hci_stack->substate = HCI_INIT_W4_READ_WHITE_LIST_SIZE;
@@ -1271,7 +1365,6 @@ static void hci_initializing_run(void){
             hci_stack->substate = HCI_INIT_W4_LE_SET_SCAN_PARAMETERS;
             hci_send_cmd(&hci_le_set_scan_parameters, 1, 0x1e0, 0x30, hci_stack->le_own_addr_type, 0);
             break;
-#endif
 #endif
         default:
             return;
@@ -1287,8 +1380,8 @@ static void hci_init_done(void){
 }
 
 static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
-    UNUSED(size);
-
+    UNUSED(size);   // ok: less than 6 bytes are read from our buffer
+    
     uint8_t command_completed = 0;
 
     if (hci_event_packet_get_type(packet) == HCI_EVENT_COMMAND_COMPLETE){
@@ -1470,8 +1563,9 @@ static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
             hci_stack->substate = HCI_INIT_READ_BD_ADDR;
             return;
         case HCI_INIT_W4_SET_BD_ADDR:
-            // for STLC2500D, bd addr change only gets active after sending reset command
-            if (hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_ST_MICROELECTRONICS){
+            // for STLC2500D + ATWILC3000, bd addr change only gets active after sending reset command
+            if ((hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_ST_MICROELECTRONICS)
+            ||  (hci_stack->manufacturer == BLUETOOTH_COMPANY_ID_ATMEL_CORPORATION)){
                 hci_stack->substate = HCI_INIT_SEND_RESET_ST_WARM_BOOT;
                 return;
             }
@@ -1513,6 +1607,19 @@ static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
         case HCI_INIT_W4_LE_READ_BUFFER_SIZE:
             // skip write le host if not supported (e.g. on LE only EM9301)
             if (hci_stack->local_supported_commands[0] & 0x02) break;
+            hci_stack->substate = HCI_INIT_LE_SET_EVENT_MASK;
+            return;
+
+
+#ifdef ENABLE_LE_DATA_LENGTH_EXTENSION
+        case HCI_INIT_W4_WRITE_LE_HOST_SUPPORTED:
+            if ((hci_stack->local_supported_commands[0] & 0x30) == 0x30){
+                hci_stack->substate = HCI_INIT_LE_SET_EVENT_MASK;
+                return;
+            }
+            // explicit fall through to reduce repetitions
+#endif
+
 #ifdef ENABLE_LE_CENTRAL
             hci_stack->substate = HCI_INIT_READ_WHITE_LIST_SIZE;
 #else
@@ -1520,12 +1627,7 @@ static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
 #endif
             return;
 #endif
-        case HCI_INIT_W4_WRITE_LOCAL_NAME:
-            // skip write eir data if no eir data set
-            if (hci_stack->eir_data) break;
-            hci_stack->substate = HCI_INIT_WRITE_INQUIRY_MODE;
-            return;
-
+            
 #ifdef ENABLE_SCO_OVER_HCI
         case HCI_INIT_W4_WRITE_SCAN_ENABLE:
             // skip write synchronous flow control if not supported
@@ -1590,13 +1692,12 @@ static void event_handler(uint8_t *packet, int size){
 
     bd_addr_t addr;
     bd_addr_type_t addr_type;
-    uint8_t link_type;
     hci_con_handle_t handle;
     hci_connection_t * conn;
     int i;
-
-    // warnings
-    UNUSED(link_type);
+#ifdef ENABLE_CLASSIC
+    uint8_t link_type;
+#endif
 
     // log_info("HCI:EVENT:%02x", hci_event_packet_get_type(packet));
 
@@ -1634,18 +1735,25 @@ static void event_handler(uint8_t *packet, int size){
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_le_read_buffer_size)){
                 hci_stack->le_data_packets_length = little_endian_read_16(packet, 6);
                 hci_stack->le_acl_packets_total_num  = packet[8];
-                    // determine usable ACL payload size
-                    if (HCI_ACL_PAYLOAD_SIZE < hci_stack->le_data_packets_length){
-                        hci_stack->le_data_packets_length = HCI_ACL_PAYLOAD_SIZE;
-                    }
+                // determine usable ACL payload size
+                if (HCI_ACL_PAYLOAD_SIZE < hci_stack->le_data_packets_length){
+                    hci_stack->le_data_packets_length = HCI_ACL_PAYLOAD_SIZE;
+                }
                 log_info("hci_le_read_buffer_size: size %u, count %u", hci_stack->le_data_packets_length, hci_stack->le_acl_packets_total_num);
             }
+#endif
+#ifdef ENABLE_LE_DATA_LENGTH_EXTENSION
+            if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_le_read_maximum_data_length)){
+                hci_stack->le_supported_max_tx_octets = little_endian_read_16(packet, 6);
+                hci_stack->le_supported_max_tx_time = little_endian_read_16(packet, 8);
+                log_info("hci_le_read_maximum_data_length: tx octets %u, tx time %u us", hci_stack->le_supported_max_tx_octets, hci_stack->le_supported_max_tx_time);
+            }
+#endif
 #ifdef ENABLE_LE_CENTRAL
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_le_read_white_list_size)){
                 hci_stack->le_whitelist_capacity = packet[6];
                 log_info("hci_le_read_white_list_size: size %u", hci_stack->le_whitelist_capacity);
             }
-#endif
 #endif
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_bd_addr)) {
                 reverse_bd_addr(&packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE + 1],
@@ -1661,6 +1769,13 @@ static void event_handler(uint8_t *packet, int size){
 #ifdef ENABLE_CLASSIC
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_write_scan_enable)){
                 hci_emit_discoverable_enabled(hci_stack->discoverable);
+            }
+            if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_inquiry_cancel)){
+                if (hci_stack->inquiry_state == GAP_INQUIRY_STATE_W4_CANCELLED){
+                    hci_stack->inquiry_state = GAP_INQUIRY_STATE_IDLE;
+                    uint8_t event[] = { GAP_EVENT_INQUIRY_COMPLETE, 1, 0};
+                    hci_emit_event(event, sizeof(event), 1);
+                }
             }
 #endif
 
@@ -1689,8 +1804,10 @@ static void event_handler(uint8_t *packet, int size){
                     (packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1+14] & 0x80) >> 7 |  // bit 0 = Octet 14, bit 7
                     (packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1+24] & 0x40) >> 5 |  // bit 1 = Octet 24, bit 6
                     (packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1+10] & 0x10) >> 2 |  // bit 2 = Octet 10, bit 4
-                    (packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1+18] & 0x08);        // bit 3 = Octet 18, bit 3
-                    log_info("Local supported commands summary 0x%02x", hci_stack->local_supported_commands[0]);
+                    (packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1+18] & 0x08)      |  // bit 3 = Octet 18, bit 3
+                    (packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1+34] & 0x01) << 4 |  // bit 4 = Octet 34, bit 0
+                    (packet[OFFSET_OF_DATA_IN_COMMAND_COMPLETE+1+35] & 0x08) << 2;   // bit 5 = Octet 35, bit 3
+                    log_info("Local supported commands summary 0x%02x", hci_stack->local_supported_commands[0]); 
             }
 #ifdef ENABLE_CLASSIC
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_write_synchronous_flow_control_enable)){
@@ -1744,6 +1861,18 @@ static void event_handler(uint8_t *packet, int size){
         }
 
 #ifdef ENABLE_CLASSIC
+        case HCI_EVENT_INQUIRY_COMPLETE:
+            if (hci_stack->inquiry_state == GAP_INQUIRY_STATE_ACTIVE){
+                hci_stack->inquiry_state = GAP_INQUIRY_STATE_IDLE;
+                uint8_t event[] = { GAP_EVENT_INQUIRY_COMPLETE, 1, 0};
+                hci_emit_event(event, sizeof(event), 1);
+            }
+            break;
+        case HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE:
+            if (hci_stack->remote_name_state == GAP_REMOTE_NAME_STATE_W4_COMPLETE){
+                hci_stack->remote_name_state = GAP_REMOTE_NAME_STATE_IDLE;
+            }
+            break;
         case HCI_EVENT_CONNECTION_REQUEST:
             reverse_bd_addr(&packet[2], addr);
             // TODO: eval COD 8-10
@@ -2025,6 +2154,13 @@ static void event_handler(uint8_t *packet, int size){
             // For SCO, we do the can_send_now_check here
             hci_notify_if_sco_can_send_now();
             return;
+
+        // explode inquriy results for easier consumption
+        case HCI_EVENT_INQUIRY_RESULT:
+        case HCI_EVENT_INQUIRY_RESULT_WITH_RSSI:
+        case HCI_EVENT_EXTENDED_INQUIRY_RESPONSE:
+            gap_inquiry_explode(packet);
+            break;
 #endif
 
 #ifdef ENABLE_BLE
@@ -2233,12 +2369,6 @@ static void hci_state_reset(void){
     hci_stack->le_whitelist = 0;
     hci_stack->le_whitelist_capacity = 0;
 #endif
-    hci_stack->le_connection_parameter_range.le_conn_interval_min =          6;
-    hci_stack->le_connection_parameter_range.le_conn_interval_max =       3200;
-    hci_stack->le_connection_parameter_range.le_conn_latency_min =           0;
-    hci_stack->le_connection_parameter_range.le_conn_latency_max =         500;
-    hci_stack->le_connection_parameter_range.le_supervision_timeout_min =   10;
-    hci_stack->le_connection_parameter_range.le_supervision_timeout_max = 3200;
 }
 
 #ifdef ENABLE_CLASSIC
@@ -2288,7 +2418,12 @@ void hci_init(const hci_transport_t *transport, const void *config){
     // bondable by default
     hci_stack->bondable = 1;
 
-    // Secure Simple Pairing default: enable, no I/O capabilities, general bonding, mitm not required, auto accept
+#ifdef ENABLE_CLASSIC
+    // classic name
+    hci_stack->local_name = default_classic_name;
+#endif
+
+    // Secure Simple Pairing default: enable, no I/O capabilities, general bonding, mitm not required, auto accept 
     hci_stack->ssp_enable = 1;
     hci_stack->ssp_io_capability = SSP_IO_CAPABILITY_NO_INPUT_NO_OUTPUT;
     hci_stack->ssp_authentication_requirement = SSP_IO_AUTHREQ_MITM_PROTECTION_NOT_REQUIRED_GENERAL_BONDING;
@@ -2296,6 +2431,24 @@ void hci_init(const hci_transport_t *transport, const void *config){
 
     // voice setting - signed 16 bit pcm data with CVSD over the air
     hci_stack->sco_voice_setting = 0x60;
+
+#ifdef ENABLE_LE_CENTRAL
+    // connection parameter to use for outgoing connections
+    hci_stack->le_connection_interval_min = 0x0008;    // 10 ms
+    hci_stack->le_connection_interval_max = 0x0018;    // 30 ms
+    hci_stack->le_connection_latency      = 4;         // 4
+    hci_stack->le_supervision_timeout     = 0x0048;    // 720 ms
+    hci_stack->le_minimum_ce_length       = 2;         // 1.25 ms
+    hci_stack->le_maximum_ce_length       = 0x0030;    // 30 ms
+#endif
+
+    // connection parameter range used to answer connection parameter update requests in l2cap
+    hci_stack->le_connection_parameter_range.le_conn_interval_min =          6; 
+    hci_stack->le_connection_parameter_range.le_conn_interval_max =       3200;
+    hci_stack->le_connection_parameter_range.le_conn_latency_min =           0;
+    hci_stack->le_connection_parameter_range.le_conn_latency_max =         500;
+    hci_stack->le_connection_parameter_range.le_supervision_timeout_min =   10;
+    hci_stack->le_connection_parameter_range.le_supervision_timeout_max = 3200;
 
     hci_state_reset();
 }
@@ -2737,11 +2890,57 @@ static void hci_run(void){
         hci_send_cmd(&hci_reject_connection_request, hci_stack->decline_addr, reason);
         return;
     }
-
     // send scan enable
     if (hci_stack->state == HCI_STATE_WORKING && hci_stack->new_scan_enable_value != 0xff && hci_classic_supported()){
         hci_send_cmd(&hci_write_scan_enable, hci_stack->new_scan_enable_value);
         hci_stack->new_scan_enable_value = 0xff;
+        return;
+    }
+    // start/stop inquiry
+    if (hci_stack->inquiry_state >= GAP_INQUIRY_DURATION_MIN && hci_stack->inquiry_state <= GAP_INQUIRY_DURATION_MAX){
+        uint8_t duration = hci_stack->inquiry_state;
+        hci_stack->inquiry_state = GAP_INQUIRY_STATE_ACTIVE;
+        hci_send_cmd(&hci_inquiry, HCI_INQUIRY_LAP, duration, 0);
+        return;
+    }
+    if (hci_stack->inquiry_state == GAP_INQUIRY_STATE_W2_CANCEL){
+        hci_stack->inquiry_state = GAP_INQUIRY_STATE_W4_CANCELLED;
+        hci_send_cmd(&hci_inquiry_cancel);
+        return;
+    }
+    // remote name request
+    if (hci_stack->remote_name_state == GAP_REMOTE_NAME_STATE_W2_SEND){
+        hci_stack->remote_name_state = GAP_REMOTE_NAME_STATE_W4_COMPLETE;
+        hci_send_cmd(&hci_remote_name_request, hci_stack->remote_name_addr, 
+            hci_stack->remote_name_page_scan_repetition_mode, 0, hci_stack->remote_name_clock_offset);
+        return;
+    }
+    // pairing
+    if (hci_stack->gap_pairing_state != GAP_PAIRING_STATE_IDLE){
+        uint8_t state = hci_stack->gap_pairing_state;
+        hci_stack->gap_pairing_state = GAP_PAIRING_STATE_IDLE;
+        switch (state){
+            case GAP_PAIRING_STATE_SEND_PIN:
+                hci_send_cmd(&hci_pin_code_request_reply, hci_stack->gap_pairing_addr, strlen(hci_stack->gap_pairing_pin), hci_stack->gap_pairing_pin);
+                break;
+            case GAP_PAIRING_STATE_SEND_PIN_NEGATIVE:
+                hci_send_cmd(&hci_pin_code_request_negative_reply, hci_stack->gap_pairing_addr);
+                break;
+            case GAP_PAIRING_STATE_SEND_PASSKEY:
+                hci_send_cmd(&hci_user_passkey_request_reply, hci_stack->gap_pairing_addr, hci_stack->gap_pairing_passkey);
+                break;
+            case GAP_PAIRING_STATE_SEND_PASSKEY_NEGATIVE:
+                hci_send_cmd(&hci_user_passkey_request_negative_reply, hci_stack->gap_pairing_addr);
+                break;
+            case GAP_PAIRING_STATE_SEND_CONFIRMATION:
+                hci_send_cmd(&hci_user_confirmation_request_reply, hci_stack->gap_pairing_addr);
+                break;
+            case GAP_PAIRING_STATE_SEND_CONFIRMATION_NEGATIVE:
+                hci_send_cmd(&hci_user_confirmation_request_negative_reply, hci_stack->gap_pairing_addr);
+                break;
+            default:
+                break;
+        }
         return;
     }
 #endif
@@ -2798,14 +2997,21 @@ static void hci_run(void){
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_ADV_DATA){
-            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_SET_ADV_DATA) ;
-            hci_send_cmd(&hci_le_set_advertising_data, hci_stack->le_advertisements_data_len, hci_stack->le_advertisements_data);
+            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_ADV_DATA;
+            uint8_t adv_data_clean[31];
+            memset(adv_data_clean, 0, sizeof(adv_data_clean));
+            memcpy(adv_data_clean, hci_stack->le_advertisements_data, hci_stack->le_advertisements_data_len);
+            hci_replace_bd_addr_placeholder(adv_data_clean, hci_stack->le_advertisements_data_len);
+            hci_send_cmd(&hci_le_set_advertising_data, hci_stack->le_advertisements_data_len, adv_data_clean);
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA){
-            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA) ;
-            hci_send_cmd(&hci_le_set_scan_response_data, hci_stack->le_scan_response_data_len,
-                hci_stack->le_scan_response_data);
+            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA;
+            uint8_t scan_data_clean[31];
+            memset(scan_data_clean, 0, sizeof(scan_data_clean));
+            memcpy(scan_data_clean, hci_stack->le_scan_response_data, hci_stack->le_scan_response_data_len);
+            hci_replace_bd_addr_placeholder(scan_data_clean, hci_stack->le_scan_response_data_len);
+            hci_send_cmd(&hci_le_set_scan_response_data, hci_stack->le_scan_response_data_len, hci_stack->le_scan_response_data);
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_ENABLE){
@@ -2873,13 +3079,13 @@ static void hci_run(void){
                  0,         // peer address type
                  null_addr, // peer bd addr
                  hci_stack->le_own_addr_type, // our addr type:
-                 0x0008,    // conn interval min
-                 0x0018,    // conn interval max
-                 0,         // conn latency
-                 0x0048,    // supervision timeout
-                 0x0001,    // min ce length
-                 0x0001     // max ce length
-                 );
+                 hci_stack->le_connection_interval_min,    // conn interval min
+                 hci_stack->le_connection_interval_max,    // conn interval max
+                 hci_stack->le_connection_latency,         // conn latency
+                 hci_stack->le_supervision_timeout,        // conn latency
+                 hci_stack->le_minimum_ce_length,          // min ce length
+                 hci_stack->le_maximum_ce_length           // max ce length
+                );
             return;
         }
 #endif
@@ -2904,20 +3110,19 @@ static void hci_run(void){
 #ifdef ENABLE_LE_CENTRAL
                         log_info("sending hci_le_create_connection");
                         hci_send_cmd(&hci_le_create_connection,
-                                     0x0060,    // scan interval: 60 ms
-                                     0x0030,    // scan interval: 30 ms
-                                     0,         // don't use whitelist
-                                     connection->address_type, // peer address type
-                                     connection->address,      // peer bd addr
-                                     hci_stack->le_own_addr_type,  // our addr type:
-                                     0x0008,    // conn interval min
-                                     0x0018,    // conn interval max
-                                     0,         // conn latency
-                                     0x0048,    // supervision timeout
-                                     0x0001,    // min ce length
-                                     0x0001     // max ce length
-                                     );
-
+                             0x0060,    // scan interval: 60 ms
+                             0x0030,    // scan interval: 30 ms
+                             0,         // don't use whitelist
+                             connection->address_type, // peer address type
+                             connection->address,      // peer bd addr
+                             hci_stack->le_own_addr_type, // our addr type:
+                             hci_stack->le_connection_interval_min,    // conn interval min
+                             hci_stack->le_connection_interval_max,    // conn interval max
+                             hci_stack->le_connection_latency,         // conn latency
+                             hci_stack->le_supervision_timeout,        // conn latency
+                             hci_stack->le_minimum_ce_length,          // min ce length
+                             hci_stack->le_maximum_ce_length          // max ce length
+                             );
                         connection->state = SENT_CREATE_CONNECTION;
 #endif
 #endif
@@ -3404,6 +3609,79 @@ static void hci_notify_if_sco_can_send_now(void){
         hci_stack->sco_packet_handler(HCI_EVENT_PACKET, 0, event, sizeof(event));
     }
 }
+
+// parsing end emitting has been merged to reduce code size
+static void gap_inquiry_explode(uint8_t * packet){
+    uint8_t event[15+GAP_INQUIRY_MAX_NAME_LEN];
+
+    uint8_t * eir_data;
+    ad_context_t context;
+    const uint8_t * name;
+    uint8_t         name_len;
+
+    int event_type = hci_event_packet_get_type(packet);
+    int num_reserved_fields = event_type == HCI_EVENT_INQUIRY_RESULT ? 2 : 1;    // 2 for old event, 1 otherwise
+    int num_responses       = hci_event_inquiry_result_get_num_responses(packet);
+
+    // event[1] is set at the end
+    int i;
+    for (i=0; i<num_responses;i++){
+        memset(event, 0, sizeof(event));
+        event[0] = GAP_EVENT_INQUIRY_RESULT;
+        uint8_t event_size = 18;    // if name is not set by EIR
+
+        memcpy(&event[2],  &packet[3 +                                             i*6], 6); // bd_addr
+        event[8] =          packet[3 + num_responses*(6)                         + i*1];     // page_scan_repetition_mode
+        memcpy(&event[9],  &packet[3 + num_responses*(6+1+num_reserved_fields)   + i*3], 3); // class of device
+        memcpy(&event[12], &packet[3 + num_responses*(6+1+num_reserved_fields+3) + i*2], 2); // clock offset
+
+        switch (event_type){
+            case HCI_EVENT_INQUIRY_RESULT:
+                // 14,15,16,17 = 0, size 18
+                break;
+            case HCI_EVENT_INQUIRY_RESULT_WITH_RSSI:
+                event[14] = 1;
+                event[15] = packet [3 + num_responses*(6+1+num_reserved_fields+3+2) + i*1]; // rssi
+                // 16,17 = 0, size 18
+                break;
+            case HCI_EVENT_EXTENDED_INQUIRY_RESPONSE:
+                event[14] = 1;
+                event[15] = packet [3 + num_responses*(6+1+num_reserved_fields+3+2) + i*1]; // rssi
+                // for EIR packets, there is only one reponse in it
+                eir_data = &packet[3 + (6+1+num_reserved_fields+3+2+1)];
+                name = NULL;
+                // EIR data is 240 bytes in EIR event
+                for (ad_iterator_init(&context, 240, eir_data) ; ad_iterator_has_more(&context) ; ad_iterator_next(&context)){
+                    uint8_t data_type    = ad_iterator_get_data_type(&context);
+                    uint8_t data_size    = ad_iterator_get_data_len(&context);
+                    const uint8_t * data = ad_iterator_get_data(&context);
+                    // Prefer Complete Local Name over Shortend Local Name
+                    switch (data_type){
+                        case BLUETOOTH_DATA_TYPE_SHORTENED_LOCAL_NAME:
+                            if (name) continue;
+                            /* explicit fall-through */
+                        case BLUETOOTH_DATA_TYPE_COMPLETE_LOCAL_NAME:
+                            name = data;
+                            name_len = data_size;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                if (name){
+                    event[16] = 1;
+                    // truncate name if needed
+                    int len = btstack_min(name_len, GAP_INQUIRY_MAX_NAME_LEN);
+                    event[17] = len;
+                    memcpy(&event[18], name, len);
+                    event_size += len;
+                }
+                break;
+        }
+        event[1] = event_size - 2;
+        hci_emit_event(event, event_size, 1);
+    }
+}
 #endif
 
 void hci_emit_state(void){
@@ -3766,6 +4044,28 @@ uint8_t gap_connect_cancel(void){
 }
 #endif
 
+#ifdef ENABLE_LE_CENTRAL
+/**
+ * @brief Set connection parameters for outgoing connections
+ * @param conn_interval_min (unit: 1.25ms), default: 10 ms
+ * @param conn_interval_max (unit: 1.25ms), default: 30 ms
+ * @param conn_latency, default: 4
+ * @param supervision_timeout (unit: 10ms), default: 720 ms
+ * @param min_ce_length (unit: 0.625ms), default: 10 ms
+ * @param max_ce_length (unit: 0.625ms), default: 30 ms
+ */
+
+void gap_set_connection_parameters(uint16_t conn_interval_min, uint16_t conn_interval_max,
+    uint16_t conn_latency, uint16_t supervision_timeout, uint16_t min_ce_length, uint16_t max_ce_length){
+    hci_stack->le_connection_interval_min = conn_interval_min;
+    hci_stack->le_connection_interval_max = conn_interval_max;
+    hci_stack->le_connection_latency = conn_latency;
+    hci_stack->le_supervision_timeout = supervision_timeout;
+    hci_stack->le_minimum_ce_length = min_ce_length;
+    hci_stack->le_maximum_ce_length = max_ce_length;
+}
+#endif
+
 /**
  * @brief Updates the connection parameters for a given LE connection
  * @param handle
@@ -4027,8 +4327,134 @@ void gap_set_extended_inquiry_response(const uint8_t * data){
 }
 
 /**
+ * @brief Start GAP Classic Inquiry
+ * @param duration in 1.28s units
+ * @return 0 if ok
+ * @events: GAP_EVENT_INQUIRY_RESULT, GAP_EVENT_INQUIRY_COMPLETE
+ */
+int gap_inquiry_start(uint8_t duration_in_1280ms_units){
+    if (hci_stack->inquiry_state != GAP_INQUIRY_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    if (duration_in_1280ms_units < GAP_INQUIRY_DURATION_MIN || duration_in_1280ms_units > GAP_INQUIRY_DURATION_MAX){
+        return ERROR_CODE_INVALID_HCI_COMMAND_PARAMETERS;
+    }
+    hci_stack->inquiry_state = duration_in_1280ms_units;
+    hci_run();
+    return 0;
+}
+
+/**
+ * @brief Stop GAP Classic Inquiry
+ * @returns 0 if ok
+ */
+int gap_inquiry_stop(void){
+    if (hci_stack->inquiry_state >= GAP_INQUIRY_DURATION_MIN || hci_stack->inquiry_state <= GAP_INQUIRY_DURATION_MAX) {
+        // emit inquiry complete event, before it even started
+        uint8_t event[] = { GAP_EVENT_INQUIRY_COMPLETE, 1, 0};
+        hci_emit_event(event, sizeof(event), 1);
+        return 0;
+    }
+    if (hci_stack->inquiry_state != GAP_INQUIRY_STATE_ACTIVE) return ERROR_CODE_COMMAND_DISALLOWED;
+    hci_stack->inquiry_state = GAP_INQUIRY_STATE_W2_CANCEL;
+    hci_run();
+    return 0;
+}    
+
+
+/**
+ * @brief Remote Name Request
+ * @param addr
+ * @param page_scan_repetition_mode
+ * @param clock_offset only used when bit 15 is set
+ * @events: HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE
+ */
+int gap_remote_name_request(bd_addr_t addr, uint8_t page_scan_repetition_mode, uint16_t clock_offset){
+    if (hci_stack->remote_name_state != GAP_REMOTE_NAME_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    memcpy(hci_stack->remote_name_addr, addr, 6);
+    hci_stack->remote_name_page_scan_repetition_mode = page_scan_repetition_mode;
+    hci_stack->remote_name_clock_offset = clock_offset;
+    hci_stack->remote_name_state = GAP_REMOTE_NAME_STATE_W2_SEND;
+    hci_run();
+    return 0;
+}
+
+static int gap_pairing_set_state_and_run(bd_addr_t addr, uint8_t state){
+    hci_stack->gap_pairing_state = state;
+    memcpy(hci_stack->gap_pairing_addr, addr, 6);
+    hci_run();
+    return 0;
+}
+
+/**
+ * @brief Legacy Pairing Pin Code Response
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_pin_code_response(bd_addr_t addr, const char * pin){
+    if (hci_stack->gap_pairing_state != GAP_INQUIRY_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    hci_stack->gap_pairing_pin = pin;
+    return gap_pairing_set_state_and_run(addr, GAP_PAIRING_STATE_SEND_PIN);
+}
+
+/**
+ * @brief Abort Legacy Pairing
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_pin_code_negative(bd_addr_t addr){
+    if (hci_stack->gap_pairing_state != GAP_INQUIRY_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    return gap_pairing_set_state_and_run(addr, GAP_PAIRING_STATE_SEND_PIN_NEGATIVE);
+}
+
+/**
+ * @brief SSP Passkey Response
+ * @param addr
+ * @param passkey
+ * @return 0 if ok
+ */
+int gap_ssp_passkey_response(bd_addr_t addr, uint32_t passkey){
+    if (hci_stack->gap_pairing_state != GAP_INQUIRY_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    hci_stack->gap_pairing_passkey = passkey;
+    return gap_pairing_set_state_and_run(addr, GAP_PAIRING_STATE_SEND_PASSKEY);
+}
+
+/**
+ * @brief Abort SSP Passkey Entry/Pairing
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_ssp_passkey_negative(bd_addr_t addr){
+    if (hci_stack->gap_pairing_state != GAP_INQUIRY_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    return gap_pairing_set_state_and_run(addr, GAP_PAIRING_STATE_SEND_PASSKEY_NEGATIVE);
+}
+
+/**
+ * @brief Accept SSP Numeric Comparison
+ * @param addr
+ * @param passkey
+ * @return 0 if ok
+ */
+int gap_ssp_confirmation_response(bd_addr_t addr){
+    if (hci_stack->gap_pairing_state != GAP_INQUIRY_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    return gap_pairing_set_state_and_run(addr, GAP_PAIRING_STATE_SEND_CONFIRMATION);
+}
+
+/**
+ * @brief Abort SSP Numeric Comparison/Pairing
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_ssp_confirmation_negative(bd_addr_t addr){
+    if (hci_stack->gap_pairing_state != GAP_INQUIRY_STATE_IDLE) return ERROR_CODE_COMMAND_DISALLOWED;
+    return gap_pairing_set_state_and_run(addr, GAP_PAIRING_STATE_SEND_CONFIRMATION_NEGATIVE);
+}
+
+/**
  * @brief Set inquiry mode: standard, with RSSI, with RSSI + Extended Inquiry Results. Has to be called before power on.
- * @param inquriy_mode see bluetooth_defines.h
+ * @param inquiry_mode see bluetooth_defines.h
  */
 void hci_set_inquiry_mode(inquiry_mode_t mode){
     hci_stack->inquiry_mode = mode;
@@ -4059,6 +4485,12 @@ int hci_get_sco_packet_length(void){
     return 27;
 }
 #endif
+
+
+HCI_STATE hci_get_state(void){
+    return hci_stack->state;
+}
+
 
 /**
  * @brief Set callback for Bluetooth Hardware Error

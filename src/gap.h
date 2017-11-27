@@ -125,14 +125,18 @@ gap_connection_type_t gap_get_connection_type(hci_con_handle_t connection_handle
 /** 
  * @brief Sets local name.
  * @note has to be done before stack starts up
+ * @note Default name is 'BTstack 00:00:00:00:00:00'
+ * @note '00:00:00:00:00:00' in local_name will be replaced with actual bd addr
  * @param name is not copied, make sure memory is accessible during stack startup
  */
 void gap_set_local_name(const char * local_name);
 
 /**
  * @brief Set Extended Inquiry Response data
- * @param eir_data size 240 bytes, is not copied make sure memory is accessible during stack startup
  * @note has to be done before stack starts up
+ * @note If not set, local name will be used for EIR data (see gap_set_local_name)
+ * @note '00:00:00:00:00:00' in local_name will be replaced with actual bd addr
+ * @param eir_data size 240 bytes, is not copied make sure memory is accessible during stack startup
  */
 void gap_set_extended_inquiry_response(const uint8_t * data); 
 
@@ -238,6 +242,7 @@ void gap_random_address_set(bd_addr_t addr);
  * @param advertising_data_length
  * @param advertising_data (max 31 octets)
  * @note data is not copied, pointer has to stay valid
+ * @note '00:00:00:00:00:00' in advertising_data will be replaced with actual bd addr
  */
 void gap_advertisements_set_data(uint8_t advertising_data_length, const uint8_t * advertising_data);
 
@@ -269,8 +274,22 @@ void gap_advertisements_enable(int enabled);
  * @param advertising_data_length
  * @param advertising_data (max 31 octets)
  * @note data is not copied, pointer has to stay valid
+ * @note '00:00:00:00:00:00' in scan_response_data will be replaced with actual bd addr
  */
 void gap_scan_response_set_data(uint8_t scan_response_data_length, const uint8_t * scan_response_data);
+
+/**
+ * @brief Set connection parameters for outgoing connections
+ * @param conn_interval_min (unit: 1.25ms), default: 10 ms
+ * @param conn_interval_max (unit: 1.25ms), default: 30 ms
+ * @param conn_latency, default: 4
+ * @param supervision_timeout (unit: 10ms), default: 720 ms
+ * @param min_ce_length (unit: 0.625ms), default: 10 ms
+ * @param max_ce_length (unit: 0.625ms), default: 30 ms
+ */
+
+void gap_set_connection_parameters(uint16_t conn_interval_min, uint16_t conn_interval_max,
+	uint16_t conn_latency, uint16_t supervision_timeout, uint16_t min_ce_length, uint16_t max_ce_length);
 
 /**
  * @brief Request an update of the connection parameter for a given LE connection
@@ -372,6 +391,81 @@ void gap_drop_link_key_for_bd_addr(bd_addr_t addr);
  * @param link_key_type
  */
 void gap_store_link_key_for_bd_addr(bd_addr_t addr, link_key_t link_key, link_key_type_t type);
+
+/**
+ * @brief Start GAP Classic Inquiry
+ * @param duration in 1.28s units
+ * @return 0 if ok
+ * @events: GAP_EVENT_INQUIRY_RESULT, GAP_EVENT_INQUIRY_COMPLETE
+ */
+int gap_inquiry_start(uint8_t duration_in_1280ms_units);
+
+/**
+ * @brief Stop GAP Classic Inquiry
+ * @brief Stop GAP Classic Inquiry
+ * @returns 0 if ok
+ * @events: GAP_EVENT_INQUIRY_COMPLETE
+ */
+int gap_inquiry_stop(void);
+
+/**
+ * @brief Remote Name Request
+ * @param addr
+ * @param page_scan_repetition_mode
+ * @param clock_offset only used when bit 15 is set - pass 0 if not known
+ * @events: HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE
+ */
+int gap_remote_name_request(bd_addr_t addr, uint8_t page_scan_repetition_mode, uint16_t clock_offset);
+
+/**
+ * @brief Legacy Pairing Pin Code Response
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_pin_code_response(bd_addr_t addr, const char * pin);
+
+/**
+ * @brief Abort Legacy Pairing
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_pin_code_negative(bd_addr_t addr);
+
+/**
+ * @brief SSP Passkey Response
+ * @param addr
+ * @param passkey [0..999999]
+ * @return 0 if ok
+ */
+int gap_ssp_passkey_response(bd_addr_t addr, uint32_t passkey);
+
+/**
+ * @brief Abort SSP Passkey Entry/Pairing
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_ssp_passkey_negative(bd_addr_t addr);
+
+/**
+ * @brief Accept SSP Numeric Comparison
+ * @param addr
+ * @param passkey
+ * @return 0 if ok
+ */
+int gap_ssp_confirmation_response(bd_addr_t addr);
+
+/**
+ * @brief Abort SSP Numeric Comparison/Pairing
+ * @param addr
+ * @param pin
+ * @return 0 if ok
+ */
+int gap_ssp_confirmation_negative(bd_addr_t addr);
+
+
 
 // LE
 

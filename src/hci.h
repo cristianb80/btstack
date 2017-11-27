@@ -70,10 +70,10 @@ extern "C" {
      
 // packet buffer sizes
 
-// Max HCI Commadn LE payload size:
+// Max HCI Command LE payload size:
 // 64 from LE Generate DHKey command
 // 32 from LE Encrypt command
-#if defined(ENABLE_LE_SECURE_CONNECTIONS) && !defined(HAVE_HCI_CONTROLLER_DHKEY_SUPPORT)
+#if defined(ENABLE_LE_SECURE_CONNECTIONS) && !defined(ENABLE_MICRO_ECC_FOR_LE_SECURE_CONNECTIONS)
 #define HCI_CMD_PAYLOAD_SIZE_LE 64
 #else
 #define HCI_CMD_PAYLOAD_SIZE_LE 32
@@ -303,6 +303,7 @@ typedef enum {
     SM_RESPONDER_IDLE,
     SM_RESPONDER_SEND_SECURITY_REQUEST,
     SM_RESPONDER_PH0_RECEIVED_LTK_REQUEST,
+    SM_RESPONDER_PH0_RECEIVED_LTK_W4_IRK,
     SM_RESPONDER_PH0_SEND_LTK_REQUESTED_NEGATIVE_REPLY,
     SM_RESPONDER_PH1_W4_PAIRING_REQUEST,
     SM_RESPONDER_PH1_PAIRING_REQUEST_RECEIVED,
@@ -351,6 +352,7 @@ typedef enum {
     SM_SC_W4_PAIRING_RANDOM,
     SM_SC_W2_CALCULATE_G2,
     SM_SC_W4_CALCULATE_G2,
+    SM_SC_W4_CALCULATE_DHKEY,
     SM_SC_W2_CALCULATE_F5_SALT,
     SM_SC_W4_CALCULATE_F5_SALT,
     SM_SC_W2_CALCULATE_F5_MACKEY,
@@ -446,6 +448,20 @@ typedef struct {
 
 #endif
 
+#ifdef ENABLE_L2CAP_ENHANCED_RETRANSMISSION_MODE
+typedef enum {
+    L2CAP_INFORMATION_STATE_IDLE = 0,
+    L2CAP_INFORMATION_STATE_W2_SEND_EXTENDED_FEATURE_REQUEST,
+    L2CAP_INFORMATION_STATE_W4_EXTENDED_FEATURE_RESPONSE,
+    L2CAP_INFORMATION_STATE_DONE
+} l2cap_information_state_t;
+
+typedef struct {
+    l2cap_information_state_t information_state;
+    uint16_t                  extended_feature_mask;
+} l2cap_state_t;
+#endif
+
 //
 typedef struct {
     // linked list - assert: first field
@@ -513,6 +529,10 @@ typedef struct {
 
     // ATT Server
     att_server_t    att_server;
+#endif
+
+#ifdef ENABLE_L2CAP_ENHANCED_RETRANSMISSION_MODE
+    l2cap_state_t l2cap_state;
 #endif
 
 } hci_connection_t;
@@ -598,6 +618,15 @@ typedef enum hci_init_state{
     HCI_INIT_W4_LE_READ_BUFFER_SIZE,
     HCI_INIT_WRITE_LE_HOST_SUPPORTED,
     HCI_INIT_W4_WRITE_LE_HOST_SUPPORTED,
+    HCI_INIT_LE_SET_EVENT_MASK,
+    HCI_INIT_W4_LE_SET_EVENT_MASK,
+#endif
+
+#ifdef ENABLE_LE_DATA_LENGTH_EXTENSION
+    HCI_INIT_LE_READ_MAX_DATA_LENGTH,
+    HCI_INIT_W4_LE_READ_MAX_DATA_LENGTH,
+    HCI_INIT_LE_WRITE_SUGGESTED_DATA_LENGTH,
+    HCI_INIT_W4_LE_WRITE_SUGGESTED_DATA_LENGTH,
 #endif
     
 #ifdef ENABLE_LE_CENTRAL
@@ -704,10 +733,12 @@ typedef struct {
     uint8_t local_supported_features[8];
 
     /* local supported commands summary - complete info is 64 bytes */
-    /* 0 - read buffer size */
-    /* 1 - write le host supported */
+    /* 0 - Read Buffer Size */
+    /* 1 - Write Le Host Supported */
     /* 2 - Write Synchronous Flow Control Enable (Octet 10/bit 4) */
-    /* 3 - Write Default Erroneous Data Reporting (Octect 18/bit 3) */
+    /* 3 - Write Default Erroneous Data Reporting (Octet 18/bit 3) */
+    /* 4 - LE Write Suggested Default Data Length (Octet 34/bit 0) */
+    /* 5 - LE Read Maximum Data Length (Octet 35/bit 3) */
     uint8_t local_supported_commands[1];
 
     /* bluetooth device information from hci read local version information */
@@ -725,16 +756,31 @@ typedef struct {
     HCI_STATE      state;
     hci_substate_t substate;
     btstack_timer_source_t timeout;
-    uint8_t   cmds_ready;
-    
+
     uint16_t  last_cmd_opcode;
+
+    uint8_t   cmds_ready;
+
+    /* buffer for scan enable cmd - 0xff no change */
+    uint8_t   new_scan_enable_value;
 
     uint8_t   discoverable;
     uint8_t   connectable;
     uint8_t   bondable;
 
-    /* buffer for scan enable cmd - 0xff no change */
-    uint8_t   new_scan_enable_value;
+    uint8_t   inquiry_state;    // see hci.c for state defines
+
+    bd_addr_t remote_name_addr;
+    uint16_t  remote_name_clock_offset;
+    uint8_t   remote_name_page_scan_repetition_mode;
+    uint8_t   remote_name_state;    // see hci.c for state defines
+
+    bd_addr_t gap_pairing_addr;
+    uint8_t   gap_pairing_state;    // see hci.c for state defines
+    union {
+        const char * gap_pairing_pin;
+        uint32_t     gap_pairing_passkey;
+    };
     
     uint16_t  sco_voice_setting;
     uint16_t  sco_voice_setting_active;
@@ -767,6 +813,14 @@ typedef struct {
     // LE Whitelist Management
     uint8_t               le_whitelist_capacity;
     btstack_linked_list_t le_whitelist;
+
+    // Connection parameters
+    uint16_t le_connection_interval_min;
+    uint16_t le_connection_interval_max;
+    uint16_t le_connection_latency;
+    uint16_t le_supervision_timeout;
+    uint16_t le_minimum_ce_length;
+    uint16_t le_maximum_ce_length;
 #endif
 
     le_connection_parameter_range_t le_connection_parameter_range;
@@ -789,6 +843,12 @@ typedef struct {
     uint8_t  le_advertisements_channel_map;
     uint8_t  le_advertisements_filter_policy;
     bd_addr_t le_advertisements_direct_address;
+#endif
+
+#ifdef ENABLE_LE_DATA_LENGTH_EXTENSION
+    // LE Data Length
+    uint16_t le_supported_max_tx_octets;
+    uint16_t le_supported_max_tx_time;
 #endif
 
     // custom BD ADDR
@@ -1093,6 +1153,11 @@ uint16_t hci_get_manufacturer(void);
  * Disable automatic L2CAP disconnect if no L2CAP connection is established
  */
 void hci_disable_l2cap_timeout_check(void);
+
+/**
+ * Get state
+ */
+HCI_STATE hci_get_state(void);
 
 #if defined __cplusplus
 }

@@ -46,18 +46,13 @@
 
 #include "btstack_run_loop.h"
 #include "l2cap.h"
-#include "rfcomm.h"
+#include "classic/rfcomm.h"
 #include "btstack_event.h"
 #include "classic/goep_client.h"
 #include "classic/pbap_client.h"
 
-#ifdef HAVE_POSIX_STDIN
-#include <unistd.h>
-#include "stdin_support.h"
-#endif
-
-#ifndef HAVE_POSIX_STDIN
-static int step = 0;
+#ifdef HAVE_BTSTACK_STDIN
+#include "btstack_stdin.h"
 #endif
 
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size);
@@ -70,7 +65,7 @@ static const char * remote_addr_string = "30-85-A9-54-2E-78";
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 static uint16_t pbap_cid;
 
-#ifdef HAVE_POSIX_STDIN
+#ifdef HAVE_BTSTACK_STDIN
 
 // Testig User Interface 
 static void show_usage(void){
@@ -84,18 +79,11 @@ static void show_usage(void){
     printf("c - set phonebook '/SIM1/telecom/pb'\n");
     printf("d - pull phonebook\n");
     printf("e - disconnnect\n");
-    printf("---\n");
-    printf("Ctrl-c - exit\n");
-    printf("---\n");
+    printf("\n");
 }
 
-static void stdin_process(btstack_data_source_t *ds, btstack_data_source_callback_type_t callback_type){
-    UNUSED(ds);
-    UNUSED(callback_type);
-
-    char cmd = btstack_stdin_read();
-
-    switch (cmd){
+static void stdin_process(char c){
+    switch (c){
         case 'a':
             printf("[+] Connecting to %s...\n", bd_addr_to_str(remote_addr));
             pbap_connect(&packet_handler, remote_addr, &pbap_cid);
@@ -237,7 +225,7 @@ int btstack_main(int argc, const char * argv[]){
     // init PBAP Client
     pbap_client_init();
 
-#ifdef HAVE_POSIX_STDIN
+#ifdef HAVE_BTSTACK_STDIN
     btstack_stdin_setup(stdin_process);
 #endif    
 

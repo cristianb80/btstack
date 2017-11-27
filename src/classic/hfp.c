@@ -256,7 +256,7 @@ void hfp_emit_string_event(btstack_packet_handler_t callback, uint8_t event_subt
     event[0] = HCI_EVENT_HFP_META;
     event[1] = sizeof(event) - 2;
     event[2] = event_subtype;
-    size_t size = (strlen(value) < (size_t) (sizeof(event) - 4)) ? strlen(value) : (size_t) (sizeof(event) - 4);
+    int size = ( strlen(value) < sizeof(event) - 4) ? (int) strlen(value) : (int) sizeof(event) - 4;
     strncpy((char*)&event[3], value, size);
     event[3 + size] = 0;
     (*callback)(HCI_EVENT_PACKET, 0, event, sizeof(event));
@@ -358,7 +358,8 @@ static hfp_connection_t * create_hfp_connection_context(void){
 }
 
 static void remove_hfp_connection_context(hfp_connection_t * hfp_connection){
-    btstack_linked_list_remove(&hfp_connections, (btstack_linked_item_t*) hfp_connection);   
+    btstack_linked_list_remove(&hfp_connections, (btstack_linked_item_t*) hfp_connection);
+    btstack_memory_hfp_connection_free(hfp_connection);
 }
 
 static hfp_connection_t * provide_hfp_connection_context_for_bd_addr(bd_addr_t bd_addr){
@@ -458,25 +459,18 @@ void hfp_create_sdp_record(uint8_t * service, uint32_t service_record_handle, ui
 static hfp_connection_t * connection_doing_sdp_query = NULL;
 
 static void handle_query_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
-    UNUSED(packet_type);
-    UNUSED(channel);
-    UNUSED(size);
+    UNUSED(packet_type);    // ok: handling own sdp events
+    UNUSED(channel);        // ok: no channel
+    UNUSED(size);           // ok: handling own sdp events
 
     hfp_connection_t * hfp_connection = connection_doing_sdp_query;
-    
-    if (NULL == hfp_connection)
-    	return ;
+    if (!hfp_connection) {
+        log_error("handle_query_rfcomm_event, no connection");
+        return;
+    }
 
-    if ( hfp_connection->state != HFP_W4_SDP_QUERY_COMPLETE) return;
-    
     switch (hci_event_packet_get_type(packet)){
         case SDP_EVENT_QUERY_RFCOMM_SERVICE:
-/* irrangiungibile            
-            if (!hfp_connection) {
-                log_error("handle_query_rfcomm_event alloc connection for RFCOMM port %u failed", sdp_event_query_rfcomm_service_get_rfcomm_channel(packet));
-                return;
-            }
-*/            
             hfp_connection->rfcomm_channel_nr = sdp_event_query_rfcomm_service_get_rfcomm_channel(packet);
             break;
         case SDP_EVENT_QUERY_COMPLETE:
@@ -487,6 +481,8 @@ static void handle_query_rfcomm_event(uint8_t packet_type, uint16_t channel, uin
                 rfcomm_create_channel(rfcomm_packet_handler, hfp_connection->remote_addr, hfp_connection->rfcomm_channel_nr, NULL); 
                 break;
             }
+            hfp_connection->state = HFP_IDLE;
+            hfp_emit_slc_connection_event(hfp_callback, sdp_event_query_complete_get_status(packet), HCI_CON_HANDLE_INVALID, hfp_connection->remote_addr);
             log_info("rfcomm service not found, status %u.", sdp_event_query_complete_get_status(packet));
             break;
         default:
@@ -540,7 +536,7 @@ static void hfp_handle_failed_sco_connection(uint8_t status){
 
 
 void hfp_handle_hci_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
-    UNUSED(channel);
+    UNUSED(channel);    // ok: no channel
 
     bd_addr_t event_addr;
     uint16_t rfcomm_cid, handle;
@@ -1258,7 +1254,7 @@ static void parse_sequence(hfp_connection_t * hfp_connection){
             break;
         case HFP_CMD_SUPPORTED_FEATURES:
             hfp_connection->remote_supported_features = btstack_atoi((char*)hfp_connection->line_buffer);
-            log_info("Parsed supported feature %" PRIu32 "\n", hfp_connection->remote_supported_features);
+            log_info("Parsed supported feature %d\n", (int) hfp_connection->remote_supported_features);
             break;
         case HFP_CMD_AVAILABLE_CODECS:
             log_info("Parsed codec %s\n", hfp_connection->line_buffer);

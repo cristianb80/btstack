@@ -108,6 +108,49 @@ typedef enum {
   INQUIRY_MODE_RSSI_AND_EIR,
 } inquiry_mode_t;
 
+
+/*
+ * @brief L2CAP Segmentation And Reassembly packet type in I-Frames
+ */
+typedef enum {
+    L2CAP_SEGMENTATION_AND_REASSEMBLY_UNSEGMENTED_L2CAP_SDU = 0,
+    L2CAP_SEGMENTATION_AND_REASSEMBLY_START_OF_L2CAP_SDU,
+    L2CAP_SEGMENTATION_AND_REASSEMBLY_END_OF_L2CAP_SDU,
+    L2CAP_SEGMENTATION_AND_REASSEMBLY_CONTINUATION_OF_L2CAP_SDU
+} l2cap_segmentation_and_reassembly_t;
+
+/*
+ * @brief L2CAP Supervisory function in S-Frames
+ */
+typedef enum {
+    L2CAP_SUPERVISORY_FUNCTION_RR_RECEIVER_READY = 0,
+    L2CAP_SUPERVISORY_FUNCTION_REJ_REJECT,
+    L2CAP_SUPERVISORY_FUNCTION_RNR_RECEIVER_NOT_READY,
+    L2CAP_SUPERVISORY_FUNCTION_SREJ_SELECTIVE_REJECT
+} l2cap_supervisory_function_t;
+
+/**
+ * @brief L2CAP Information Types used in Information Request & Response
+ */
+typedef enum {
+  L2CAP_INFO_TYPE_CONNECTIONLESS_MTU = 1,
+  L2CAP_INFO_TYPE_EXTENDED_FEATURES_SUPPORTED,
+  L2CAP_INFO_TYPE_FIXED_CHANNELS_SUPPORTED,
+} l2cap_info_type_t;
+
+/**
+ * @brief L2CAP Configuration Option Types used in Configurateion Request & Response
+ */
+typedef enum {
+  L2CAP_CONFIG_OPTION_TYPE_MAX_TRANSMISSION_UNIT = 1,
+  L2CAP_CONFIG_OPTION_TYPE_FLUSH_TIMEOUT,
+  L2CAP_CONFIG_OPTION_TYPE_QUALITY_OF_SERVICE,
+  L2CAP_CONFIG_OPTION_TYPE_RETRANSMISSION_AND_FLOW_CONTROL, 
+  L2CAP_CONFIG_OPTION_TYPE_FRAME_CHECK_SEQUENCE,
+  L2CAP_CONFIG_OPTION_TYPE_EXTENDED_FLOW_SPECIFICATION,
+  L2CAP_CONFIG_OPTION_TYPE_EXTENDED_WINDOW_SIZE,
+} l2cap_config_option_type_t;
+
 /**
  * HCI Transport
  */
@@ -131,11 +174,11 @@ typedef enum {
  */
 
 //
-// Error Codes
+// Error Codes rfom Bluetooth Core Specification
 //
 
-// from Bluetooth Core Specification
-#define ERROR_CODE_SUCCESS                                 0x00
+/* ENUM_START: BLUETOOTH_ERROR_CODE */
+#define ERROR_CODE_SUCCESS                                 0x00 
 #define ERROR_CODE_UNKNOWN_HCI_COMMAND                     0x01
 #define ERROR_CODE_UNKNOWN_CONNECTION_IDENTIFIER           0x02
 #define ERROR_CODE_HARDWARE_FAILURE                        0x03
@@ -200,6 +243,7 @@ typedef enum {
 #define ERROR_CODE_CONNECTION_FAILED_TO_BE_ESTABLISHED     0x3E
 #define ERROR_CODE_MAC_CONNECTION_FAILED                   0x3F
 #define ERROR_CODE_COARSE_CLOCK_ADJUSTMENT_REJECTED_BUT_WILL_TRY_TO_ADJUST_USING_CLOCK_DRAGGING 0x40
+/* ENUM_END */
 
 // HCI roles
 #define HCI_ROLE_MASTER 0
@@ -607,11 +651,10 @@ typedef enum {
  */
 #define HCI_SUBEVENT_LE_READ_LOCAL_P256_PUBLIC_KEY_COMPLETE 0x08
  /**
- * @format 11QQ
+ * @format 11Q
  * @param subevent_code
  * @param status
- * @param dhkey_x x coordinate of Diffie-Hellman key
- * @param dhkey_y y coordinate of Diffie-Hellman key
+ * @param dhkey Diffie-Hellman key
  */
 #define HCI_SUBEVENT_LE_GENERATE_DHKEY_COMPLETE            0x09
 
@@ -661,7 +704,12 @@ typedef enum {
 #define L2CAP_CID_SECURITY_MANAGER_PROTOCOL 0x0006
 
 // L2CAP Configuration Result Codes
-#define L2CAP_CONF_RESULT_UNKNOWN_OPTIONS   0x0003
+#define L2CAP_CONF_RESULT_SUCCESS                  0x0000
+#define L2CAP_CONF_RESULT_UNACCEPTABLE_PARAMETERS  0x0001
+#define L2CAP_CONF_RESULT_REJECT                   0x0002
+#define L2CAP_CONF_RESULT_UNKNOWN_OPTIONS          0x0003
+#define L2CAP_CONF_RESULT_PENDING                  0x0004
+#define L2CAP_CONF_RESULT_FLOW_SPEC_REJECTED       0x0005
 
 // L2CAP Reject Result Codes
 #define L2CAP_REJ_CMD_UNKNOWN               0x0000
@@ -672,12 +720,17 @@ typedef enum {
 // Extended Response Timeout eXpired
 #define L2CAP_ERTX_TIMEOUT_MS 120000
 
-// Fixed PSM numbers
+//
+// Fixed PSM numbers from https://www.bluetooth.com/specifications/assigned-numbers/logical-link-control 
+//
+// @TODO: replace with BLUETOOTH_PROTOCOL_xxx in rest of code
 #define PSM_SDP           BLUETOOTH_PROTOCOL_SDP
 #define PSM_RFCOMM        BLUETOOTH_PROTOCOL_RFCOMM
 #define PSM_BNEP          BLUETOOTH_PROTOCOL_BNEP
+// @TODO: scrape PSMs Bluetooth SIG site and put in bluetooth_psm.h or bluetooth_l2cap.h
 #define PSM_HID_CONTROL   0x11
 #define PSM_HID_INTERRUPT 0x13
+#define PSM_IPSP          0x23
 
 /**
  * SDP Protocol
@@ -1028,13 +1081,14 @@ typedef enum {
 #define ATT_PROPERTY_AUTHORIZATION_REQUIRED  0x800
 // Encryption key size stored in upper 4 bits, 0 == no encryption, encryption key size - 1 otherwise
 
-// ATT Transaction Timeout of 30 seconds for Command/Response or Incidationc/Confirmation
+// ATT Transaction Timeout of 30 seconds for Command/Response or Indication/Confirmation
 #define ATT_TRANSACTION_TIMEOUT_MS     30000
 
 #define ATT_TRANSACTION_MODE_NONE      0x0
 #define ATT_TRANSACTION_MODE_ACTIVE    0x1
 #define ATT_TRANSACTION_MODE_EXECUTE   0x2
 #define ATT_TRANSACTION_MODE_CANCEL    0x3
+#define ATT_TRANSACTION_MODE_VALIDATE  0x4
 
 // MARK: GATT UUIDs
 #define GATT_PRIMARY_SERVICE_UUID                   0x2800

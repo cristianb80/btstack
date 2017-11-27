@@ -105,7 +105,7 @@ static void hfp_hf_emit_subscriber_information(btstack_packet_handler_t callback
     event[2] = event_subtype;
     event[3] = status;
     event[4] = bnip_type;
-    size_t size = (strlen(bnip_number) < (size_t) (sizeof(event) - 6)) ? strlen(bnip_number) : (size_t) (sizeof(event) - 6);
+    int size = (strlen(bnip_number) < sizeof(event) - 6) ? (int) strlen(bnip_number) : (int) sizeof(event) - 6;
     strncpy((char*)&event[5], bnip_number, size);
     event[5 + size] = 0;
     (*callback)(HCI_EVENT_PACKET, 0, event, sizeof(event));
@@ -118,7 +118,7 @@ static void hfp_hf_emit_type_and_number(btstack_packet_handler_t callback, uint8
     event[1] = sizeof(event) - 2;
     event[2] = event_subtype;
     event[3] = bnip_type;
-    size_t size = (strlen(bnip_number) < (size_t) (sizeof(event) - 5)) ? strlen(bnip_number) : (size_t) (sizeof(event) - 5);
+    int size = (strlen(bnip_number) < sizeof(event) - 5) ? (int) strlen(bnip_number) : (int) sizeof(event) - 5;
     strncpy((char*)&event[4], bnip_number, size);
     event[4 + size] = 0;
     (*callback)(HCI_EVENT_PACKET, 0, event, sizeof(event));
@@ -136,7 +136,7 @@ static void hfp_hf_emit_enhanced_call_status(btstack_packet_handler_t callback, 
     event[6] = clcc_status;
     event[7] = clcc_mpty;
     event[8] = bnip_type;
-    size_t size = (strlen(bnip_number) < (size_t) (sizeof(event) - 10)) ? strlen(bnip_number) : (size_t) (sizeof(event) - 10);
+    int size = (strlen(bnip_number) < sizeof(event) - 10) ? (int) strlen(bnip_number) : (int) sizeof(event) - 10;
     strncpy((char*)&event[9], bnip_number, size);
     event[9 + size] = 0;
     (*callback)(HCI_EVENT_PACKET, 0, event, sizeof(event));
@@ -636,6 +636,9 @@ static void hfp_run_for_context(hfp_connection_t * hfp_connection){
         done = call_setup_state_machine(hfp_connection);
     }
 
+    // don't send a new command while ok still pending
+    if (hfp_connection->ok_pending) return;
+
     if (hfp_connection->send_microphone_gain){
         hfp_connection->send_microphone_gain = 0;
         hfp_connection->ok_pending = 1;
@@ -985,16 +988,21 @@ static void hfp_hf_switch_on_ok(hfp_connection_t *hfp_connection){
 
 
 static void hfp_handle_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
-    UNUSED(packet_type);
+    UNUSED(packet_type);    // ok: only called with RFCOMM_DATA_PACKET
+
+    // assertion: size >= 1 as rfcomm.c does not deliver empty packets
+    if (size < 1) return;
 
     hfp_connection_t * hfp_connection = get_hfp_connection_context_for_rfcomm_cid(channel);
     if (!hfp_connection) return;
 
+    // temp overwrite last byte (most likely \n for log_info)
     char last_char = packet[size-1];
     packet[size-1] = 0;
     log_info("HFP_RX %s", packet);
     packet[size-1] = last_char;
             
+    // process messages byte-wise
     int pos, i, value;
     for (pos = 0; pos < size ; pos++){
         hfp_parse(hfp_connection, packet[pos], 1);
@@ -1042,7 +1050,7 @@ static void hfp_handle_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8
             break;
         case HFP_CMD_AG_SENT_CLIP_INFORMATION:
             hfp_connection->command = HFP_CMD_NONE;
-            hfp_hf_emit_type_and_number(hfp_callback, HFP_SUBEVENT_CALLING_LINE_INDETIFICATION_NOTIFICATION, hfp_connection->bnip_type, hfp_connection->bnip_number);
+            hfp_hf_emit_type_and_number(hfp_callback, HFP_SUBEVENT_CALLING_LINE_IDENTIFICATION_NOTIFICATION, hfp_connection->bnip_type, hfp_connection->bnip_number);
             break;
         case HFP_CMD_EXTENDED_AUDIO_GATEWAY_ERROR:
             hfp_connection->ok_pending = 0;
@@ -1069,6 +1077,8 @@ static void hfp_handle_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8
                         hfp_callsetup_status = (hfp_callsetup_status_t) hfp_connection->ag_indicators[i].status;
                     } else if (strcmp(hfp_connection->ag_indicators[i].name, "callheld") == 0){
                         hfp_callheld_status = (hfp_callheld_status_t) hfp_connection->ag_indicators[i].status;
+                        // avoid set but not used warning
+                        (void) hfp_callheld_status;
                     } else if (strcmp(hfp_connection->ag_indicators[i].name, "call") == 0){
                         hfp_call_status = (hfp_call_status_t) hfp_connection->ag_indicators[i].status;
                     }

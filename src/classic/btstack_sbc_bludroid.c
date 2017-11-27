@@ -127,7 +127,7 @@ void btstack_sbc_decoder_test_simulate_corrupt_frames(int period){
 
 static int find_sequence_of_zeros(const OI_BYTE *frame_data, OI_UINT32 frame_bytes, int seq_length){
     int zero_seq_count = 0;
-    int i;
+    unsigned int i;
     for (i=0; i<frame_bytes; i++){
         if (frame_data[i] == 0) {
             zero_seq_count++;
@@ -144,7 +144,7 @@ static int find_h2_syncword(const OI_BYTE *frame_data, OI_UINT32 frame_bytes){
     uint8_t h2_first_byte = 0;
     uint8_t h2_second_byte = 0;
     
-    int i;
+    unsigned int i;
     for (i=0; i<frame_bytes; i++){
         if (frame_data[i] == syncword) {
             break;
@@ -181,7 +181,7 @@ int btstack_sbc_decoder_sample_rate(btstack_sbc_decoder_state_t * state){
 }
 
 #ifdef OI_DEBUG
-void OI_AssertFail(char* file, int line, char* reason){
+void OI_AssertFail(const char* file, int line, const char* reason){
     log_error("AssertFail file %s, line %d, reason %s", file, line, reason);
 }
 #endif
@@ -190,7 +190,7 @@ void btstack_sbc_decoder_init(btstack_sbc_decoder_state_t * state, btstack_sbc_m
     if (sbc_decoder_state_singleton && sbc_decoder_state_singleton != state ){
         log_error("SBC decoder: different sbc decoder state is allready registered");
     } 
-    OI_STATUS status = 0;
+    OI_STATUS status = OI_STATUS_SUCCESS;
     switch (mode){
         case SBC_MODE_STANDARD:
             // note: we always request stereo output, even for mono input
@@ -203,7 +203,7 @@ void btstack_sbc_decoder_init(btstack_sbc_decoder_state_t * state, btstack_sbc_m
             break;
     }
 
-    if (status != 0){
+    if (status != OI_STATUS_SUCCESS){
         log_error("SBC decoder: error during reset %d\n", status);
     }
     
@@ -266,7 +266,7 @@ static void btstack_sbc_decoder_process_sbc_data(btstack_sbc_decoder_state_t * s
                 }
             }
 
-            OI_STATUS status = 0;
+            OI_STATUS status = OI_STATUS_SUCCESS;
             int bad_frame = 0;
             int zero_seq_found = 0;
 
@@ -289,7 +289,7 @@ static void btstack_sbc_decoder_process_sbc_data(btstack_sbc_decoder_state_t * s
             
             bytes_processed = bytes_in_buffer_before - decoder_state->bytes_in_frame_buffer;
             switch(status){
-                case 0:
+                case OI_STATUS_SUCCESS:
                     decoder_state->first_good_frame_found = 1;
                     
                     if (state->mode == SBC_MODE_mSBC){
@@ -329,7 +329,7 @@ static void btstack_sbc_decoder_process_sbc_data(btstack_sbc_decoder_state_t * s
             }   
 
             memmove(decoder_state->frame_buffer, decoder_state->frame_buffer + bytes_processed, decoder_state->bytes_in_frame_buffer);
-            if (status || decoder_state->bytes_in_frame_buffer == 0) break;
+            if ((status != OI_STATUS_SUCCESS) || (decoder_state->bytes_in_frame_buffer == 0)) break;
 
         }
     }
@@ -340,7 +340,7 @@ static void btstack_sbc_decoder_process_msbc_data(btstack_sbc_decoder_state_t * 
 
     bludroid_decoder_state_t * decoder_state = (bludroid_decoder_state_t*)state->decoder_state;
     int input_bytes_to_process = size;
-    int msbc_frame_size = 57; 
+    unsigned int msbc_frame_size = 57; 
 
     // printf("<<-- enter -->>\n");
     // printf("Process data: in buffer %u, new %u\n", decoder_state->bytes_in_frame_buffer, size);
@@ -377,7 +377,7 @@ static void btstack_sbc_decoder_process_msbc_data(btstack_sbc_decoder_state_t * 
             }
         }
 
-        OI_STATUS status = 0;
+        OI_STATUS status = OI_STATUS_SUCCESS;
         int bad_frame = 0;
         int zero_seq_found = 0;
 
@@ -406,6 +406,7 @@ static void btstack_sbc_decoder_process_msbc_data(btstack_sbc_decoder_state_t * 
         }        
     
         bytes_processed = bytes_in_buffer_before - decoder_state->bytes_in_frame_buffer;
+        OI_UINT32 bytes_in_frame_buffer = msbc_frame_size;
 
         switch(status){
             case 0:
@@ -461,8 +462,7 @@ static void btstack_sbc_decoder_process_msbc_data(btstack_sbc_decoder_state_t * 
                 if (!plc_enabled) break;
                 
                 frame_data = btstack_sbc_plc_zero_signal_frame();
-                OI_UINT32 bytes_in_frame_buffer = msbc_frame_size;
-                
+
                 status = OI_CODEC_SBC_DecodeFrame(&(decoder_state->decoder_context), 
                                                     &frame_data, 
                                                     &bytes_in_frame_buffer, 
@@ -503,7 +503,7 @@ void btstack_sbc_decoder_process_data(btstack_sbc_decoder_state_t * state, int p
 // *****************************************************************************
 
 void btstack_sbc_encoder_init(btstack_sbc_encoder_state_t * state, btstack_sbc_mode_t mode, 
-                        int blocks, int subbands, int allmethod, int sample_rate, int bitpool){
+                        int blocks, int subbands, int allmethod, int sample_rate, int bitpool, int channel_mode){
 
     if (sbc_encoder_state_singleton && sbc_encoder_state_singleton != state ){
         log_error("SBC encoder: different sbc decoder state is allready registered");
@@ -524,9 +524,11 @@ void btstack_sbc_encoder_init(btstack_sbc_encoder_state_t * state, btstack_sbc_m
             bd_encoder_state.context.s16AllocationMethod = allmethod;                     
             bd_encoder_state.context.s16BitPool = bitpool;  
             bd_encoder_state.context.mSBCEnabled = 0;
-            bd_encoder_state.context.s16ChannelMode = SBC_STEREO;
+            bd_encoder_state.context.s16ChannelMode = channel_mode;
             bd_encoder_state.context.s16NumOfChannels = 2;
-            
+            if (bd_encoder_state.context.s16ChannelMode == SBC_MONO){
+                bd_encoder_state.context.s16NumOfChannels = 1;
+            }
             switch(sample_rate){
                 case 16000: bd_encoder_state.context.s16SamplingFreq = SBC_sf16000; break;
                 case 32000: bd_encoder_state.context.s16SamplingFreq = SBC_sf32000; break;

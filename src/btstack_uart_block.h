@@ -86,12 +86,12 @@ typedef struct {
     int (*close)(void);
 
     /**
-     * set callback for block received
+     * set callback for block received. NULL disables callback
      */
     void (*set_block_received)(void (*block_handler)(void));
 
     /**
-     * set callback for sent
+     * set callback for sent. NULL disables callback
      */
     void (*set_block_sent)(void (*block_handler)(void));
 
@@ -104,6 +104,11 @@ typedef struct {
      * set parity
      */
     int  (*set_parity)(int parity);
+
+    /**
+     * set flowcontrol
+     */
+    int  (*set_flowcontrol)(int flowcontrol);
 
     /**
      * receive block
@@ -132,11 +137,18 @@ typedef struct {
      */
     void (*set_sleep)(btstack_uart_sleep_mode_t sleep_mode);
 
+    /** 
+     * set wakeup handler - needed to notify hci transport of wakeup requests by Bluetooth controller
+     * Called upon CTS pulse or RX data. See sleep modes.
+     */
+    void (*set_wakeup_handler)(void (*wakeup_handler)(void));
+
 } btstack_uart_block_t;
 
 // common implementations
 const btstack_uart_block_t * btstack_uart_block_posix_instance(void);
 const btstack_uart_block_t * btstack_uart_block_windows_instance(void);
 const btstack_uart_block_t * btstack_uart_block_embedded_instance(void);
+const btstack_uart_block_t * btstack_uart_block_freertos_instance(void);
 
 #endif

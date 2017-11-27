@@ -11,32 +11,33 @@ CORE += \
 	btstack_run_loop.c		    \
 	btstack_util.c 	            \
 	main.c 	\
-	stdin_support.c \
+	btstack_stdin_posix.c \
 	
 
 COMMON += \
+	ad_parser.c 				\
+	btstack_link_key_db_fs.c    \
+	btstack_run_loop_posix.c    \
 	hci.c			            \
 	hci_cmd.c		            \
 	hci_dump.c		            \
+	hci_transport_h2_libusb.c   \
 	l2cap.c			            \
 	l2cap_signaling.c	        \
-	hci_transport_h2_libusb.c \
-	btstack_run_loop_posix.c \
-	btstack_link_key_db_fs.c \
-	le_device_db_fs.c \
-	wav_util.c \
+	le_device_db_fs.c           \
+	sdp_server.c			    \
+	sdp_client.c 				\
 	sdp_util.c	                \
-	sdp_server.c			            \
+	wav_util.c 					\
 
 CFLAGS += -g -Wall -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wunused-variable -Wunused-parameter -Werror 
-CFLAGS += -I.
 CFLAGS += -I${BTSTACK_ROOT}/src
 CFLAGS += -I${BTSTACK_ROOT}/src/classic
 CFLAGS += -I${BTSTACK_ROOT}/3rd-party/bluedroid/decoder/include -D OI_DEBUG
 CFLAGS += -I${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/include
 CFLAGS += -I${BTSTACK_ROOT}/platform/posix 
 CFLAGS += -I${BTSTACK_ROOT}/platform/embedded 
-CFLAGS += -I${BTSTACK_ROOT}/port/libusb 
+CFLAGS += -I..
 
 VPATH += ${BTSTACK_ROOT}/src
 VPATH += ${BTSTACK_ROOT}/src/classic
@@ -65,7 +66,7 @@ SBC_ENCODER += \
 AVRCP += \
 	avrcp.c 			\
 	
-AVRCP_TESTS = avrcp_test
+AVRCP_TESTS = avrcp_controller_test
 
 CORE_OBJ    = $(CORE:.c=.o)
 COMMON_OBJ  = $(COMMON:.c=.o) 
@@ -75,7 +76,7 @@ AVRCP_OBJ  = $(AVRCP:.c=.o)
 
 all: ${AVRCP_TESTS}
 
-avrcp_test: ${CORE_OBJ} ${COMMON_OBJ} ${SBC_DECODER_OBJ} ${SBC_ENCODER_OBJ} ${AVRCP_OBJ} avrcp_test.o
+avrcp_controller_test: ${CORE_OBJ} ${COMMON_OBJ} ${SBC_DECODER_OBJ} ${SBC_ENCODER_OBJ} ${AVRCP_OBJ} avrcp_controller.o avrcp_controller_test.o
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
 test: all

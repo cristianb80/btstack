@@ -89,6 +89,7 @@
 // --> support only a single SCO connection
 // #define ALT_SETTING (1)
 
+#ifdef ENABLE_SCO_OVER_HCI
 // alt setting for 1-3 connections and 8/16 bit
 static const int alt_setting_8_bit[]  = {1,2,3};      
 static const int alt_setting_16_bit[] = {2,4,5};
@@ -97,7 +98,7 @@ static const int alt_setting_16_bit[] = {2,4,5};
 // One complete SCO packet with 24 frames every 3 frames (== 3 ms)
 #define NUM_ISO_PACKETS (3)
 
-const uint16_t iso_packet_size_for_alt_setting[] = {
+static const uint16_t iso_packet_size_for_alt_setting[] = {
     0,
     9,
     17,
@@ -106,6 +107,7 @@ const uint16_t iso_packet_size_for_alt_setting[] = {
     49,
     63,
 };
+#endif
 
 // 49 bytes is the max usb packet size for alternate setting 5 (Three 8 kHz 16-bit channels or one 8 kHz 16-bit channel and one 16 kHz 16-bit channel)
 // note: alt setting 6 has max packet size of 63 every 7.5 ms = 472.5 bytes / HCI packet, while max SCO packet has 255 byte payload
@@ -261,6 +263,11 @@ static void queue_transfer(struct libusb_transfer *transfer){
 LIBUSB_CALL static void async_callback(struct libusb_transfer *transfer){
 
     int c;
+
+    if (libusb_state != LIB_USB_TRANSFERS_ALLOCATED){
+        log_info("shutdown, transfer %p", transfer);
+    }
+
 
     // identify and free transfers as part of shutdown
 #ifdef ENABLE_SCO_OVER_HCI
@@ -1072,7 +1079,7 @@ static int usb_open(void){
 
         const struct libusb_pollfd ** pollfd = libusb_get_pollfds(NULL);
         for (num_pollfds = 0 ; pollfd[num_pollfds] ; num_pollfds++);
-        pollfd_data_sources = malloc(sizeof(btstack_data_source_t) * num_pollfds);
+        pollfd_data_sources = (btstack_data_source_t *)malloc(sizeof(btstack_data_source_t) * num_pollfds);
         if (!pollfd_data_sources){
             log_error("Cannot allocate data sources for pollfds");
             usb_close();
@@ -1101,6 +1108,10 @@ static int usb_open(void){
 
 static int usb_close(void){
     int c;
+    int completed = 0;
+
+    log_info("usb_close");
+
     switch (libusb_state){
         case LIB_USB_CLOSED:
             break;
@@ -1129,17 +1140,27 @@ static int usb_close(void){
             // Cancel all transfers, ignore warnings for this
             libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_ERROR);
             for (c = 0 ; c < EVENT_IN_BUFFER_COUNT ; c++) {
-                libusb_cancel_transfer(event_in_transfer[c]);
+                if (event_in_transfer[c]){
+                    log_info("cancel event_in_transfer[%u] = %p", c, event_in_transfer[c]);
+                    libusb_cancel_transfer(event_in_transfer[c]);
+                }
             }
             for (c = 0 ; c < ACL_IN_BUFFER_COUNT ; c++) {
-                libusb_cancel_transfer(acl_in_transfer[c]);
+                if (acl_in_transfer[c]){
+                    log_info("cancel acl_in_transfer[%u] = %p", c, acl_in_transfer[c]);
+                    libusb_cancel_transfer(acl_in_transfer[c]);
+                }
             }
 #ifdef ENABLE_SCO_OVER_HCI
             for (c = 0 ; c < SCO_IN_BUFFER_COUNT ; c++) {
-                libusb_cancel_transfer(sco_in_transfer[c]);
+                if (sco_in_transfer[c]){
+                    log_info("cancel sco_in_transfer[%u] = %p", c, sco_in_transfer[c]);
+                    libusb_cancel_transfer(sco_in_transfer[c]);
+                }
             }
             for (c = 0; c < SCO_OUT_BUFFER_COUNT ; c++){
                 if (sco_out_transfers_in_flight[c]) {
+                    log_info("cancel sco_out_transfers[%u] = %p", c, sco_out_transfers[c]);
                     libusb_cancel_transfer(sco_out_transfers[c]);
                 } else {
                     libusb_free_transfer(sco_out_transfers[c]);
@@ -1149,9 +1170,15 @@ static int usb_close(void){
 #endif
             libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_WARNING);
 
-            // wait until all transfers are completed
-            int completed = 0;
+            // wait until all transfers are completed - or 20 iterations
+            int countdown = 20;
             while (!completed){
+
+                if (--countdown == 0){
+                    log_info("Not all transfers cancelled, leaking a bit.");
+                    break;
+                }
+
                 struct timeval tv;
                 memset(&tv, 0, sizeof(struct timeval));
                 libusb_handle_events_timeout(NULL, &tv);
@@ -1159,6 +1186,7 @@ static int usb_close(void){
                 completed = 1;
                 for (c=0;c<EVENT_IN_BUFFER_COUNT;c++){
                     if (event_in_transfer[c]) {
+                        log_info("event_in_transfer[%u] still active (%p)", c, event_in_transfer[c]);
                         completed = 0;
                         break;
                     }
@@ -1168,6 +1196,7 @@ static int usb_close(void){
 
                 for (c=0;c<ACL_IN_BUFFER_COUNT;c++){
                     if (acl_in_transfer[c]) {
+                        log_info("acl_in_transfer[%u] still active (%p)", c, acl_in_transfer[c]);
                         completed = 0;
                         break;
                     }
@@ -1179,6 +1208,7 @@ static int usb_close(void){
                 // Cancel all synchronous transfer
                 for (c = 0 ; c < SCO_IN_BUFFER_COUNT ; c++) {
                     if (sco_in_transfer[c]){
+                        log_info("sco_in_transfer[%u] still active (%p)", c, sco_in_transfer[c]);
                         completed = 0;
                         break;
                     }
@@ -1188,6 +1218,7 @@ static int usb_close(void){
 
                 for (c=0; c < SCO_OUT_BUFFER_COUNT ; c++){
                     if (sco_out_transfers[c]){
+                        log_info("sco_out_transfers[%u] still active (%p)", c, sco_out_transfers[c]);
                         completed = 0;
                         break;
                     }

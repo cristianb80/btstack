@@ -128,6 +128,7 @@ static void handle_query_rfcomm_event(uint8_t packet_type, uint16_t channel, uin
 
 static btstack_packet_handler_t hsp_hs_callback;
 static void dummy_notify(uint8_t packet_type, uint16_t channel, uint8_t * event, uint16_t size){
+    // ok: no code
     UNUSED(packet_type);    
     UNUSED(channel);    
     UNUSED(event);    
@@ -450,7 +451,7 @@ static void hsp_run(void){
 
 
 static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
-    UNUSED(channel);
+    UNUSED(channel);    // ok: no channel for HCI_EVENT_PACKET and only single active RFCOMM channel
 
     // printf("packet_handler type %u, packet[0] %x\n", packet_type, packet[0]);
     if (packet_type == RFCOMM_DATA_PACKET){
@@ -607,9 +608,9 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
 }
 
 static void handle_query_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
-    UNUSED(packet_type);
-    UNUSED(channel);
-    UNUSED(size);
+    UNUSED(packet_type);    // ok: handling own sdp events
+    UNUSED(channel);        // ok: no channel
+    UNUSED(size);           // ok: handling own sdp events
 
     switch (hci_event_packet_get_type(packet)){
         case SDP_EVENT_QUERY_RFCOMM_SERVICE:
@@ -625,6 +626,11 @@ static void handle_query_rfcomm_event(uint8_t packet_type, uint16_t channel, uin
             }
             hsp_hs_reset_state();
             log_info("Service not found, status %u.", sdp_event_query_complete_get_status(packet));
+            if (sdp_event_query_complete_get_status(packet)){
+                emit_event(HSP_SUBEVENT_AUDIO_CONNECTION_COMPLETE, sdp_event_query_complete_get_status(packet));
+            } else {
+                emit_event(HSP_SUBEVENT_AUDIO_CONNECTION_COMPLETE, SDP_SERVICE_NOT_FOUND);
+            }
             break;
     }
 }

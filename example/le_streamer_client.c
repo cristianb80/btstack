@@ -51,6 +51,7 @@
 #include "btstack.h"
 
 typedef enum {
+    TC_OFF,
     TC_IDLE,
     TC_W4_SCAN_RESULT,
     TC_W4_CONNECT,
@@ -73,10 +74,58 @@ static uint8_t le_streamer_characteristic_uuid[16] = { 0x00, 0x00, 0xFF, 0x11, 0
 static gatt_client_service_t le_streamer_service;
 static gatt_client_characteristic_t le_streamer_characteristic;
 
-static gatt_client_notification_t notification_registration;
+static gatt_client_notification_t notification_listener;
+static int listener_registered;
 
-static gc_state_t state = TC_IDLE;
+static gc_state_t state = TC_OFF;
 static btstack_packet_callback_registration_t hci_event_callback_registration;
+
+/*
+ * @section Track throughput
+ * @text We calculate the throughput by setting a start time and measuring the amount of 
+ * data sent. After a configurable REPORT_INTERVAL_MS, we print the throughput in kB/s
+ * and reset the counter and start time.
+ */
+
+/* LISTING_START(tracking): Tracking throughput */
+
+#define REPORT_INTERVAL_MS 3000
+
+// support for multiple clients
+typedef struct {
+    char name;
+    int le_notification_enabled;
+    hci_con_handle_t connection_handle;
+    int  counter;
+    char test_data[200];
+    int  test_data_len;
+    uint32_t test_data_sent;
+    uint32_t test_data_start;
+} le_streamer_connection_t;
+
+static le_streamer_connection_t le_streamer_connection;
+
+static void test_reset(le_streamer_connection_t * context){
+    context->test_data_start = btstack_run_loop_get_time_ms();
+    context->test_data_sent = 0;
+}
+
+static void test_track_data(le_streamer_connection_t * context, int bytes_sent){
+    context->test_data_sent += bytes_sent;
+    // evaluate
+    uint32_t now = btstack_run_loop_get_time_ms();
+    uint32_t time_passed = now - context->test_data_start;
+    if (time_passed < REPORT_INTERVAL_MS) return;
+    // print speed
+    int bytes_per_second = context->test_data_sent * 1000 / time_passed;
+    printf("%c: %u bytes -> %u.%03u kB/s\n", context->name, context->test_data_sent, bytes_per_second / 1000, bytes_per_second % 1000);
+
+    // restart
+    context->test_data_start = now;
+    context->test_data_sent  = 0;
+}
+/* LISTING_END(tracking): Tracking throughput */
+
 
 // returns 1 if name is found in advertisement
 static int advertisement_report_contains_name(const char * name, uint8_t * advertisement_report){
@@ -148,11 +197,15 @@ static void handle_gatt_client_event(uint8_t packet_type, uint16_t channel, uint
                         break;  
                     } 
                     // register handler for notifications
-                    gatt_client_listen_for_characteristic_value_updates(&notification_registration, handle_gatt_client_event, connection_handle, &le_streamer_characteristic);
+                    listener_registered = 1;
+                    gatt_client_listen_for_characteristic_value_updates(&notification_listener, handle_gatt_client_event, connection_handle, &le_streamer_characteristic);
                     // enable notifications
                     state = TC_W4_TEST_DATA;
                     printf("Start streaming - enable notify on test characteristic.\n");
                     gatt_client_write_client_characteristic_configuration(handle_gatt_client_event, connection_handle, &le_streamer_characteristic, GATT_CLIENT_CHARACTERISTICS_CONFIGURATION_NOTIFICATION);
+                    // setup tracking
+                    le_streamer_connection.name = 'A';
+                    test_reset(&le_streamer_connection);
                     break;
                 default:
                     break;
@@ -162,8 +215,13 @@ static void handle_gatt_client_event(uint8_t packet_type, uint16_t channel, uint
         case TC_W4_TEST_DATA:
             switch(hci_event_packet_get_type(packet)){
                 case GATT_EVENT_NOTIFICATION:
+#if 0                
                     printf("Data: ");
                     printf_hexdump( gatt_event_notification_get_value(packet), gatt_event_notification_get_value_length(packet));
+#else
+                    test_track_data(&le_streamer_connection, gatt_event_notification_get_value_length(packet));
+#endif
+                    break;
                 case GATT_EVENT_QUERY_COMPLETE:
                     break;
                 default:
@@ -179,27 +237,36 @@ static void handle_gatt_client_event(uint8_t packet_type, uint16_t channel, uint
     
 }
 
+// Either connect to remote specified on command line or start scan for device with "LE Streamer" in advertisement
+static void le_streamer_client_start(void){
+    if (cmdline_addr_found){
+        printf("Connect to %s\n", bd_addr_to_str(cmdline_addr));
+        state = TC_W4_CONNECT;
+        gap_connect(cmdline_addr, 0);
+    } else {
+        printf("Start scanning!\n");
+        state = TC_W4_SCAN_RESULT;
+        gap_set_scan_parameters(0,0x0030, 0x0030);
+        gap_start_scan();
+    }
+}
+
 static void hci_event_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){
     UNUSED(channel);
     UNUSED(size);
 
     if (packet_type != HCI_EVENT_PACKET) return;
     
+    uint16_t conn_interval;
     uint8_t event = hci_event_packet_get_type(packet);
     switch (event) {
         case BTSTACK_EVENT_STATE:
             // BTstack activated, get started
-            if (btstack_event_state_get_state(packet) != HCI_STATE_WORKING) break;
-            if (cmdline_addr_found){
-                printf("Connect to %s\n", bd_addr_to_str(cmdline_addr));
-                state = TC_W4_CONNECT;
-                gap_connect(cmdline_addr, 0);
-                break;
+            if (btstack_event_state_get_state(packet) == HCI_STATE_WORKING) {
+                le_streamer_client_start();
+            } else {
+                state = TC_OFF;
             }
-            printf("Start scanning!\n");
-            state = TC_W4_SCAN_RESULT;
-            gap_set_scan_parameters(0,0x0030, 0x0030);
-            gap_start_scan();
             break;
         case GAP_EVENT_ADVERTISING_REPORT:
             if (state != TC_W4_SCAN_RESULT) return;
@@ -219,6 +286,10 @@ static void hci_event_handler(uint8_t packet_type, uint16_t channel, uint8_t *pa
             if (hci_event_le_meta_get_subevent_code(packet) !=  HCI_SUBEVENT_LE_CONNECTION_COMPLETE) break;
             if (state != TC_W4_CONNECT) return;
             connection_handle = hci_subevent_le_connection_complete_get_connection_handle(packet);
+            // print connection parameters (without using float operations)
+            conn_interval = hci_subevent_le_connection_complete_get_conn_interval(packet);
+            printf("Connection Interval: %u.%02u ms\n", conn_interval * 125 / 100, 25 * (conn_interval & 3));
+            printf("Connection Latency: %u\n", hci_subevent_le_connection_complete_get_conn_latency(packet));  
             // initialize gatt client context with handle, and add it to the list of active clients
             // query primary services
             printf("Search for LE Streamer service.\n");
@@ -226,18 +297,25 @@ static void hci_event_handler(uint8_t packet_type, uint16_t channel, uint8_t *pa
             gatt_client_discover_primary_services_by_uuid128(handle_gatt_client_event, connection_handle, le_streamer_service_uuid);
             break;
         case HCI_EVENT_DISCONNECTION_COMPLETE:
+            // unregister listener
+            if (listener_registered){
+                listener_registered = 0;
+                gatt_client_stop_listening_for_characteristic_value_updates(&notification_listener);
+            }
             if (cmdline_addr_found){
                 printf("Disconnected %s\n", bd_addr_to_str(cmdline_addr));
                 return;
             }
             printf("Disconnected %s\n", bd_addr_to_str(le_streamer_addr));
+            if (state == TC_OFF) break;
+            le_streamer_client_start();
             break;
         default:
             break;
     }
 }
 
-#ifdef HAVE_POSIX_STDIN
+#ifdef HAVE_BTSTACK_STDIN
 static void usage(const char *name){
     fprintf(stderr, "Usage: %s [-a|--address aa:bb:cc:dd:ee:ff]\n", name);
     fprintf(stderr, "If no argument is provided, LE Streamer Client will start scanning and connect to the first device named 'LE Streamer'.\n");
@@ -248,7 +326,7 @@ static void usage(const char *name){
 int btstack_main(int argc, const char * argv[]);
 int btstack_main(int argc, const char * argv[]){
 
-#ifdef HAVE_POSIX_STDIN
+#ifdef HAVE_BTSTACK_STDIN
     int arg = 1;
     cmdline_addr_found = 0;
     
@@ -264,8 +342,8 @@ int btstack_main(int argc, const char * argv[]){
         return 0;
     }
 #else
-    UNUSED(argc);
-    UNUSED(argv);
+    (void)argc;
+    (void)argv;
 #endif
 
     hci_event_callback_registration.callback = &hci_event_handler;
@@ -277,6 +355,9 @@ int btstack_main(int argc, const char * argv[]){
 
     sm_init();
     sm_set_io_capabilities(IO_CAPABILITY_NO_INPUT_NO_OUTPUT);
+
+    // use different connection parameters: conn interval min/max (* 1.25 ms), slave latency, supervision timeout, CE len min/max (* 0.6125 ms) 
+    // gap_set_connection_parameters(0x06, 0x06, 4, 1000, 0x01, 0x06 * 2);
 
     // turn on!
     hci_power_control(HCI_POWER_ON);
