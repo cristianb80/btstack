@@ -190,7 +190,7 @@ void printf_hexdump(const void *data, int size){
     }
     printf("\n");
 }
-
+#endif
 #if defined(ENABLE_LOG_INFO) || defined(ENABLE_LOG_DEBUG)
 static void log_hexdump(int level, const void * data, int size){
 #define ITEMS_PER_LINE 16

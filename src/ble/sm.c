@@ -4020,10 +4020,6 @@ static sm_connection_t * sm_get_connection_for_handle(hci_con_handle_t con_handl
     return &hci_con->sm_connection;
 }
 
-void sm_use_fixed_legacy_pairing_passkey_in_display_role(uint32_t passkey){
-	sm_fixed_legacy_pairing_passkey_in_display_role = passkey;
-}
-
 // @returns 0 if not encrypted, 7-16 otherwise
 int sm_encryption_key_size(hci_con_handle_t con_handle){
     sm_connection_t * sm_conn = sm_get_connection_for_handle(con_handle);

@@ -2997,7 +2997,7 @@ static void hci_run(void){
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_ADV_DATA){
-            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_ADV_DATA;
+            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_SET_ADV_DATA);
             uint8_t adv_data_clean[31];
             memset(adv_data_clean, 0, sizeof(adv_data_clean));
             memcpy(adv_data_clean, hci_stack->le_advertisements_data, hci_stack->le_advertisements_data_len);
@@ -3006,7 +3006,7 @@ static void hci_run(void){
             return;
         }
         if (hci_stack->le_advertisements_todo & LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA){
-            hci_stack->le_advertisements_todo &= ~LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA;
+            hci_stack->le_advertisements_todo &= NOT(LE_ADVERTISEMENT_TASKS_SET_SCAN_DATA);
             uint8_t scan_data_clean[31];
             memset(scan_data_clean, 0, sizeof(scan_data_clean));
             memcpy(scan_data_clean, hci_stack->le_scan_response_data, hci_stack->le_scan_response_data_len);

@@ -46,6 +46,8 @@
 #include <stdint.h>
 #include "btstack_linked_list.h"
 
+#define NOT(x)             (~(unsigned int) (x))
+
 // UNUSED macro
 #ifndef UNUSED
 #define UNUSED(x) (void)(sizeof(x))
