@@ -215,6 +215,12 @@ if __name__ == '__main__':
                     c.write('\t\t\tsdl.? = ? ;\n'.replace('?', dic[1]))
                     c.write('\t\t\tMUX_LIB ;\n')
                     c.write('\t\t}\n')
+                    c.write('\t\tif (dim + ofs > sizeof(%s)) {\n' % dic[1])
+                    c.write('\t\t\tif (ofs < sizeof(%s))\n' % dic[1])
+                    c.write('\t\t\t\tdim = sizeof(%s) - ofs ;\n' % dic[1])
+                    c.write('\t\t\telse\n')
+                    c.write('\t\t\t\tdim = 0 ;\n')
+                    c.write('\t\t}\n')
                     c.write('\t\tletti = dim ;\n')
                     c.write('\t\tbreak ;\n')
                 for crt in ntf:
