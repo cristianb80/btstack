@@ -754,7 +754,7 @@ void l2cap_init(void){
 #endif
 }
 
-#ifdef ENABLE_BLE
+#if 0
 void l2cap_register_packet_handler(void (*handler)(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size)){
 #ifdef ENABLE_BLE
     l2cap_event_packet_handler = handler;

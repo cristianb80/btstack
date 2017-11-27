@@ -1618,14 +1618,13 @@ static void hci_initializing_event_handler(uint8_t * packet, uint16_t size){
                 return;
             }
             // explicit fall through to reduce repetitions
-#endif
-
 #ifdef ENABLE_LE_CENTRAL
             hci_stack->substate = HCI_INIT_READ_WHITE_LIST_SIZE;
 #else
             hci_init_done();
 #endif
             return;
+#endif
 #endif
             
 #ifdef ENABLE_SCO_OVER_HCI
