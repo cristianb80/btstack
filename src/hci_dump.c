@@ -200,7 +200,7 @@ static void printf_timestamp(void){
     uint16_t p_ms      = time_ms - (seconds * 1000);
     uint16_t p_seconds = seconds - (minutes * 60);
     uint16_t p_minutes = minutes - (hours   * 60);     
-    printf("[%02u:%02u:%02u.%03u] ", hours, p_minutes, p_seconds, p_ms);
+    BTSTACK_PRINTF("[%02u:%02u:%02u.%03u] ", hours, p_minutes, p_seconds, p_ms);
 #endif
 }
 
@@ -284,7 +284,6 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
 
     printf_timestamp();
     printf_packet(packet_type, in, packet, len);
-
 #endif
 }
 
@@ -306,9 +305,9 @@ void hci_dump_log_va_arg(int log_level, const char * format, va_list argptr){
 #endif
 
     printf_timestamp();
-    printf("LOG -- ");
-    vprintf(format, argptr);
-    printf("\n");
+    BTSTACK_PRINTF("LOG -- ");
+    BTSTACK_VPRINTF(format, argptr);
+    BTSTACK_PRINTF("\n");
 }
 
 void hci_dump_log(int log_level, const char * format, ...){
