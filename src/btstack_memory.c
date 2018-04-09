@@ -619,7 +619,7 @@ avrcp_browsing_connection_t * btstack_memory_avrcp_browsing_connection_get(void)
 void btstack_memory_avrcp_browsing_connection_free(avrcp_browsing_connection_t *avrcp_browsing_connection){
     // silence compiler warning about unused parameter in a portable way
     (void) avrcp_browsing_connection;
-};
+}
 #endif
 #elif defined(HAVE_MALLOC)
 avrcp_browsing_connection_t * btstack_memory_avrcp_browsing_connection_get(void){

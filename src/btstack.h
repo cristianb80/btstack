@@ -83,7 +83,7 @@
 #include "ble/sm.h"
 #endif
 
-// #ifdef ENABLE_CLASSIC
+#ifdef ENABLE_CLASSIC
 #include "classic/a2dp_sink.h"
 #include "classic/a2dp_source.h"
 #include "classic/avdtp.h"
@@ -114,6 +114,6 @@
 #include "classic/sdp_server.h"
 #include "classic/sdp_util.h"
 #include "classic/spp_server.h"
-// #endif
+#endif
 
 #endif  // __BTSTACK_H
