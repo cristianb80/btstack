@@ -7,6 +7,7 @@
 
 // Port related features
 #define HAVE_EMBEDDED_TIME_MS
+// #define HAVE_EM9304_PATCH_CONTAINER
 
 // BTstack features that can be enabled
 #define ENABLE_BLE
@@ -15,6 +16,7 @@
 #define ENABLE_LE_DATA_LENGTH_EXTENSION
 #define ENABLE_LOG_INFO
 #define ENABLE_LOG_ERROR
+// #define ENABLE_SEGGER_RTT
 
 // BTstack configuration. buffers, sizes, ...
 #define HCI_ACL_PAYLOAD_SIZE 100

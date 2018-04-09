@@ -55,9 +55,8 @@ extern "C" {
 #endif
 
 /* API_START */
-
 /**
- * @brief AVDTP Sink service record. 
+ * @brief AVRCP Controller service record. 
  * @param service
  * @param service_record_handle
  * @param browsing  1 - supported, 0 - not supported
@@ -68,12 +67,12 @@ extern "C" {
 void avrcp_controller_create_sdp_record(uint8_t * service, uint32_t service_record_handle, uint8_t browsing, uint16_t supported_features, const char * service_name, const char * service_provider_name);
 
 /**
- * @brief Set up AVDTP Sink device.
+ * @brief Set up AVRCP Controller device.
  */
 void avrcp_controller_init(void);
 
 /**
- * @brief Register callback for the AVRCP Sink client. 
+ * @brief Register callback for the AVRCP Controller client. 
  * @param callback
  */
 void avrcp_controller_register_packet_handler(btstack_packet_handler_t callback);
@@ -99,6 +98,13 @@ uint8_t avrcp_controller_disconnect(uint16_t avrcp_cid);
  * @returns status
  */
 uint8_t avrcp_controller_unit_info(uint16_t avrcp_cid);
+
+/**
+ * @brief Subunit info.
+ * @param avrcp_cid
+ * @returns status
+ */
+uint8_t avrcp_controller_subunit_info(uint16_t avrcp_cid);
 
 /**
  * @brief Get capabilities.
@@ -278,8 +284,11 @@ uint8_t avrcp_controller_set_shuffle_mode(uint16_t avrcp_cid, avrcp_shuffle_mode
  * @returns status
  */
 uint8_t avrcp_controller_set_repeat_mode(uint16_t avrcp_cid, avrcp_repeat_mode_t mode);
-
 /* API_END */
+
+// Used by AVRCP controller and AVRCP browsing controller
+extern avrcp_context_t avrcp_controller_context;
+
 #if defined __cplusplus
 }
 #endif

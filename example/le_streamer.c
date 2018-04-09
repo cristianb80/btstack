@@ -38,19 +38,23 @@
 #define __BTSTACK_FILE__ "le_streamer.c"
 
 // *****************************************************************************
-/* EXAMPLE_START(le_streamer): LE Peripheral - Stream data over GATT
+/* EXAMPLE_START(le_streamer): LE Streamer - Stream data over GATT.
  *
  * @text All newer operating systems provide GATT Client functionality.
  * This example shows how to get a maximal throughput via BLE:
- * - send whenever possible
- * - use the max ATT MTU
+ * - send whenever possible,
+ * - use the max ATT MTU.
  *
- * In theory, we should also update the connection parameters, but we already get
+ * @text In theory, we should also update the connection parameters, but we already get
  * a connection interval of 30 ms and there's no public way to use a shorter 
- * interval with iOS (if we're not implementing an HID device)
+ * interval with iOS (if we're not implementing an HID device).
+ *
+ * @text Note: To start the streaming, run the example.
+ * On remote device use some GATT Explorer, e.g. LightBlue, BLExplr to enable notifications.
  */
  // *****************************************************************************
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,6 +86,7 @@ static btstack_packet_callback_registration_t hci_event_callback_registration;
 typedef struct {
     char name;
     int le_notification_enabled;
+    uint16_t value_handle;
     hci_con_handle_t connection_handle;
     int  counter;
     char test_data[200];
@@ -183,7 +188,7 @@ static void test_track_sent(le_streamer_connection_t * context, int bytes_sent){
     if (time_passed < REPORT_INTERVAL_MS) return;
     // print speed
     int bytes_per_second = context->test_data_sent * 1000 / time_passed;
-    printf("%c: %u bytes sent-> %u.%03u kB/s\n", context->name, context->test_data_sent, bytes_per_second / 1000, bytes_per_second % 1000);
+    printf("%c: %"PRIu32" bytes sent-> %u.%03u kB/s\n", context->name, context->test_data_sent, bytes_per_second / 1000, bytes_per_second % 1000);
 
     // restart
     context->test_data_start = now;
@@ -210,6 +215,12 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
     switch (packet_type) {
         case HCI_EVENT_PACKET:
             switch (hci_event_packet_get_type(packet)) {
+                case BTSTACK_EVENT_STATE:
+                // BTstack activated, get started
+                if (btstack_event_state_get_state(packet) == HCI_STATE_WORKING) {
+                    printf("To start the streaming, please run the le_streamer_client example on other device, or use some GATT Explorer, e.g. LightBlue, BLExplr.\n");
+                } 
+                break;
                 case HCI_EVENT_DISCONNECTION_COMPLETE:
                     context = connection_for_conn_handle(hci_event_disconnection_complete_get_connection_handle(packet));
                     if (!context) break;
@@ -284,7 +295,7 @@ static void streamer(void){
     memset(context->test_data, context->counter, context->test_data_len);
 
     // send
-    att_server_notify(context->connection_handle, ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE, (uint8_t*) context->test_data, context->test_data_len);
+    att_server_notify(context->connection_handle, context->value_handle, (uint8_t*) context->test_data, context->test_data_len);
 
     // track
     test_track_sent(context, context->test_data_len);
@@ -314,17 +325,30 @@ static int att_write_callback(hci_con_handle_t con_handle, uint16_t att_handle, 
     le_streamer_connection_t * context = connection_for_conn_handle(con_handle);
     switch(att_handle){
         case ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_CLIENT_CONFIGURATION_HANDLE:
+        case ATT_CHARACTERISTIC_0000FF12_0000_1000_8000_00805F9B34FB_01_CLIENT_CONFIGURATION_HANDLE:
             context->le_notification_enabled = little_endian_read_16(buffer, 0) == GATT_CLIENT_CHARACTERISTICS_CONFIGURATION_NOTIFICATION;
             printf("%c: Notifications enabled %u\n", context->name, context->le_notification_enabled); 
             if (context->le_notification_enabled){
+                switch (att_handle){
+                    case ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_CLIENT_CONFIGURATION_HANDLE:
+                        context->value_handle = ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE;
+                        break;
+                    case ATT_CHARACTERISTIC_0000FF12_0000_1000_8000_00805F9B34FB_01_CLIENT_CONFIGURATION_HANDLE:
+                        context->value_handle = ATT_CHARACTERISTIC_0000FF12_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE;
+                        break;
+                    default:
+                        break;
+                }
                 att_server_request_can_send_now_event(context->connection_handle);
             }
             test_reset(context);
             break;
+        case ATT_CHARACTERISTIC_0000FF11_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE:
         case ATT_CHARACTERISTIC_0000FF12_0000_1000_8000_00805F9B34FB_01_VALUE_HANDLE:
-            printf("%c: Write to ...FF12... : ", context->name);
-            printf_hexdump(buffer, buffer_size);
-            break;       
+            test_track_sent(context, buffer_size);
+            break;
+        default:
+            printf("Write to 0x%04x, len %u\n", att_handle, buffer_size);
     }
     return 0;
 }

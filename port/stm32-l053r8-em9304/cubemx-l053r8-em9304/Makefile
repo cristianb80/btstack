@@ -51,6 +51,8 @@ VPATH += ${BTSTACK_ROOT}/src/classic
 VPATH += ${BTSTACK_ROOT}/platform/embedded
 VPATH += ${BTSTACK_ROOT}/example
 VPATH += ${BTSTACK_ROOT}/3rd-party/micro-ecc
+VPATH += ${BTSTACK_ROOT}/3rd-party/segger-rtt
+VPATH += ${BTSTACK_ROOT}/chipset/em9301
 
 ######################################
 # source
@@ -86,12 +88,14 @@ Src/stm32l0xx_it.c \
 	att_dispatch.c \
 	att_server.c \
 	battery_service_server.c \
+	btstack_chipset_em9301.c \
 	btstack_linked_list.c \
 	btstack_memory.c \
 	btstack_memory_pool.c \
 	btstack_ring_buffer.c \
 	btstack_run_loop.c \
 	btstack_run_loop_embedded.c \
+	btstack_tlv.c \
 	btstack_uart_block_embedded.c \
 	btstack_util.c \
 	device_information_service_server.c \
@@ -105,6 +109,9 @@ Src/stm32l0xx_it.c \
 	le_device_db_memory.c \
 	sm.c \
 	uECC.c \
+	0000000_META_hci_patches_v5_iram.c \
+SEGGER_RTT.c \
+SEGGER_RTT_Syscalls_GCC.c \
 
 # ASM sources
 ASM_SOURCES =  \
@@ -174,6 +181,7 @@ C_INCLUDES += -I${BTSTACK_ROOT}/src/ble/gatt-service
 C_INCLUDES += -I${BTSTACK_ROOT}/src/classic
 C_INCLUDES += -I${BTSTACK_ROOT}/src
 C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/micro-ecc
+C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/segger-rtt
 C_INCLUDES += -I${BTSTACK_ROOT}/platform/embedded
 
 # compile gcc flags
@@ -202,8 +210,9 @@ LIBDIR =
 LDFLAGS = $(MCU) -specs=nano.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/le_streamer.map,--cref -Wl,--gc-sections
 
 # default action: build all
+#	ancs_client_demo \
+
 LE_EXAMPLES = \
-	ancs_client_demo \
 	gap_le_advertisements \
 	gatt_battery_query \
 	gatt_browser \
@@ -220,6 +229,7 @@ GATT_FILES = \
 	gatt_browser.gatt \
 	gatt_battery_query.gatt \
 	sm_pairing_peripheral.gatt \
+	sm_pairing_central.gatt \
 
 
 #######################################

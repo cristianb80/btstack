@@ -37,7 +37,7 @@ The file *btstack_config.h* contains three parts:
 ### HAVE_* directives {#sec:haveDirectives}
 System properties:
 
-#define | Description
+\#define | Description
 -----------------------------------|-------------------------------------
 HAVE_MALLOC                        | Use dynamic memory
 HAVE_AES128                        | Use platform AES128 engine - not needed usually
@@ -46,14 +46,14 @@ HAVE_MBEDTLS_ECC_P256              | mbedTLS provides NIST P-256 operations e.g.
 
 Embedded platform properties:
 
-#define                            | Description
+\#define                            | Description
 -----------------------------------|------------------------------------
 HAVE_EMBEDDED_TIME_MS              | System provides time in milliseconds
 HAVE_EMBEDDED_TICK                 | System provides tick interrupt
 
 POSIX platform properties:
 
-#define                            | Description
+\#define                            | Description
 -----------------------------------|------------------------------------
 HAVE_POSIX_B300_MAPPED_TO_2000000  | Workaround to use serial port with 2 mbps
 HAVE_POSIX_B600_MAPPED_TO_3000000  | Workaround to use serial port with 3 mpbs
@@ -67,23 +67,24 @@ LE_DEVICE_DB_PATH                  | Path to stored LE device information
 ### ENABLE_* directives {#sec:enableDirectives}
 BTstack properties:
 
-#define                         | Description
---------------------------------|---------------------------------------------
-ENABLE_CLASSIC                  | Enable Classic related code in HCI and L2CAP
-ENABLE_BLE                      | Enable BLE related code in HCI and L2CAP
-ENABLE_EHCILL                   | Enable eHCILL low power mode on TI CC256x/WL18xx chipsets
-ENABLE_LOG_DEBUG                | Enable log_debug messages
-ENABLE_LOG_ERROR                | Enable log_error messages
-ENABLE_LOG_INFO                 | Enable log_info messages
-ENABLE_SCO_OVER_HCI             | Enable SCO over HCI for chipsets (only TI CC256x/WL18xx, CSR + Broadcom H2/USB))
-ENABLE_HFP_WIDE_BAND_SPEECH     | Enable support for mSBC codec used in HFP profile for Wide-Band Speech
-ENBALE_LE_PERIPHERAL            | Enable support for LE Peripheral Role in HCI and Security Manager
-ENBALE_LE_CENTRAL               | Enable support for LE Central Role in HCI and Security Manager
-ENABLE_LE_SECURE_CONNECTIONS    | Enable LE Secure Connections
+\#define                         | Description
+---------------------------------|---------------------------------------------
+ENABLE_CLASSIC                   | Enable Classic related code in HCI and L2CAP
+ENABLE_BLE                       | Enable BLE related code in HCI and L2CAP
+ENABLE_EHCILL                    | Enable eHCILL low power mode on TI CC256x/WL18xx chipsets
+ENABLE_LOG_DEBUG                 | Enable log_debug messages
+ENABLE_LOG_ERROR                 | Enable log_error messages
+ENABLE_LOG_INFO                  | Enable log_info messages
+ENABLE_SCO_OVER_HCI              | Enable SCO over HCI for chipsets (only TI CC256x/WL18xx, CSR + Broadcom H2/USB))
+ENABLE_HFP_WIDE_BAND_SPEECH      | Enable support for mSBC codec used in HFP profile for Wide-Band Speech
+ENBALE_LE_PERIPHERAL             | Enable support for LE Peripheral Role in HCI and Security Manager
+ENBALE_LE_CENTRAL                | Enable support for LE Central Role in HCI and Security Manager
+ENABLE_LE_SECURE_CONNECTIONS     | Enable LE Secure Connections
 ENABLE_MICRO_ECC_FOR_LE_SECURE_CONNECTIONS | Use [micro-ecc library](https://github.com/kmackay/micro-ecc) for ECC operations
-ENABLE_LE_DATA_CHANNELS         | Enable LE Data Channels in credit-based flow control mode
-ENABLE_LE_DATA_LENGTH_EXTENSION | Enable LE Data Length Extension support
-ENABLE_LE_SIGNED_WRITE          | Enable LE Signed Writes in ATT/GATT
+ENABLE_LE_DATA_CHANNELS          | Enable LE Data Channels in credit-based flow control mode
+ENABLE_LE_DATA_LENGTH_EXTENSION  | Enable LE Data Length Extension support
+ENABLE_LE_SIGNED_WRITE           | Enable LE Signed Writes in ATT/GATT
+ENABLE_ATT_DELAYED_READ_RESPONSE | Enable support for delayed ATT Read operations, see [GATT Server](profiles/#sec:GATTServerProfile)
 ENABLE_L2CAP_ENHANCED_RETRANSMISSION_MODE | Enable L2CAP Enhanced Retransmission Mode. Mandatory for AVRCP Browsing
 ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL | Enable HCI Controller to Host Flow Control, see below
 ENABLE_CC256X_BAUDRATE_CHANGE_FLOWCONTROL_BUG_WORKAROUND | Enable workaround for bug in CC256x Flow Control during baud rate change, see chipset docs.
@@ -96,7 +97,7 @@ In general, BTstack relies on flow control of the HCI transport, either via Hard
 
 Host buffer configuration for HCI Controller to Host Flow Control:
 
-#define         | Description
+\#define         | Description
 ------------------|------------
 HCI_HOST_ACL_PACKET_NUM | Max number of ACL packets
 HCI_HOST_ACL_PACKET_LEN | Max size of HCI Host ACL packets
@@ -123,7 +124,7 @@ For each HCI connection, a buffer of size HCI_ACL_PAYLOAD_SIZE is reserved. For 
 <!-- a name "lst:memoryConfiguration"></a-->
 <!-- -->
 
-#define | Description
+\#define | Description
 --------|------------
 HCI_ACL_PAYLOAD_SIZE | Max size of HCI ACL payloads
 MAX_NR_BNEP_CHANNELS | Max number of BNEP channels
@@ -174,11 +175,11 @@ If implemented, bonding information is stored in Non-volatile memory. For Classi
 <!-- a name "lst:nvmDefines"></a-->
 <!-- -->
 
-#define                   | Description
+\#define                   | Description
 --------------------------|------------
 NVM_NUM_LINK_KEYS         | Max number of Classic Link Keys that can be stored 
 NVM_NUM_DEVICE_DB_ENTRIES | Max number of LE Device DB entries that can be stored
-
+NVN_NUM_GATT_SERVER_CCC   | Max number of 'Client Characteristic Configuration' values that can be stored by GATT Server
 
 ## Source tree structure {#sec:sourceTreeHowTo}
 
@@ -482,7 +483,7 @@ services for the HID Control and HID Interrupt PSMs using
 *l2cap_register_service*. In this call, you’ll also specify
 a packet handler to accept and receive keyboard data.
 
-All events names have the form MODULE_EVENT_NAME now, e.g., *gap_event_advertising_report*.
+All events names have the form MODULE_EVENT_NAME now, e.g., *gap_event_-advertising_report*.
 To facilitate working with
 events and get rid of manually calculating offsets into packets, BTstack provides
 auto-generated getters for all fields of all events in *src/hci_event.h*. All

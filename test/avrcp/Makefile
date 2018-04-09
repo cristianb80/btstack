@@ -12,7 +12,8 @@ CORE += \
 	btstack_util.c 	            \
 	main.c 	\
 	btstack_stdin_posix.c \
-	
+	btstack_tlv.c \
+	btstack_tlv_posix.c \	
 
 COMMON += \
 	ad_parser.c 				\
@@ -35,6 +36,7 @@ CFLAGS += -I${BTSTACK_ROOT}/src
 CFLAGS += -I${BTSTACK_ROOT}/src/classic
 CFLAGS += -I${BTSTACK_ROOT}/3rd-party/bluedroid/decoder/include -D OI_DEBUG
 CFLAGS += -I${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/include
+CFLAGS += -I${BTSTACK_ROOT}/3rd-party/tinydir
 CFLAGS += -I${BTSTACK_ROOT}/platform/posix 
 CFLAGS += -I${BTSTACK_ROOT}/platform/embedded 
 CFLAGS += -I..
@@ -57,10 +59,10 @@ LDFLAGS += $(shell pkg-config portaudio-2.0 --libs)
 
 SBC_DECODER += \
 	${BTSTACK_ROOT}/src/classic/btstack_sbc_plc.c \
-	${BTSTACK_ROOT}/src/classic/btstack_sbc_bludroid.c \
+	${BTSTACK_ROOT}/src/classic/btstack_sbc_decoder_bluedroid.c \
 
 SBC_ENCODER += \
-	${BTSTACK_ROOT}/src/classic/btstack_sbc_bludroid.c \
+	${BTSTACK_ROOT}/src/classic/btstack_sbc_encoder_bluedroid.c \
 	${BTSTACK_ROOT}/src/classic/hfp_msbc.c \
 
 AVRCP += \

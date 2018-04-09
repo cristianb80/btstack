@@ -1,6 +1,3 @@
-**_Note: Major API Changes. For older projects, you may use the [v0.9 branch](https://github.com/bluekitchen/btstack/tree/v0.9).
-Please see [Migration notes](https://github.com/bluekitchen/btstack/blob/master/doc/manual/docs/appendix/migration.md)_**
-
 # Welcome to BTstack
 
 BTstack is [BlueKitchen's](http://bluekitchen-gmbh.com) implementation of the official Bluetooth stack.
@@ -28,9 +25,11 @@ BTstack is free for non-commercial use. However, for commercial use, <a href="ma
 
 **Protocols:** L2CAP, RFCOMM, SDP, BNEP, ATT, SM (incl. LE Secure Connections).
 
-**Profiles** GAP, IOP, HFP, HSP, SPP, PAN, GATT.
+**Profiles:** GAP, IOP, HFP, HSP, SPP, PAN, GATT.
 
-**Coming next** A2DP, AVRCP, HID, HOGP, BLE Mesh, and more.
+**Beta Stage:** A2DP, AVRCP, HID, HOGP.
+
+**In Development:** BLE Mesh, AVRCP Browsing and more.
 
 It has been qualified with the the Bluetooth SIG for GAP, IOP, HFP, HSP, SPP, PAN profiles and
 GATT, SM of the Bluetooth 4.2 LE Central and Peripheral roles (QD ID 25340). For information on MFi/iAP2 support, please <a href="mailto:contact@bluekitchen-gmbh.com">contact us</a>.
@@ -40,7 +39,7 @@ GATT, SM of the Bluetooth 4.2 LE Central and Peripheral roles (QD ID 25340). For
 
 Build Status               | Port | Platform
 ---------------------| -----| ------
-No build server | [esp32](https://github.com/bluekitchen/btstack/tree/master/port/esp32) | [Espressif ESP32](http://www.espressif.com/products/hardware/esp32/overview) 2.4 GHz Wi-Fi and Bluetooth Dual-Mode combo chip using [FreeRTOS](http://www.freertos.org)
+[<img src="http://buildbot.bluekitchen-gmbh.com/btstack/badge.png?builder=port-esp32-master">](https://buildbot.bluekitchen-gmbh.com/btstack/builders/port-esp32-master) | [esp32](https://github.com/bluekitchen/btstack/tree/master/port/esp32) | [Espressif ESP32](http://www.espressif.com/products/hardware/esp32/overview) 2.4 GHz Wi-Fi and Bluetooth Dual-Mode combo chip using [FreeRTOS](http://www.freertos.org)
 [<img src="http://buildbot.bluekitchen-gmbh.com/btstack/badge.png?builder=port-ez430-rf2560-master">](https://buildbot.bluekitchen-gmbh.com/btstack/builders/port-ez430-rf2560-master) | [ez430-rf2560](https://github.com/bluekitchen/btstack/tree/master/port/ez430-rf2560) | [EZ430-RF256x Bluetooth Evaluation Tool for MSP430](http://www.ti.com/tool/ez430-rf256x)
 [<img src="http://buildbot.bluekitchen-gmbh.com/btstack/badge.png?builder=port-msp-exp430f5438-cc2564b-master">](https://buildbot.bluekitchen-gmbh.com/btstack/builders/port-msp-exp430f5438-cc2564b-master) | [msp-exp430f5438-cc2564b](https://github.com/bluekitchen/btstack/tree/master/port/msp-exp430f5438-cc2564b) |[MSP430F5438 Experimenter Board for MSP430](http://www.ti.com/tool/msp-exp430f5438) with [Bluetooth CC2564 Module Evaluation Board](http://www.ti.com/tool/cc2564modnem)
 [<img src="http://buildbot.bluekitchen-gmbh.com/btstack/badge.png?builder=port-msp430f5229lp-cc2564b-master">](https://buildbot.bluekitchen-gmbh.com/btstack/builders/port-msp430f5229lp-cc2564b-master)     | [msp430f5529lp-cc2564b](https://github.com/bluekitchen/btstack/tree/master/port/msp430f5229lp-cc2564b) | [MSP-EXP430F5529LP LaunchPad](http://www.ti.com/ww/en/launchpad/launchpads-msp430-msp-exp430f5529lp.html#tabs) with [Bluetooth CC2564 Module Evaluation Board](http://www.ti.com/tool/cc2564modnem) and [EM Adapter BoosterPack](http://www.ti.com/tool/boost-ccemadapter) with additional 32768Hz quartz oscillator
@@ -71,15 +70,16 @@ No build server | [freertos](https://github.com/bluekitchen/btstack/tree/master/
 
 ## Supported Chipsets
 
-Chipset                      | Type      | HCI Transport   | SCO over HCI (2) | BTstack folder | Comment
+Chipset                      | Type      | HCI Transport   | SCO over HCI     | BTstack folder | Comment
 ---------------------------- |-----------| ----------------|------------------|----------------|---------
-Atmel ATWILC3000             | Dual mode | H4              | Don't know       | atwilc3000     | Firmware size: 270 kB
+Atmel ATWILC3000             | LE        | H4              | n.a.             | atwilc3000     | Firmware size: 60 kB
 Broadcom UART                | Dual mode | H4, H5          | Probably         | bcm            | Max UART baudrate 2 mbps
 Broadcom USB Dongles         | Dual mode | USB             | Yes              | bcm            |
 CSR UART                     | Dual mode | H4, H5, BCSP    | No (didn't work) | csr            |
 CSR USB Dongles              | Dual mode | USB             | Yes              | csr            |
+Cypress CYW20704             | Dual mode | H4, H5, USB     | Probably         | bcm            |
 Dialog Semiconductor DA14581 | LE        | H4, SPI         | n.a.             | da14581        | Official HCI firmware used
-Espressif ESP32              | Dual mode | VHCI            | Probably         |                | SoC with Bluetooth and Wifi
+Espressif ESP32              | Dual mode | VHCI            | Not yet          |                | SoC with Bluetooth and Wifi
 EM 9301, 9304                | LE        | SPI             | n.a.             | em9301         | Custom HCI SPI implementation
 Nordic nRF                   | LE        | H4              | n.a.             |                | Requires custom HCI firmware
 STM STLC2500D                | Classic   | H4              | No (didn't try)  | stlc2500d      | Custom deep sleep management not supported

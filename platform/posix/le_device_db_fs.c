@@ -260,6 +260,10 @@ int le_device_db_count(void){
     return counter;
 }
 
+int le_device_db_max_count(void){
+    return LE_DEVICE_MEMORY_SIZE;
+}
+
 // free device
 void le_device_db_remove(int index){
     le_devices[index].addr_type = INVALID_ENTRY_ADDR_TYPE;
@@ -280,6 +284,8 @@ int le_device_db_add(int addr_type, bd_addr_t addr, sm_key_t irk){
 
     log_info("Central Device DB adding type %u - %s", addr_type, bd_addr_to_str(addr));
     log_info_key("irk", irk);
+
+    memset(&le_devices[index], 0, sizeof(le_device_memory_db_t));
 
     le_devices[index].addr_type = addr_type;
     memcpy(le_devices[index].addr, addr, 6);

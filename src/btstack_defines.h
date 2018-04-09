@@ -111,6 +111,10 @@ typedef uint8_t sm_key_t[16];
 
 // PBAP data
 #define PBAP_DATA_PACKET        0x0e
+
+// AVRCP browsing data
+#define AVRCP_BROWSING_DATA_PACKET     0x0f
+
  
 // debug log messages
 #define LOG_MESSAGE_PACKET      0xfc
@@ -185,8 +189,8 @@ typedef uint8_t sm_key_t[16];
 #define AVDTP_CONNECTION_DOES_NOT_EXIST                    0xC1
 #define AVDTP_CONNECTION_IN_WRONG_STATE                    0xC2
 #define AVDTP_STREAM_ENDPOINT_IN_WRONG_STATE               0xC3
-#define AVDTP_MEDIA_CONNECTION_DOES_NOT_EXIST              0xC4 
-
+#define AVDTP_STREAM_ENDPOINT_DOES_NOT_EXIST               0xC4
+#define AVDTP_MEDIA_CONNECTION_DOES_NOT_EXIST              0xC5 
 /* ENUM_END */
 
 // DAEMON COMMANDS
@@ -298,9 +302,7 @@ typedef uint8_t sm_key_t[16];
 
 // ..
 // Internal properties reuse some GATT Characteristic Properties fields
-#define ATT_DB_FLAGS_READ_WITHOUT_AUTHENTICATION 0x0001
-#define ATT_DB_PERSISTENT_WRITE_CCC              0x0010
-
+#define ATT_DB_VERSION                                     0x01
 
 // EVENTS
 
@@ -726,6 +728,12 @@ typedef uint8_t sm_key_t[16];
 #define GATT_EVENT_MTU                                           0xAB
 
 /**
+ * @format H
+ * @param handle
+ */
+#define GATT_EVENT_CAN_WRITE_WITHOUT_RESPONSE                    0xAC
+
+/** 
  * @format H2
  * @param handle
  * @param MTU
@@ -884,7 +892,7 @@ typedef uint8_t sm_key_t[16];
   * @param address
   * @param identity_addr_type
   * @param identity_address
-  * @param index_internal
+  * @param index
   *
   */
 #define SM_EVENT_IDENTITY_RESOLVING_SUCCEEDED                    0xDA
@@ -916,14 +924,32 @@ typedef uint8_t sm_key_t[16];
  /**
   * @brief Emitted during pairing to inform app about address used as identity
   *
-  * @format H1B1B
+  * @format H1B1B1
   * @param handle
   * @param addr_type
   * @param address
   * @param identity_addr_type
   * @param identity_address
+  * @param index
   */
 #define SM_EVENT_IDENTITY_CREATED                                0xDE
+
+ /**
+  * @brief Emitted to inform app that pairing is complete. Possible status values:
+  *        ERROR_CODE_SUCCESS                            -> pairing success
+  *        ERROR_CODE_CONNECTION_TIMEOUT                 -> timeout
+  *        ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION  -> disconnect
+  *        ERROR_CODE_AUTHENTICATION_FAILURE             -> SM protocol error, see reason field with SM_REASON_* from bluetooth.h
+  *
+  * @format H1B11
+  * @param handle
+  * @param addr_type
+  * @param address
+  * @param status
+  * @param reason if status == ERROR_CODE_AUTHENTICATION_FAILURE
+  */
+#define SM_EVENT_PAIRING_COMPLETE                                0xDF
+
 
 // GAP
 
@@ -1363,6 +1389,94 @@ typedef uint8_t sm_key_t[16];
  */
 #define AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_OTHER_CAPABILITY        0x08
 
+
+/**
+ * @format 1211
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ */
+#define AVDTP_SUBEVENT_SIGNALING_MEDIA_TRANSPORT_CAPABILITY        0x09
+
+
+/**
+ * @format 1211
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ */
+#define AVDTP_SUBEVENT_SIGNALING_REPORTING_CAPABILITY        0x0A
+
+
+/**
+ * @format 1211111
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ * @param recovery_type
+ * @param maximum_recovery_window_size
+ * @param maximum_number_media_packets
+ */
+#define AVDTP_SUBEVENT_SIGNALING_RECOVERY_CAPABILITY        0x0B
+
+
+/**
+ * @format 12112LV
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ * @param cp_type
+ * @param cp_type_value_len
+ * @param cp_type_value
+ */
+#define AVDTP_SUBEVENT_SIGNALING_CONTENT_PROTECTION_CAPABILITY        0x0C
+
+
+/**
+ * @format 121111111111
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ * @param fragmentation
+ * @param transport_identifiers_num
+ * @param transport_session_identifier_1
+ * @param transport_session_identifier_2
+ * @param transport_session_identifier_3
+ * @param tcid_1
+ * @param tcid_2
+ * @param tcid_3
+ */
+#define AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY        0x0D
+
+
+/**
+ * @format 1211
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ */
+#define AVDTP_SUBEVENT_SIGNALING_DELAY_REPORTING_CAPABILITY        0x0E
+
+
+/**
+ * @format 1211111
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ * @param back_ch
+ * @param media
+ * @param recovery
+ */
+#define AVDTP_SUBEVENT_SIGNALING_HEADER_COMPRESSION_CAPABILITY        0x0F
+
+
 /**
  * @format 12111121111111
  * @param subevent_code
@@ -1380,7 +1494,7 @@ typedef uint8_t sm_key_t[16];
  * @param min_bitpool_value
  * @param max_bitpool_value
  */
-#define AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_SBC_CONFIGURATION        0x09
+#define AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_SBC_CONFIGURATION        0x10
 
 /**
  * @format 1211112LV
@@ -1394,7 +1508,7 @@ typedef uint8_t sm_key_t[16];
  * @param media_codec_information_len
  * @param media_codec_information
  */
-#define AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_OTHER_CONFIGURATION        0x0A
+#define AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_OTHER_CONFIGURATION        0x11
 
 /**
  * @format 12B111
@@ -1405,7 +1519,7 @@ typedef uint8_t sm_key_t[16];
  * @param remote_seid
  * @param status 0 == OK
  */
-#define AVDTP_SUBEVENT_STREAMING_CONNECTION_ESTABLISHED     0x0B
+#define AVDTP_SUBEVENT_STREAMING_CONNECTION_ESTABLISHED     0x12
 
 /**
  * @format 121
@@ -1413,7 +1527,7 @@ typedef uint8_t sm_key_t[16];
  * @param avdtp_cid
  * @param local_seid
  */
-#define AVDTP_SUBEVENT_STREAMING_CONNECTION_RELEASED        0x0C
+#define AVDTP_SUBEVENT_STREAMING_CONNECTION_RELEASED        0x13
 
 /**
  * @format 1212
@@ -1422,7 +1536,17 @@ typedef uint8_t sm_key_t[16];
  * @param local_seid
  * @param sequence_number
  */
-#define AVDTP_SUBEVENT_STREAMING_CAN_SEND_MEDIA_PACKET_NOW   0x0D
+#define AVDTP_SUBEVENT_STREAMING_CAN_SEND_MEDIA_PACKET_NOW   0x14
+
+/**
+ * @format 1211
+ * @param subevent_code
+ * @param avdtp_cid
+ * @param local_seid
+ * @param remote_seid
+ */
+#define AVDTP_SUBEVENT_SIGNALING_CAPABILITY_DONE             0x15
+
 
 
 /** A2DP Subevent */
@@ -1540,12 +1664,13 @@ typedef uint8_t sm_key_t[16];
 #define A2DP_SUBEVENT_COMMAND_REJECTED                              0x0A
 
 /**
- * @format 12B          Signaling channel is opened.
- * @param subevent_code 
+ * @format 12B1
+ * @param subevent_code
  * @param a2dp_cid
  * @param bd_addr
+ * @param status 0 == OK
  */
-#define A2DP_SUBEVENT_INCOMING_CONNECTION_ESTABLISHED               0x0B
+#define A2DP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED              0x0B
 
 /**
  * @format 12            Signaling channel is released.
@@ -1786,6 +1911,40 @@ typedef uint8_t sm_key_t[16];
  * @param status
  */
 #define AVRCP_SUBEVENT_NOW_PLAYING_INFO_DONE                                  0x1A
+
+/**
+ * @format 1B2
+ * @param subevent_code
+ * @param bd_addr
+ * @param browsing_cid
+ */
+#define AVRCP_SUBEVENT_INCOMING_BROWSING_CONNECTION                          0x1B
+
+/**
+ * @format 11B2
+ * @param subevent_code
+ * @param status 0 == OK
+ * @param bd_addr
+ * @param browsing_cid
+ */
+#define AVRCP_SUBEVENT_BROWSING_CONNECTION_ESTABLISHED                        0x1C
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param browsing_cid
+ */
+#define AVRCP_SUBEVENT_BROWSING_CONNECTION_RELEASED                            0x1D
+
+
+/**
+ * @format 1211
+ * @param subevent_code
+ * @param browsing_cid
+ * @param browsing_status
+ * @param bluetooth_status
+ */
+#define AVRCP_SUBEVENT_BROWSING_MEDIA_ITEM_DONE                                0x1E
 
 
 /**

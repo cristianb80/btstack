@@ -53,50 +53,6 @@ typedef struct {
     bd_addr_type_t address_type;
 } sm_lookup_entry_t;
 
-static inline uint8_t sm_pairing_packet_get_code(sm_pairing_packet_t packet){
-    return packet[0];
-}
-static inline uint8_t sm_pairing_packet_get_io_capability(sm_pairing_packet_t packet){
-    return packet[1];
-}
-static inline uint8_t sm_pairing_packet_get_oob_data_flag(sm_pairing_packet_t packet){
-    return packet[2];
-}
-static inline uint8_t sm_pairing_packet_get_auth_req(sm_pairing_packet_t packet){
-    return packet[3];
-}
-static inline uint8_t sm_pairing_packet_get_max_encryption_key_size(sm_pairing_packet_t packet){
-    return packet[4];
-}
-static inline uint8_t sm_pairing_packet_get_initiator_key_distribution(sm_pairing_packet_t packet){
-    return packet[5];
-}
-static inline uint8_t sm_pairing_packet_get_responder_key_distribution(sm_pairing_packet_t packet){
-    return packet[6];
-}
-
-static inline void sm_pairing_packet_set_code(sm_pairing_packet_t packet, uint8_t code){
-    packet[0] = code;
-}
-static inline void sm_pairing_packet_set_io_capability(sm_pairing_packet_t packet, uint8_t io_capability){
-    packet[1] = io_capability;
-}
-static inline void sm_pairing_packet_set_oob_data_flag(sm_pairing_packet_t packet, uint8_t oob_data_flag){
-    packet[2] = oob_data_flag;
-}
-static inline void sm_pairing_packet_set_auth_req(sm_pairing_packet_t packet, uint8_t auth_req){
-    packet[3] = auth_req;
-}
-static inline void sm_pairing_packet_set_max_encryption_key_size(sm_pairing_packet_t packet, uint8_t max_encryption_key_size){
-    packet[4] = max_encryption_key_size;
-}
-static inline void sm_pairing_packet_set_initiator_key_distribution(sm_pairing_packet_t packet, uint8_t initiator_key_distribution){
-    packet[5] = initiator_key_distribution;
-}
-static inline void sm_pairing_packet_set_responder_key_distribution(sm_pairing_packet_t packet, uint8_t responder_key_distribution){
-    packet[6] = responder_key_distribution;
-}
-
 /* API_START */
 
 /**
@@ -120,7 +76,7 @@ void sm_set_ir(const sm_key_t ir);
  * @brief Registers OOB Data Callback. The callback should set the oob_data and return 1 if OOB data is availble
  * @param get_oob_data_callback
  */
-void sm_register_oob_data_callback( int (*get_oob_data_callback)(uint8_t addres_type, bd_addr_t addr, uint8_t * oob_data));
+void sm_register_oob_data_callback( int (*get_oob_data_callback)(uint8_t address_type, bd_addr_t addr, uint8_t * oob_data));
 
 /**
  * @brief Add event packet handler. 
@@ -197,28 +153,6 @@ void sm_passkey_input(hci_con_handle_t con_handle, uint32_t passkey);
 void sm_keypress_notification(hci_con_handle_t con_handle, uint8_t action);
 
 /**
- *
- * @brief Get encryption key size.
- * @param con_handle
- * @return 0 if not encrypted, 7-16 otherwise
- */
-int sm_encryption_key_size(hci_con_handle_t con_handle);
-
-/**
- * @brief Get authentication property.
- * @param con_handle
- * @return 1 if bonded with OOB/Passkey (AND MITM protection)
- */
-int sm_authenticated(hci_con_handle_t con_handle);
-
-/**
- * @brief Queries authorization state.
- * @param con_handle
- * @return authorization_state for the current session
- */
-authorization_state_t sm_authorization_state(hci_con_handle_t con_handle);
-
-/**
  * @brief Used by att_server.c to request user authorization.
  * @param con_handle
  */
@@ -291,12 +225,12 @@ int sm_le_device_index(hci_con_handle_t con_handle );
 void sm_use_fixed_ec_keypair(uint8_t * qx, uint8_t * qy, uint8_t * d);
 
 /**
- * @brief Set passkey used with LE Legacy Pairing when we generate and show it instead of random number
- * @note Can be used to improve security over Just Works if no keyboard or displary are present and
+ * @brief Use fixec passkey for Legacy and SC instead of generating a random number
+ * @note Can be used to improve security over Just Works if no keyboard or displary are present and 
  *       individual random passkey can be printed on the device during production
  * @param passkey
  */
-void sm_use_fixed_legacy_pairing_passkey_in_display_role(uint32_t passkey);
+void sm_use_fixed_passkey_in_display_role(uint32_t passkey);
 
 /**
  * @brief Allow connection re-encryption in Peripheral (Responder) role for LE Legacy Pairing 
@@ -308,12 +242,33 @@ void sm_use_fixed_legacy_pairing_passkey_in_display_role(uint32_t passkey);
  */
 void sm_allow_ltk_reconstruction_without_le_device_db_entry(int allow);
 
+/**
+ * @brief Generate OOB data for LE Secure Connections
+ * @note This generates a 128 bit random number ra and then calculates Ca = f4(PKa, PKa, ra, 0)
+ *       New OOB data should be generated for each pairing. Ra is used for subsequent OOB pairings
+ * @param callback
+ * @returns status
+ */
+uint8_t sm_generate_sc_oob_data(void (*callback)(const uint8_t * confirm_value, const uint8_t * random_value));
+
+/**
+ *
+ * @brief Registers OOB Data Callback for LE Secure Conections. The callback should set all arguments and return 1 if OOB data is availble
+ * @note the oob_sc_local_random usually is the random_value returend by sm_generate_sc_oob_data
+ * @param get_oob_data_callback
+ */
+void sm_register_sc_oob_data_callback( int (*get_sc_oob_data_callback)(uint8_t address_type, bd_addr_t addr, uint8_t * oob_sc_peer_confirm, uint8_t * oob_sc_peer_random));
+
 /* API_END */
 
 // PTS testing
 void sm_test_set_irk(sm_key_t irk);
 void sm_test_use_fixed_local_csrk(void);
 void sm_test_use_fixed_ec_keypair(void);
+
+#ifdef ENABLE_TESTING_SUPPORT
+void sm_test_set_pairing_failure(int reason);
+#endif
 
 #if defined __cplusplus
 }

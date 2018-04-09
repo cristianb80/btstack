@@ -35,6 +35,7 @@ COMMON += \
 	hci_dump.c		            \
 	l2cap.c			            \
 	l2cap_signaling.c	        \
+	btstack_tlv.c               \
 
 CLASSIC += \
 	btstack_link_key_db_memory.c   \
@@ -82,10 +83,10 @@ include ${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/Makefile.inc
 
 SBC_DECODER += \
 	btstack_sbc_plc.c \
-	btstack_sbc_bludroid.c \
+	btstack_sbc_decoder_bluedroid.c \
 
 SBC_ENCODER += \
-	btstack_sbc_bludroid.c \
+	btstack_sbc_encoder_bluedroid.c \
 	hfp_msbc.c \
 
 CVSD_PLC = \
@@ -107,17 +108,21 @@ HXCMOD_PLAYER = \
 	${BTSTACK_ROOT}/3rd-party/hxcmod-player/mods/nao-deceased_by_disease.c 	\
 
 EXAMPLES = 					\
+	att_delayed_read_response \
 	a2dp_sink_demo			\
-	a2dp_source_demo       \
+	a2dp_source_demo        \
 	ancs_client_demo		\
 	dut_mode_classic        \
 	gap_dedicated_bonding	\
 	gap_inquiry 			\
 	gap_le_advertisements   \
+	gap_link_keys           \
 	gatt_battery_query		\
 	gatt_browser            \
+	gatt_heart_rate_client	\
 	hfp_ag_demo             \
 	hfp_hf_demo             \
+	hid_host_demo           \
 	hid_keyboard_demo 	    \
 	hid_mouse_demo          \
 	hog_keyboard_demo       \
@@ -125,6 +130,8 @@ EXAMPLES = 					\
 	hsp_ag_demo             \
 	hsp_hs_demo             \
 	le_counter              \
+	le_data_channel_client  \
+	le_data_channel_server  \
 	le_streamer				\
 	le_streamer_client      \
 	led_counter				\
@@ -145,6 +152,8 @@ EXAMPLES_USING_LE =			\
 	gatt_battery_query      \
 	gatt_browser			\
 	le_counter              \
+	le_data_channel_client  \
+	le_data_channel_server  \
 	le_streamer				\
 	le_streamer_client      \
 	spp_and_le_counter	    \
@@ -197,6 +206,9 @@ spp_counter: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} spp_counter.c
 le_counter: le_counter.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} battery_service_server.o le_counter.c
 	${CC} $(filter-out le_counter.h,$^) ${CFLAGS} ${LDFLAGS} -o $@
 
+att_delayed_read_response: att_delayed_read_response.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} att_delayed_read_response.c
+	${CC} $(filter-out att_delayed_read_response.h,$^) ${CFLAGS} ${LDFLAGS} -o $@
+
 hog_keyboard_demo: hog_keyboard_demo.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} battery_service_server.o device_information_service_server.o hids_device.o btstack_ring_buffer.o hog_keyboard_demo.c
 	${CC} $(filter-out hog_keyboard_demo.h,$^) ${CFLAGS} ${LDFLAGS} -o $@
 
@@ -206,13 +218,16 @@ hog_mouse_demo: hog_mouse_demo.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SER
 sm_pairing_peripheral: sm_pairing_peripheral.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} sm_pairing_peripheral.c
 	${CC} $(filter-out sm_pairing_peripheral.h,$^) ${CFLAGS} ${LDFLAGS} -o $@
 
-sm_pairing_central: ${CORE_OBJ} ${COMMON_OBJ} ${SM_OBJ} sm_pairing_central.o
-	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
+sm_pairing_central: sm_pairing_central.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} sm_pairing_central.o
+	${CC} $(filter-out sm_pairing_central.h,$^) ${CFLAGS} ${LDFLAGS} -o $@
 
 le_streamer: le_streamer.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} le_streamer.c
 	${CC} $(filter-out le_streamer.h,$^) ${CFLAGS} ${LDFLAGS} -o $@
 
 le_streamer_client: ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_CLIENT_OBJ} ${SM_OBJ} le_streamer_client.c
+	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
+
+gatt_heart_rate_client: ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_CLIENT_OBJ} ${SM_OBJ} gatt_heart_rate_client.c
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
 spp_and_le_counter: spp_and_le_counter.h ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} spp_and_le_counter.c
@@ -231,6 +246,9 @@ gap_dedicated_bonding: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} gap_dedicated_bo
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
 gap_inquiry: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} gap_inquiry.c
+	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
+
+gap_link_keys: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} gap_link_keys.c
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
 panu_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} panu_demo.c
@@ -263,26 +281,39 @@ hfp_ag_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_DECODE
 hfp_hf_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_DECODER_OBJ} ${SBC_ENCODER_OBJ} ${CVSD_PLC_OBJ} wav_util.o sco_demo_util.o btstack_ring_buffer.o hfp.o hfp_hf.o hfp_hf_demo.c
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
+hid_host_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} btstack_hid_parser.o hid_host_demo.o
+	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
+
 hid_keyboard_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} btstack_ring_buffer.o hid_device.o hid_keyboard_demo.o
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
 hid_mouse_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} btstack_ring_buffer.o hid_device.o hid_mouse_demo.o
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
-a2dp_source_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_ENCODER_OBJ} ${SBC_DECODER_OBJ} ${AVDTP_OBJ} ${HXCMOD_PLAYER_OBJ} avrcp.o avrcp_target.o a2dp_source_demo.c
+a2dp_source_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_ENCODER_OBJ} ${AVDTP_OBJ} ${HXCMOD_PLAYER_OBJ} avrcp.o avrcp_target.o a2dp_source_demo.c
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
-a2dp_sink_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_ENCODER_OBJ} ${SBC_DECODER_OBJ} ${AVDTP_OBJ} avrcp.o avrcp_controller.o a2dp_sink_demo.c
+a2dp_sink_demo: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} ${SBC_DECODER_OBJ} ${AVDTP_OBJ} avrcp.o avrcp_controller.o a2dp_sink_demo.c
+	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
+
+avrcp_browsing_client: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} ${SDP_CLIENT} avrcp.o avrcp_controller.o avrcp_browsing_controller.o avrcp_media_item_iterator.o avrcp_browsing_client.c
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
 dut_mode_classic: ${CORE_OBJ} ${COMMON_OBJ} ${CLASSIC_OBJ} dut_mode_classic.c
 	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
 
+le_data_channel_client: ${CORE_OBJ} ${COMMON_OBJ} ${SM_OBJ} le_data_channel_client.c
+	${CC} $^ ${CFLAGS} ${LDFLAGS} -o $@
+
+le_data_channel_server: le_data_channel_server.h ${CORE_OBJ} ${COMMON_OBJ} ${ATT_OBJ} ${GATT_SERVER_OBJ} ${SM_OBJ} le_data_channel_server.c
+	${CC} $(filter-out le_data_channel_server.h,$^) ${CFLAGS} ${LDFLAGS} -o $@
+
 clean:
 	rm -f ${EXAMPLES} *_demo
 	rm -f  *.o *.out *.hex *.exe *.wav *.sbc
 	rm -f  ancs_client_demo.h profile.h spp_and_le_counter.h le_counter.h le_streamer.h hog_keyboard_demo.h hog_mouse_demo.h
-	rm -f  gatt_battery_query.h gatt_browser.h sm_pairing_peripheral.h spp_and_le_streamer.h
+	rm -f  gatt_battery_query.h gatt_browser.h sm_pairing_peripheral.h spp_and_le_streamer.h 
+	rm -f  le_data_channel_server.h sm_pairing_central.h
 	rm -rf *.dSYM
 	rm -rf ${BTSTACK_ROOT}/src/*.o
 	rm -rf ${BTSTACK_ROOT}/src/ble/*.o

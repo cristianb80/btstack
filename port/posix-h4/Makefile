@@ -17,6 +17,7 @@ CORE += \
 	main.c \
 	btstack_stdin_posix.c \
 	wav_util.c 					\
+	0000000_META_hci_patches_v5_iram.c \
 	# bluetooth_init_cc2564_2.14.c \
 	# bluetooth_init_cc2564C_1.0.c \
 
@@ -40,6 +41,7 @@ CFLAGS  += -g -Wall -Werror \
 	-I$(BTSTACK_ROOT)/chipset/em9301 \
 	-I$(BTSTACK_ROOT)/chipset/stlc2500d \
 	-I$(BTSTACK_ROOT)/chipset/tc3566x \
+    -I${BTSTACK_ROOT}/3rd-party/tinydir
 
 VPATH += ${BTSTACK_ROOT}/platform/posix
 VPATH += ${BTSTACK_ROOT}/platform/embedded

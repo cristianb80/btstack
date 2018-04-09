@@ -61,6 +61,14 @@
 #include "hci.h"
 #include "hci_dump.h"
 #include "btstack_stdin.h"
+#include "btstack_tlv_posix.h"
+
+#define TLV_DB_PATH_PREFIX "/tmp/btstack_"
+#define TLV_DB_PATH_POSTFIX ".tlv"
+static char tlv_db_path[100];
+static const btstack_tlv_t * tlv_impl;
+static btstack_tlv_posix_t   tlv_context;
+static bd_addr_t             local_addr;
 
 int btstack_main(int argc, const char * argv[]);
 
@@ -70,9 +78,20 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
     UNUSED(channel);
     UNUSED(size);
     if (packet_type != HCI_EVENT_PACKET) return;
-    if (hci_event_packet_get_type(packet) != BTSTACK_EVENT_STATE) return;
-    if (btstack_event_state_get_state(packet) != HCI_STATE_WORKING) return;
-    printf("BTstack up and running.\n");
+    switch (hci_event_packet_get_type(packet)){
+        case BTSTACK_EVENT_STATE:
+            if (btstack_event_state_get_state(packet) != HCI_STATE_WORKING) return;
+            gap_local_bd_addr(local_addr);
+            printf("BTstack up and running on %s.\n", bd_addr_to_str(local_addr));
+            strcpy(tlv_db_path, TLV_DB_PATH_PREFIX);
+            strcat(tlv_db_path, bd_addr_to_str(local_addr));
+            strcat(tlv_db_path, TLV_DB_PATH_POSTFIX);
+            tlv_impl = btstack_tlv_posix_init_instance(&tlv_context, tlv_db_path);
+            btstack_tlv_set_instance(tlv_impl, &tlv_context);
+            break;
+        default:
+            break;
+    }
 }
 
 static void sigint_handler(int param){
@@ -103,23 +122,24 @@ int main(int argc, const char * argv[]){
 
     uint8_t usb_path[USB_MAX_PATH_LEN];
     int usb_path_len = 0;
+    const char * usb_path_string = NULL;
     if (argc >= 3 && strcmp(argv[1], "-u") == 0){
         // parse command line options for "-u 11:22:33"
-        const char * port_str = argv[2];
+        usb_path_string = argv[2];
         printf("Specified USB Path: ");
         while (1){
             char * delimiter;
-            int port = strtol(port_str, &delimiter, 16);
+            int port = strtol(usb_path_string, &delimiter, 16);
             usb_path[usb_path_len] = port;
             usb_path_len++;
             printf("%02x ", port);
             if (!delimiter) break;
             if (*delimiter != ':' && *delimiter != '-') break;
-            port_str = delimiter+1;
+            usb_path_string = delimiter+1;
         }
         printf("\n");
         argc -= 2;
-        memmove(&argv[0], &argv[2], argc * sizeof(char *));
+        memmove(&argv[1], &argv[3], (argc-1) * sizeof(char *));
     }
 
 	/// GET STARTED with BTstack ///
@@ -136,7 +156,7 @@ int main(int argc, const char * argv[]){
     strcpy(pklg_path, "/tmp/hci_dump");
     if (usb_path_len){
         strcat(pklg_path, "_");
-        strcat(pklg_path, argv[2]);
+        strcat(pklg_path, usb_path_string);
     }
     strcat(pklg_path, ".pklg");
     printf("Packet Log: %s\n", pklg_path);

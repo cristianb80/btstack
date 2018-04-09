@@ -36,7 +36,8 @@ You can quit the monitor with CTRL-].
 
 ## Old Make Versions
 
-Compilation fails with older versions of the make tool, e.g. make 3.8.1 (from 2006) provided by the current Xcode 9 on macOS.
+Compilation fails with older versions of the make tool, e.g. make 3.8.1 (from 2006) provided by the current Xcode 9 on macOS or Ubuntu 14.04.1 LTS.
+
 Interestingly, if you run make a second time, it completes the compilation.
 
 ## Configuration
@@ -45,10 +46,9 @@ The sdkconfig of the example template disables the original Bluedroid stack by d
 
 ## Limitations
 
-### Bug in Host Controller to Host Flow Control implementation
-The Link Layer in the ESP32 does not reset the supervision timeout while the Host does not accept new packets (due to slow processing etc..), which will eventually triggger a disconnect based on Connection Timeout (reason 8). See https://github.com/espressif/esp-idf/issues/644#issuecomment-325251315 
+### Issues with the Bluetooth Controller Implementation
 
-For most applications, this won't be an issue, but please keep it in mind if you're LE data processing is very slow.
+There are different issues in the Bluetooth Controller of the ESP32 that is provided in binary. We've submitted appropriate issues on the GitHub Issues page here: https://github.com/espressif/esp-idf/issues/created_by/mringwal
 
 ### Multi-Threading
 

@@ -102,12 +102,13 @@ static void sm_peripheral_setup(void){
      */
 
     // LE Legacy Pairing, Just Works
-    sm_set_io_capabilities(IO_CAPABILITY_NO_INPUT_NO_OUTPUT);
-    sm_set_authentication_requirements(0);
+    // sm_set_io_capabilities(IO_CAPABILITY_NO_INPUT_NO_OUTPUT);
+    // sm_set_authentication_requirements(0);
 
     // LE Legacy Pairing, Passkey entry initiator enter, responder (us) displays
     // sm_set_io_capabilities(IO_CAPABILITY_DISPLAY_ONLY);
     // sm_set_authentication_requirements(SM_AUTHREQ_MITM_PROTECTION);
+    // sm_use_fixed_passkey_in_display_role(123456);
 
 #ifdef ENABLE_LE_SECURE_CONNECTIONS
     // LE Secure Connetions, Just Works
@@ -121,6 +122,7 @@ static void sm_peripheral_setup(void){
     // LE Legacy Pairing, Passkey entry initiator enter, responder (us) displays
     // sm_set_io_capabilities(IO_CAPABILITY_DISPLAY_ONLY);
     // sm_set_authentication_requirements(SM_AUTHREQ_SECURE_CONNECTION|SM_AUTHREQ_MITM_PROTECTION);
+    // sm_use_fixed_passkey_in_display_role(123456);
 #endif
 
     // setup ATT server
@@ -180,8 +182,28 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
                     sm_event_identity_created_get_address(packet, addr);
                     printf("Identity resolving failed\n");
                     break;
-            }   
-            break;
+                case SM_EVENT_PAIRING_COMPLETE:
+                    switch (sm_event_pairing_complete_get_status(packet)){
+                        case ERROR_CODE_SUCCESS:
+                            printf("Pairing complete, success\n");
+                            break;
+                        case ERROR_CODE_CONNECTION_TIMEOUT:
+                            printf("Pairing failed, timeout\n");
+                            break;
+                        case ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION:
+                            printf("Pairing faileed, disconnected\n");
+                            break;
+                        case ERROR_CODE_AUTHENTICATION_FAILURE:
+                            printf("Pairing failed, reason = %u\n", sm_event_pairing_complete_get_reason(packet));
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+        }
+        break;
     }
 }
 /* LISTING_END */

@@ -189,7 +189,7 @@ static int avrcp_target_send_now_playing_info(uint16_t cid, avrcp_connection_t *
     int num_free_bytes = size - pos - 2;
     uint8_t MAX_NUMBER_ATTR_LEN = 10;
 
-    while (!fragmented && num_free_bytes > 0 && connection->next_attr_id <= AVRCP_MEDIA_ATTR_SONG_LENGTH){
+    while (!fragmented && num_free_bytes > 0 && connection->next_attr_id <= AVRCP_MEDIA_ATTR_SONG_LENGTH_MS){
         avrcp_media_attribute_id_t attr_id = connection->next_attr_id;
         int attr_index = attr_id - 1;
 
@@ -197,6 +197,7 @@ static int avrcp_target_send_now_playing_info(uint16_t cid, avrcp_connection_t *
             int num_written_bytes = 0;
             int num_bytes_to_write = 0;
             switch (attr_id){
+                case AVRCP_MEDIA_ATTR_ALL:
                 case AVRCP_MEDIA_ATTR_NONE:
                     break;
                 case AVRCP_MEDIA_ATTR_TRACK:
@@ -217,7 +218,7 @@ static int avrcp_target_send_now_playing_info(uint16_t cid, avrcp_connection_t *
                     fragmented = 1;
                     connection->attribute_value_offset = 0;
                     break;
-                case AVRCP_MEDIA_ATTR_SONG_LENGTH:
+                case AVRCP_MEDIA_ATTR_SONG_LENGTH_MS:
                     num_bytes_to_write = AVRCP_ATTR_HEADER_LEN + MAX_NUMBER_ATTR_LEN;
                     if (num_free_bytes >= num_bytes_to_write){
                         num_written_bytes = avrcp_target_pack_single_element_attribute_number(packet, pos, attr_id, connection->song_length_ms);
@@ -264,7 +265,7 @@ static int avrcp_target_send_now_playing_info(uint16_t cid, avrcp_connection_t *
                 break;
         }
     } else {
-        if (connection->next_attr_id >= AVRCP_MEDIA_ATTR_SONG_LENGTH){ // DONE
+        if (connection->next_attr_id >= AVRCP_MEDIA_ATTR_SONG_LENGTH_MS){ // DONE
             if (connection->packet_type != AVRCP_SINGLE_PACKET){
                 connection->packet_type = AVRCP_END_PACKET;
             }
@@ -398,12 +399,9 @@ static uint8_t avrcp_target_response_vendor_dependent_interim(avrcp_connection_t
 static uint8_t avrcp_target_pass_through_response(uint16_t avrcp_cid, avrcp_command_type_t cmd_type, avrcp_operation_id_t opid, uint8_t operands_length, uint8_t operand){
     avrcp_connection_t * connection = get_avrcp_connection_for_avrcp_cid(avrcp_cid, &avrcp_target_context);
     if (!connection){
-        log_error("avrcp_target_operation_reject: could not find a connection.");
+        log_error("Could not find a connection.");
         return ERROR_CODE_UNKNOWN_CONNECTION_IDENTIFIER; 
     }
-    if (connection->state != AVCTP_CONNECTION_OPENED) return ERROR_CODE_COMMAND_DISALLOWED;
-    // printf("avrcp_target_pass_through_response: operation 0x%02x, operands length %d\n", opid, operands_length);
-            
     connection->command_type = cmd_type;
     connection->subunit_type = AVRCP_SUBUNIT_TYPE_PANEL; 
     connection->subunit_id =   AVRCP_SUBUNIT_ID;
@@ -597,7 +595,7 @@ uint8_t avrcp_target_set_playback_status(uint16_t avrcp_cid, avrcp_playback_stat
 void avrcp_target_set_now_playing_info(uint16_t avrcp_cid, const avrcp_track_t * current_track, uint16_t total_tracks){
     avrcp_connection_t * connection = get_avrcp_connection_for_avrcp_cid(avrcp_cid, &avrcp_target_context);
     if (!connection){
-        printf("avrcp_unit_info: could not find a connection. cid 0x%02x\n", avrcp_cid);
+        log_error("avrcp_unit_info: could not find a connection. cid 0x%02x\n", avrcp_cid);
         return; 
     }
     if (!current_track){
@@ -724,29 +722,31 @@ static void avrcp_handle_l2cap_data_packet_for_signaling_connection(avrcp_connec
             
             if (avrcp_is_receive_pass_through_cmd(operation_id)){
                 operation_id = packet[6] & 0x7F;
+                avrcp_target_operation_accepted(connection->avrcp_cid, packet[6], packet[7], packet[8]);
+                break;
             }
             
             switch (operation_id){
                 case AVRCP_OPERATION_ID_PLAY:
                 case AVRCP_OPERATION_ID_PAUSE:
                 case AVRCP_OPERATION_ID_STOP:
-                    avrcp_target_operation_accepted(connection->avrcp_cid, packet[6], packet[7], packet[8]);
-                    avrcp_target_emit_operation(avrcp_target_context.avrcp_callback, connection->avrcp_cid, packet[6], packet[7], packet[8]);
-                    break;
+                case AVRCP_OPERATION_ID_VOLUME_UP:
+                case AVRCP_OPERATION_ID_VOLUME_DOWN:
                 case AVRCP_OPERATION_ID_REWIND:
                 case AVRCP_OPERATION_ID_FAST_FORWARD:
                 case AVRCP_OPERATION_ID_FORWARD:
                 case AVRCP_OPERATION_ID_BACKWARD:
                 case AVRCP_OPERATION_ID_SKIP:
-                case AVRCP_OPERATION_ID_VOLUME_UP:
-                case AVRCP_OPERATION_ID_VOLUME_DOWN:
                 case AVRCP_OPERATION_ID_MUTE:
+                    avrcp_target_operation_accepted(connection->avrcp_cid, packet[6], packet[7], packet[8]);
+                    avrcp_target_emit_operation(avrcp_target_context.avrcp_callback, connection->avrcp_cid, operation_id, packet[7], packet[8]);
+                    break;
                 case AVRCP_OPERATION_ID_UNDEFINED:
                     avrcp_target_operation_not_implemented(connection->avrcp_cid, packet[6], packet[7], packet[8]);
                     return;
                 default:
                     avrcp_target_operation_not_implemented(connection->avrcp_cid, packet[6], packet[7], packet[8]);
-                    break;
+                    return;
             }
             break;
         }
@@ -930,12 +930,16 @@ static void avrcp_controller_packet_handler(uint8_t packet_type, uint16_t channe
             switch (hci_event_packet_get_type(packet)){
                 case L2CAP_EVENT_CAN_SEND_NOW:{
                     connection = get_avrcp_connection_for_l2cap_signaling_cid(channel, &avrcp_target_context);
-                    if (!connection) break;
+                    if (!connection) {
+                        log_error("Connection not found\n");
+                        break;
+                    }
                     
                     if (connection->abort_continue_response){
                         connection->abort_continue_response = 0;
                         connection->now_playing_info_response = 0;
                         avrcp_target_abort_continue_response(connection->l2cap_signaling_cid, connection);
+                        break;
                     }
 
                     if (connection->now_playing_info_response){
@@ -943,8 +947,7 @@ static void avrcp_controller_packet_handler(uint8_t packet_type, uint16_t channe
                         avrcp_target_send_now_playing_info(connection->l2cap_signaling_cid, connection);
                         break;
                     }
-                    break;
-                
+                    
                     if (connection->track_changed){
                         connection->track_changed = 0;
                         avrcp_target_send_notification(connection->l2cap_signaling_cid, connection, AVRCP_NOTIFICATION_EVENT_TRACK_CHANGED, connection->track_id, 8);

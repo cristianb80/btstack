@@ -48,12 +48,15 @@ extern "C" {
 #endif
 
 // custom BTstack error codes
-#define ATT_ERROR_HCI_DISCONNECT_RECEIVED          0x1f
+#define ATT_ERROR_HCI_DISCONNECT_RECEIVED         0x1f
 
 // custom BTstack ATT error codes
-#define ATT_ERROR_DATA_MISMATCH                    0x7e
-#define ATT_ERROR_TIMEOUT                          0x7F
-    
+#define ATT_ERROR_DATA_MISMATCH                   0x7e
+#define ATT_ERROR_TIMEOUT                         0x7F
+
+// custom BTstack ATT Response Pending 
+#define ATT_READ_RESPONSE_PENDING                 0xffff
+
 typedef struct att_connection {
     hci_con_handle_t con_handle;
     uint16_t mtu;       // initialized to ATT_DEFAULT_MTU (23), negotiated during MTU exchange
@@ -66,6 +69,7 @@ typedef struct att_connection {
 // ATT Client Read Callback for Dynamic Data
 // - if buffer == NULL, don't copy data, just return size of value
 // - if buffer != NULL, copy data and return number bytes copied
+// If ENABLE_ATT_DELAYED_READ_RESPONSE is defined, you may return ATT_READ_RESPONSE_PENDING if data isn't available yet
 // @param con_handle of hci le connection
 // @param attribute_handle to be read
 // @param offset defines start of attribute value
@@ -130,7 +134,8 @@ void att_dump_attributes(void);
  * @param att_connection used for mtu and security properties
  * @param request_buffer, request_len: ATT request from clinet
  * @param response_buffer for result
- * @returns len of data in response buffer. 0 = no response
+ * @returns len of data in response buffer. 0 = no response, 
+ *          ATT_READ_RESPONSE_PENDING if it was returned at least once for dynamic data (requires ENABLE_ATT_DELAYED_READ_RESPONSE)
  */
 uint16_t att_handle_request(att_connection_t * att_connection,
                             uint8_t * request_buffer,
@@ -169,13 +174,6 @@ uint16_t att_prepare_handle_value_indication(att_connection_t * att_connection,
  * @brief transcation queue of prepared writes, e.g., after disconnect
  */
 void att_clear_transaction_queue(att_connection_t * att_connection);
-
-/**
- * @brief register read/write callbacks for specific handle range
- * @param att_service_handler_t
- */
-void att_register_service_handler(att_service_handler_t * handler);
-
 
 // att_read_callback helpers for a various data types
 
@@ -236,6 +234,16 @@ uint16_t gatt_server_get_value_handle_for_characteristic_with_uuid16(uint16_t st
 
 // returns 0 if not found
 uint16_t gatt_server_get_client_configuration_handle_for_characteristic_with_uuid16(uint16_t start_handle, uint16_t end_handle, uint16_t uuid16);
+
+// non-user functionality for att_server
+
+/*
+ * @brief Check if writes to handle should be persistent
+ * @param handle
+ * @returns 1 if persistent
+ */
+int att_is_persistent_ccc(uint16_t handle);
+
 
 #if defined __cplusplus
 }

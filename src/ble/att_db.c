@@ -47,6 +47,11 @@
 #include "btstack_debug.h"
 #include "btstack_util.h"
 
+typedef enum {
+    ATT_READ,
+    ATT_WRITE,
+} att_operation_t;
+
 // Buetooth Base UUID 00000000-0000-1000-8000-00805F9B34FB in little endian
 static const uint8_t bluetooth_base_uuid[] = { 0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
@@ -65,13 +70,6 @@ static uint16_t uuid16_from_uuid(uint16_t uuid_len, uint8_t * uuid){
 }
 
 // ATT Database
-static uint8_t const * att_db = NULL;
-static att_read_callback_t  att_read_callback  = NULL;
-static att_write_callback_t att_write_callback = NULL;
-static uint8_t  att_prepare_write_error_code   = 0;
-static uint16_t att_prepare_write_error_handle = 0x0000;
-
-static btstack_linked_list_t service_handlers;
 
 // new java-style iterator
 typedef struct att_iterator {
@@ -85,6 +83,18 @@ typedef struct att_iterator {
     uint16_t value_len;
     uint8_t  const * value;
 } att_iterator_t;
+
+static void att_persistent_ccc_cache(att_iterator_t * it);
+
+static uint8_t const * att_db = NULL;
+static att_read_callback_t  att_read_callback  = NULL;
+static att_write_callback_t att_write_callback = NULL;
+static uint8_t  att_prepare_write_error_code   = 0;
+static uint16_t att_prepare_write_error_handle = 0x0000;
+
+// single cache for att_is_persistent_ccc - stores flags before write callback
+static uint16_t att_persistent_ccc_handle;
+static uint16_t att_persistent_ccc_uuid16;
 
 static void att_iterator_init(att_iterator_t *it){
     it->att_ptr = att_db;
@@ -156,30 +166,6 @@ static int att_find_handle(att_iterator_t *it, uint16_t handle){
     return 0;
 }
 
-static att_service_handler_t * att_service_handler_for_handle(uint16_t handle){
-    btstack_linked_list_iterator_t it;
-    btstack_linked_list_iterator_init(&it, &service_handlers);
-    while (btstack_linked_list_iterator_has_next(&it)){
-        att_service_handler_t * handler = (att_service_handler_t*) btstack_linked_list_iterator_next(&it);
-        if (handler->start_handle > handle) continue;
-        if (handler->end_handle   < handle) continue;
-        return handler;
-    }
-    return NULL;
-}
-
-static att_read_callback_t att_read_callback_for_handle(uint16_t handle){
-    att_service_handler_t * handler = att_service_handler_for_handle(handle);
-    if (handler) return handler->read_callback;
-    return att_read_callback;
-}
-
-static att_write_callback_t att_write_callback_for_handle(uint16_t handle){
-    att_service_handler_t * handler = att_service_handler_for_handle(handle);
-    if (handler) return handler->write_callback;
-    return att_write_callback;
-}
-
 // experimental client API
 uint16_t att_uuid_for_handle(uint16_t attribute_handle){
     att_iterator_t it;
@@ -192,9 +178,7 @@ uint16_t att_uuid_for_handle(uint16_t attribute_handle){
 
 static void att_update_value_len(att_iterator_t *it, hci_con_handle_t con_handle){
     if ((it->flags & ATT_PROPERTY_DYNAMIC) == 0) return;
-    att_read_callback_t callback = att_read_callback_for_handle(it->handle);
-    if (!callback) return;
-    it->value_len = (*callback)(con_handle, it->handle, 0, NULL, 0);
+    it->value_len = (*att_read_callback)(con_handle, it->handle, 0, NULL, 0);
     return;
 }
 
@@ -203,9 +187,7 @@ static int att_copy_value(att_iterator_t *it, uint16_t offset, uint8_t * buffer,
     
     // DYNAMIC 
     if (it->flags & ATT_PROPERTY_DYNAMIC){
-        att_read_callback_t callback = att_read_callback_for_handle(it->handle);
-        if (!callback) return 0;
-        return (*callback)(con_handle, it->handle, offset, buffer, buffer_size);
+        return (*att_read_callback)(con_handle, it->handle, offset, buffer, buffer_size);
     }
     
     // STATIC
@@ -218,6 +200,12 @@ static int att_copy_value(att_iterator_t *it, uint16_t offset, uint8_t * buffer,
 }
 
 void att_set_db(uint8_t const * db){
+    // validate db version
+    if (db == NULL) return;
+    if (*db++ != ATT_DB_VERSION){
+        log_error("ATT DB version differs, please regenerate .h from .gatt file or update att_db_util.c");
+        return;
+    }
     att_db = db;
 }
 
@@ -299,22 +287,46 @@ static inline uint16_t setup_error_invalid_offset(uint8_t * response_buffer, uin
     return setup_error(response_buffer, request, handle, ATT_ERROR_INVALID_OFFSET);
 }
 
-static uint8_t att_validate_security(att_connection_t * att_connection, att_iterator_t * it){
+static uint8_t att_validate_security(att_connection_t * att_connection, att_operation_t operation, att_iterator_t * it){
+    int required_security_level = 0;
+    switch (operation){
+        case ATT_READ:
+            if (it->flags & ATT_PROPERTY_READ_PERMISSION_BIT_0) {
+                required_security_level |= 1;
+            }
+            if (it->flags & ATT_PROPERTY_READ_PERMISSION_BIT_1) {
+                required_security_level |= 2;
+            }
+            break;
+        case ATT_WRITE:
+            if (it->flags & ATT_PROPERTY_WRITE_PERMISSION_BIT_0) {
+                required_security_level |= 1;
+            }
+            if (it->flags & ATT_PROPERTY_WRITE_PERMISSION_BIT_1) {
+                required_security_level |= 2;
+            }
+            break;
+    }
+
     int required_encryption_size = it->flags >> 12;
     if (required_encryption_size) required_encryption_size++;   // store -1 to fit into 4 bit
-    log_info("att_validate_security. flags 0x%04x - req enc size %u, authorized %u, authenticated %u, encryption_key_size %u",
-        it->flags, required_encryption_size, att_connection->authorized, att_connection->authenticated, att_connection->encryption_key_size);
-    if ((it->flags & ATT_PROPERTY_AUTHENTICATION_REQUIRED) && att_connection->authenticated == 0) {
-        return ATT_ERROR_INSUFFICIENT_AUTHENTICATION;
-    }
-    if ((it->flags & ATT_PROPERTY_AUTHORIZATION_REQUIRED) && att_connection->authorized == 0) {
+
+    log_info("att_validate_security. flags 0x%04x (=> security level %u, key size %u) authorized %u, authenticated %u, encryption_key_size %u",
+        it->flags, required_security_level, required_encryption_size, att_connection->authorized, att_connection->authenticated, att_connection->encryption_key_size);
+
+    if ((required_security_level >= ATT_SECURITY_AUTHORIZED) && (att_connection->authorized == 0)) {
         return ATT_ERROR_INSUFFICIENT_AUTHORIZATION;
     }
-    if (required_encryption_size > 0 && att_connection->encryption_key_size == 0){
-        return ATT_ERROR_INSUFFICIENT_ENCRYPTION;
+    if ((required_security_level >= ATT_SECURITY_AUTHENTICATED) && (att_connection->authenticated == 0)) {
+        return ATT_ERROR_INSUFFICIENT_AUTHENTICATION;
     }
-    if (required_encryption_size > att_connection->encryption_key_size){
-        return ATT_ERROR_INSUFFICIENT_ENCRYPTION_KEY_SIZE;
+    if (required_security_level >= ATT_SECURITY_ENCRYPTED) {
+        if ((required_encryption_size > 0) && (att_connection->encryption_key_size == 0)){
+            return ATT_ERROR_INSUFFICIENT_ENCRYPTION;
+        }
+        if (required_encryption_size > att_connection->encryption_key_size){
+            return ATT_ERROR_INSUFFICIENT_ENCRYPTION_KEY_SIZE;
+        }
     }
     return 0;
 }
@@ -517,6 +529,10 @@ static uint16_t handle_read_by_type_request2(att_connection_t * att_connection, 
     uint8_t error_code = 0;
     uint16_t first_matching_but_unreadable_handle = 0;
 
+#ifdef ENABLE_ATT_DELAYED_READ_RESPONSE
+    int read_request_pending = 0;
+#endif
+
     while (att_iterator_has_next(&it)){
         att_iterator_fetch_next(&it);
         
@@ -536,13 +552,18 @@ static uint16_t handle_read_by_type_request2(att_connection_t * att_connection, 
         }
 
         // check security requirements
-        if ((it.flags & ATT_DB_FLAGS_READ_WITHOUT_AUTHENTICATION) == 0){
-            error_code = att_validate_security(att_connection, &it);
-            if (error_code) break;
-        }
+        error_code = att_validate_security(att_connection, ATT_READ, &it);
+        if (error_code) break;
 
         att_update_value_len(&it, att_connection->con_handle);
         
+#ifdef ENABLE_ATT_DELAYED_READ_RESPONSE
+        if (it.value_len == ATT_READ_RESPONSE_PENDING){
+            read_request_pending = 1;
+        }
+        if (read_request_pending) continue;
+#endif
+
         // check if value has same len as last one
         uint16_t this_pair_len = 2 + it.value_len;
         if (offset > 1){
@@ -572,6 +593,10 @@ static uint16_t handle_read_by_type_request2(att_connection_t * att_connection, 
         offset += bytes_copied;
     }
     
+#ifdef ENABLE_ATT_DELAYED_READ_RESPONSE
+    if (read_request_pending) return ATT_READ_RESPONSE_PENDING;
+#endif
+
     // at least one attribute could be read
     if (offset > 1){
         response_buffer[0] = ATT_READ_BY_TYPE_RESPONSE;
@@ -623,14 +648,16 @@ static uint16_t handle_read_request2(att_connection_t * att_connection, uint8_t 
     }
 
     // check security requirements
-    if ((it.flags & ATT_DB_FLAGS_READ_WITHOUT_AUTHENTICATION) == 0){
-        uint8_t error_code = att_validate_security(att_connection, &it);
-        if (error_code) {
-            return setup_error(response_buffer, request_type, handle, error_code);
-        }
+    uint8_t error_code = att_validate_security(att_connection, ATT_READ, &it);
+    if (error_code) {
+        return setup_error(response_buffer, request_type, handle, error_code);
     }
 
     att_update_value_len(&it, att_connection->con_handle);
+
+#ifdef ENABLE_ATT_DELAYED_READ_RESPONSE
+    if (it.value_len == ATT_READ_RESPONSE_PENDING) return ATT_READ_RESPONSE_PENDING;
+#endif
 
     uint16_t offset   = 1;
     // limit data
@@ -671,14 +698,16 @@ static uint16_t handle_read_blob_request2(att_connection_t * att_connection, uin
     }
 
     // check security requirements
-    if ((it.flags & ATT_DB_FLAGS_READ_WITHOUT_AUTHENTICATION) == 0){
-        uint8_t error_code = att_validate_security(att_connection, &it);
-        if (error_code) {
-            return setup_error(response_buffer, request_type, handle, error_code);
-        }
+    uint8_t error_code = att_validate_security(att_connection, ATT_READ, &it);
+    if (error_code) {
+        return setup_error(response_buffer, request_type, handle, error_code);
     }
 
     att_update_value_len(&it, att_connection->con_handle);
+
+#ifdef ENABLE_ATT_DELAYED_READ_RESPONSE
+    if (it.value_len == ATT_READ_RESPONSE_PENDING) return ATT_READ_RESPONSE_PENDING;
+#endif
 
     if (value_offset > it.value_len){
         return setup_error_invalid_offset(response_buffer, request_type, handle);
@@ -721,6 +750,11 @@ static uint16_t handle_read_multiple_request2(att_connection_t * att_connection,
     int i;
     uint8_t error_code = 0;
     uint16_t handle = 0;
+
+#ifdef ENABLE_ATT_DELAYED_READ_RESPONSE
+    int read_request_pending = 0;
+#endif
+
     for (i=0;i<num_handles;i++){
         handle = little_endian_read_16(handles, i << 1);
         
@@ -742,12 +776,18 @@ static uint16_t handle_read_multiple_request2(att_connection_t * att_connection,
         }
 
         // check security requirements
-        if ((it.flags & ATT_DB_FLAGS_READ_WITHOUT_AUTHENTICATION) == 0){
-            error_code = att_validate_security(att_connection, &it);
-            if (error_code) break;
-        }
+        error_code = att_validate_security(att_connection, ATT_READ, &it);
+        if (error_code) break;
+
         att_update_value_len(&it, att_connection->con_handle);
         
+#ifdef ENABLE_ATT_DELAYED_READ_RESPONSE
+        if (it.value_len == ATT_READ_RESPONSE_PENDING) {
+            read_request_pending = 1;
+        }
+        if (read_request_pending) continue;
+#endif
+
         // limit data
         if (offset + it.value_len > response_buffer_size) {
             it.value_len = response_buffer_size - 1;
@@ -906,8 +946,7 @@ static uint16_t handle_write_request(att_connection_t * att_connection, uint8_t 
     if (!ok) {
         return setup_error_invalid_handle(response_buffer, request_type, handle);
     }
-    att_write_callback_t callback = att_write_callback_for_handle(handle);
-    if (!callback) {
+    if (!att_write_callback) {
         return setup_error_write_not_permitted(response_buffer, request_type, handle);
     }
     if ((it.flags & ATT_PROPERTY_WRITE) == 0) {
@@ -917,11 +956,12 @@ static uint16_t handle_write_request(att_connection_t * att_connection, uint8_t 
         return setup_error_write_not_permitted(response_buffer, request_type, handle);
     }
     // check security requirements
-    uint8_t error_code = att_validate_security(att_connection, &it);
+    uint8_t error_code = att_validate_security(att_connection, ATT_WRITE, &it);
     if (error_code) {
         return setup_error(response_buffer, request_type, handle, error_code);
     }
-    error_code = (*callback)(att_connection->con_handle, handle, ATT_TRANSACTION_MODE_NONE, 0, request_buffer + 3, request_len - 3);
+    att_persistent_ccc_cache(&it);
+    error_code = (*att_write_callback)(att_connection->con_handle, handle, ATT_TRANSACTION_MODE_NONE, 0, request_buffer + 3, request_len - 3);
     if (error_code) {
         return setup_error(response_buffer, request_type, handle, error_code);
     }
@@ -940,8 +980,7 @@ static uint16_t handle_prepare_write_request(att_connection_t * att_connection, 
 
     uint16_t handle = little_endian_read_16(request_buffer, 1);
     uint16_t offset = little_endian_read_16(request_buffer, 3);
-    att_write_callback_t callback = att_write_callback_for_handle(handle);
-    if (!callback) {
+    if (!att_write_callback) {
         return setup_error_write_not_permitted(response_buffer, request_type, handle);
     }
     att_iterator_t it;
@@ -956,12 +995,12 @@ static uint16_t handle_prepare_write_request(att_connection_t * att_connection, 
         return setup_error_write_not_permitted(response_buffer, request_type, handle);
     }
     // check security requirements
-    uint8_t error_code = att_validate_security(att_connection, &it);
+    uint8_t error_code = att_validate_security(att_connection, ATT_WRITE, &it);
     if (error_code) {
         return setup_error(response_buffer, request_type, handle, error_code);
     }
 
-    error_code = (*callback)(att_connection->con_handle, handle, ATT_TRANSACTION_MODE_ACTIVE, offset, request_buffer + 5, request_len - 5);
+    error_code = (*att_write_callback)(att_connection->con_handle, handle, ATT_TRANSACTION_MODE_ACTIVE, offset, request_buffer + 5, request_len - 5);
     switch (error_code){
         case 0:
             break;
@@ -980,38 +1019,11 @@ static uint16_t handle_prepare_write_request(att_connection_t * att_connection, 
     return request_len;
 }
 
-static void att_notify_write_callbacks(att_connection_t * att_connection, uint16_t transaction_mode){
-    // notify all 
-    btstack_linked_list_iterator_t it;
-    btstack_linked_list_iterator_init(&it, &service_handlers);
-    while (btstack_linked_list_iterator_has_next(&it)){
-        att_service_handler_t * handler = (att_service_handler_t*) btstack_linked_list_iterator_next(&it);
-        if (!handler->write_callback) continue;
-        (*handler->write_callback)(att_connection->con_handle, 0, transaction_mode, 0, NULL, 0);
-    }
-    if (!att_write_callback) return;
-    (*att_write_callback)(att_connection->con_handle, 0, transaction_mode, 0, NULL, 0);
-}
-
-// returns first reported error or 0
-static uint8_t att_validate_prepared_write(att_connection_t * att_connection){
-    btstack_linked_list_iterator_t it;
-    btstack_linked_list_iterator_init(&it, &service_handlers);
-    while (btstack_linked_list_iterator_has_next(&it)){
-        att_service_handler_t * handler = (att_service_handler_t*) btstack_linked_list_iterator_next(&it);
-        if (!handler->write_callback) continue;
-        uint8_t error_code = (*handler->write_callback)(att_connection->con_handle, 0, ATT_TRANSACTION_MODE_VALIDATE, 0, NULL, 0);
-        if (error_code) return error_code;
-    }
-    if (!att_write_callback) return 0;
-    return (*att_write_callback)(att_connection->con_handle, 0, ATT_TRANSACTION_MODE_VALIDATE, 0, NULL, 0);
-}
-
 /*
  * @brief transcation queue of prepared writes, e.g., after disconnect
  */
 void att_clear_transaction_queue(att_connection_t * att_connection){
-    att_notify_write_callbacks(att_connection, ATT_TRANSACTION_MODE_CANCEL);
+    (*att_write_callback)(att_connection->con_handle, 0, ATT_TRANSACTION_MODE_CANCEL, 0, NULL, 0);
 }
 
 // MARK: ATT_EXECUTE_WRITE_REQUEST 0x18
@@ -1026,7 +1038,7 @@ static uint16_t handle_execute_write_request(att_connection_t * att_connection, 
     if (request_buffer[1]) {
         // validate queued write
         if (att_prepare_write_error_code == 0){
-            att_prepare_write_error_code = att_validate_prepared_write(att_connection);
+            att_prepare_write_error_code = (*att_write_callback)(att_connection->con_handle, 0, ATT_TRANSACTION_MODE_VALIDATE, 0, NULL, 0);
         }
         // deliver queued errors
         if (att_prepare_write_error_code){
@@ -1036,7 +1048,7 @@ static uint16_t handle_execute_write_request(att_connection_t * att_connection, 
             att_prepare_write_reset();
             return setup_error(response_buffer, request_type, handle, error_code);
         }
-        att_notify_write_callbacks(att_connection, ATT_TRANSACTION_MODE_EXECUTE);
+        att_write_callback(att_connection->con_handle, 0, ATT_TRANSACTION_MODE_EXECUTE, 0, NULL, 0);
     } else {
         att_clear_transaction_queue(att_connection);
     }
@@ -1054,16 +1066,16 @@ static void handle_write_command(att_connection_t * att_connection, uint8_t * re
     UNUSED(response_buffer_size);
 
     uint16_t handle = little_endian_read_16(request_buffer, 1);
-    att_write_callback_t callback = att_write_callback_for_handle(handle);
-    if (!callback) return;
+    if (!att_write_callback) return;
 
     att_iterator_t it;
     int ok = att_find_handle(&it, handle);
     if (!ok) return;
     if ((it.flags & ATT_PROPERTY_DYNAMIC) == 0) return;
     if ((it.flags & ATT_PROPERTY_WRITE_WITHOUT_RESPONSE) == 0) return;
-    if (att_validate_security(att_connection, &it)) return;
-    (*callback)(att_connection->con_handle, handle, ATT_TRANSACTION_MODE_NONE, 0, request_buffer + 3, request_len - 3);
+    if (att_validate_security(att_connection, ATT_WRITE, &it)) return;
+    att_persistent_ccc_cache(&it);
+    (*att_write_callback)(att_connection->con_handle, handle, ATT_TRANSACTION_MODE_NONE, 0, request_buffer + 3, request_len - 3);
 }
 
 // MARK: helper for ATT_HANDLE_VALUE_NOTIFICATION and ATT_HANDLE_VALUE_INDICATION
@@ -1160,19 +1172,6 @@ uint16_t att_handle_request(att_connection_t * att_connection,
     return response_len;
 }
 
-/**
- * @brief register read/write callbacks for specific handle range
- * @param att_service_handler_t
- */
-void att_register_service_handler(att_service_handler_t * handler){
-    if (att_service_handler_for_handle(handler->start_handle) ||
-        att_service_handler_for_handle(handler->end_handle)){
-        log_error("att_register_service_handler: handler for range 0x%04x-0x%04x already registered", handler->start_handle, handler->end_handle);
-        return;
-    }
-    btstack_linked_list_add(&service_handlers, (btstack_linked_item_t*) handler);
-}
-
 // returns 1 if service found. only primary service.
 int gatt_server_get_get_handle_range_for_service_with_uuid16(uint16_t uuid16, uint16_t * start_handle, uint16_t * end_handle){
     uint16_t in_group    = 0;
@@ -1246,6 +1245,26 @@ uint16_t gatt_server_get_client_configuration_handle_for_characteristic_with_uui
         }
     }
     return 0;
+}
+
+// 1-item cache to optimize query during write_callback
+static void att_persistent_ccc_cache(att_iterator_t * it){
+    att_persistent_ccc_handle = it->handle;
+    if (it->flags & ATT_PROPERTY_UUID128){
+        att_persistent_ccc_uuid16 = 0;
+    } else {
+        att_persistent_ccc_uuid16 = little_endian_read_16(it->uuid, 0);
+    }
+}
+
+int att_is_persistent_ccc(uint16_t handle){
+    if (handle != att_persistent_ccc_handle){
+        att_iterator_t it;
+        int ok = att_find_handle(&it, handle);
+        if (!ok) return 0;
+        att_persistent_ccc_cache(&it);
+    }
+    return att_persistent_ccc_uuid16 == GATT_CLIENT_CHARACTERISTICS_CONFIGURATION;
 }
 
 // att_read_callback helpers

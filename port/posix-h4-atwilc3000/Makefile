@@ -3,7 +3,6 @@ BTSTACK_ROOT = ../..
 
 CORE += \
 	btstack_chipset_atwilc3000.c \
-	wilc3000_bt_firmware.c \
 	btstack_link_key_db_fs.c \
 	btstack_run_loop_posix.c \
 	btstack_uart_block_posix.c \
@@ -23,6 +22,7 @@ CFLAGS  += -g -Wall -Werror \
 	-I$(BTSTACK_ROOT)/platform/posix \
 	-I$(BTSTACK_ROOT)/chipset/atwilc3000 \
 	-I$(BTSTACK_ROOT)/platform/embedded \
+	-I${BTSTACK_ROOT}/3rd-party/tinydir
 
 VPATH += ${BTSTACK_ROOT}/platform/posix
 VPATH += ${BTSTACK_ROOT}/chipset/atwilc3000

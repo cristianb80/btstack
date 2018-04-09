@@ -9,10 +9,10 @@ include ${SBC_ENCODER_ROOT}/Makefile.inc
 
 SBC_DECODER += \
 	${BTSTACK_ROOT}/src/classic/btstack_sbc_plc.c \
-	${BTSTACK_ROOT}/src/classic/btstack_sbc_bludroid.c \
+	${BTSTACK_ROOT}/src/classic/btstack_sbc_decoder_bluedroid.c \
 
 SBC_ENCODER += \
-	${BTSTACK_ROOT}/src/classic/btstack_sbc_bludroid.c \
+	${BTSTACK_ROOT}/src/classic/btstack_sbc_encoder_bluedroid.c \
 	${BTSTACK_ROOT}/src/classic/hfp_msbc.c \
 
 SBC_DECODER_OBJ  = $(SBC_DECODER:.c=.o) 
@@ -21,12 +21,14 @@ SBC_ENCODER_OBJ  = $(SBC_ENCODER:.c=.o)
 CFLAGS  = -g -Wall -I. -I../ -I${BTSTACK_ROOT}/src -I${BTSTACK_ROOT}/src/classic -I${BTSTACK_ROOT}/platform/posix
 CFLAGS += -I${SBC_DECODER_ROOT}/include 
 CFLAGS += -I${SBC_ENCODER_ROOT}/include 
-CFLAGS += -D PRINT_SAMPLES -D PRINT_SCALEFACTORS -D OI_DEBUG -D TRACE_EXECUTION 
+CFLAGS += -Werror=unused-parameter
+#CFLAGS += -D PRINT_SAMPLES -D PRINT_SCALEFACTORS -D OI_DEBUG -D TRACE_EXECUTION 
 LDFLAGS += -lCppUTest -lCppUTestExt
 VPATH += ${SBC_DECODER_ROOT}/srce 
 VPATH += ${SBC_ENCODER_ROOT}/srce
 VPATH += ${BTSTACK_ROOT}/src
 VPATH += ${BTSTACK_ROOT}/platform/posix
+VPATH += ${BTSTACK_ROOT}/port/libusb
 
 COMMON += \
 	hci_dump.c		            \
@@ -35,7 +37,8 @@ COMMON += \
 
 COMMON_OBJ  = $(COMMON:.c=.o) 
 
-SBC_TESTS = sbc_decoder_test msbc_encoder_test sbc_decoder_sine
+SBC_TESTS = sbc_decoder_test msbc_encoder_test 
+#sbc_decoder_sine
 
 all: ${SBC_TESTS}
 

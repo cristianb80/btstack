@@ -143,6 +143,7 @@ COMMON = \
     hci_dump.o                \
     btstack_uart_block_embedded.o \
     hal_flash_bank_mxc.o      \
+    btstack_tlv.o             \
     btstack_tlv_flash_bank.o  \
     btstack_stdin_embedded.o  \
 
@@ -189,10 +190,10 @@ include ${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/Makefile.inc
 
 SBC_DECODER += \
 	btstack_sbc_plc.c \
-	btstack_sbc_bludroid.c \
+	btstack_sbc_decoder_bluedroid.c \
 
 SBC_ENCODER += \
-	btstack_sbc_bludroid.c \
+	btstack_sbc_encoder_bluedroid.c \
 	hfp_msbc.c \
 
 HXCMOD_PLAYER = \
@@ -257,9 +258,7 @@ include $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source/$(COMPILER)/$(TARGET_LC).
 
 # fetch and convert init scripts
 # use bluetooth_init_cc2564B_1.6_BT_Spec_4.1.c
-# include ${BTSTACK_ROOT}/chipset/cc256x/Makefile.inc
-
-#include ${BTSTACK_ROOT}/example/Makefile.inc
+include ${BTSTACK_ROOT}/chipset/cc256x/Makefile.inc
 
 rm-compiled-gatt-file:
 	rm -f spp_and_le_counter.h

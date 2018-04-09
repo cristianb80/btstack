@@ -183,7 +183,7 @@ static inline uint8_t hci_event_inquiry_result_get_num_responses(const uint8_t *
  * @note: btstack_type B
  */
 static inline void hci_event_inquiry_result_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[3], bd_addr);    
+    reverse_bd_addr(&event[3], bd_addr);
 }
 /**
  * @brief Get field page_scan_repetition_mode from event HCI_EVENT_INQUIRY_RESULT
@@ -256,7 +256,7 @@ static inline uint16_t hci_event_connection_complete_get_connection_handle(const
  * @note: btstack_type B
  */
 static inline void hci_event_connection_complete_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[5], bd_addr);    
+    reverse_bd_addr(&event[5], bd_addr);
 }
 /**
  * @brief Get field link_type from event HCI_EVENT_CONNECTION_COMPLETE
@@ -284,7 +284,7 @@ static inline uint8_t hci_event_connection_complete_get_encryption_enabled(const
  * @note: btstack_type B
  */
 static inline void hci_event_connection_request_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 /**
  * @brief Get field class_of_device from event HCI_EVENT_CONNECTION_REQUEST
@@ -368,7 +368,7 @@ static inline uint8_t hci_event_remote_name_request_complete_get_status(const ui
  * @note: btstack_type B
  */
 static inline void hci_event_remote_name_request_complete_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[3], bd_addr);    
+    reverse_bd_addr(&event[3], bd_addr);
 }
 /**
  * @brief Get field remote_name from event HCI_EVENT_REMOTE_NAME_REQUEST_COMPLETE
@@ -537,7 +537,7 @@ static inline uint8_t hci_event_role_change_get_status(const uint8_t * event){
  * @note: btstack_type B
  */
 static inline void hci_event_role_change_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[3], bd_addr);    
+    reverse_bd_addr(&event[3], bd_addr);
 }
 /**
  * @brief Get field role from event HCI_EVENT_ROLE_CHANGE
@@ -593,7 +593,7 @@ static inline uint16_t hci_event_mode_change_event_get_interval(const uint8_t * 
  * @note: btstack_type B
  */
 static inline void hci_event_pin_code_request_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 
 /**
@@ -603,7 +603,7 @@ static inline void hci_event_pin_code_request_get_bd_addr(const uint8_t * event,
  * @note: btstack_type B
  */
 static inline void hci_event_link_key_request_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 
 /**
@@ -707,7 +707,7 @@ static inline uint8_t hci_event_inquiry_result_with_rssi_get_num_responses(const
  * @note: btstack_type B
  */
 static inline void hci_event_inquiry_result_with_rssi_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[3], bd_addr);    
+    reverse_bd_addr(&event[3], bd_addr);
 }
 /**
  * @brief Get field page_scan_repetition_mode from event HCI_EVENT_INQUIRY_RESULT_WITH_RSSI
@@ -780,7 +780,7 @@ static inline hci_con_handle_t hci_event_synchronous_connection_complete_get_han
  * @note: btstack_type B
  */
 static inline void hci_event_synchronous_connection_complete_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[5], bd_addr);    
+    reverse_bd_addr(&event[5], bd_addr);
 }
 /**
  * @brief Get field link_type from event HCI_EVENT_SYNCHRONOUS_CONNECTION_COMPLETE
@@ -853,7 +853,7 @@ static inline uint8_t hci_event_extended_inquiry_response_get_num_responses(cons
  * @note: btstack_type B
  */
 static inline void hci_event_extended_inquiry_response_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[3], bd_addr);    
+    reverse_bd_addr(&event[3], bd_addr);
 }
 /**
  * @brief Get field page_scan_repetition_mode from event HCI_EVENT_EXTENDED_INQUIRY_RESPONSE
@@ -927,7 +927,7 @@ static inline hci_con_handle_t hci_event_encryption_key_refresh_complete_get_han
  * @note: btstack_type B
  */
 static inline void hci_event_user_confirmation_request_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 /**
  * @brief Get field numeric_value from event HCI_EVENT_USER_CONFIRMATION_REQUEST
@@ -946,7 +946,7 @@ static inline uint32_t hci_event_user_confirmation_request_get_numeric_value(con
  * @note: btstack_type B
  */
 static inline void hci_event_user_passkey_request_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 
 /**
@@ -956,7 +956,7 @@ static inline void hci_event_user_passkey_request_get_bd_addr(const uint8_t * ev
  * @note: btstack_type B
  */
 static inline void hci_event_remote_oob_data_request_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 
 /**
@@ -975,7 +975,7 @@ static inline uint8_t hci_event_simple_pairing_complete_get_status(const uint8_t
  * @note: btstack_type B
  */
 static inline void hci_event_simple_pairing_complete_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[3], bd_addr);    
+    reverse_bd_addr(&event[3], bd_addr);
 }
 
 /**
@@ -1026,7 +1026,7 @@ static inline uint8_t hci_event_transport_sleep_mode_get_active(const uint8_t * 
  * @note: btstack_type B
  */
 static inline void hci_event_sco_can_send_now_get_handle(const uint8_t * event, bd_addr_t handle){
-    reverse_bd_addr(&event[2], handle);    
+    reverse_bd_addr(&event[2], handle);
 }
 
 /**
@@ -1045,7 +1045,7 @@ static inline uint8_t l2cap_event_channel_opened_get_status(const uint8_t * even
  * @note: btstack_type B
  */
 static inline void l2cap_event_channel_opened_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[3], address);    
+    reverse_bd_addr(&event[3], address);
 }
 /**
  * @brief Get field handle from event L2CAP_EVENT_CHANNEL_OPENED
@@ -1137,7 +1137,7 @@ static inline uint16_t l2cap_event_channel_closed_get_local_cid(const uint8_t * 
  * @note: btstack_type B
  */
 static inline void l2cap_event_incoming_connection_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[2], address);    
+    reverse_bd_addr(&event[2], address);
 }
 /**
  * @brief Get field handle from event L2CAP_EVENT_INCOMING_CONNECTION
@@ -1267,7 +1267,7 @@ static inline uint8_t l2cap_event_le_incoming_connection_get_address_type(const 
  * @note: btstack_type B
  */
 static inline void l2cap_event_le_incoming_connection_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[3], address);    
+    reverse_bd_addr(&event[3], address);
 }
 /**
  * @brief Get field handle from event L2CAP_EVENT_LE_INCOMING_CONNECTION
@@ -1340,7 +1340,7 @@ static inline uint8_t l2cap_event_le_channel_opened_get_address_type(const uint8
  * @note: btstack_type B
  */
 static inline void l2cap_event_le_channel_opened_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[4], address);    
+    reverse_bd_addr(&event[4], address);
 }
 /**
  * @brief Get field handle from event L2CAP_EVENT_LE_CHANNEL_OPENED
@@ -1452,7 +1452,7 @@ static inline uint8_t rfcomm_event_channel_opened_get_status(const uint8_t * eve
  * @note: btstack_type B
  */
 static inline void rfcomm_event_channel_opened_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[3], bd_addr);    
+    reverse_bd_addr(&event[3], bd_addr);
 }
 /**
  * @brief Get field con_handle from event RFCOMM_EVENT_CHANNEL_OPENED
@@ -1517,7 +1517,7 @@ static inline uint16_t rfcomm_event_channel_closed_get_rfcomm_cid(const uint8_t 
  * @note: btstack_type B
  */
 static inline void rfcomm_event_incoming_connection_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 /**
  * @brief Get field server_channel from event RFCOMM_EVENT_INCOMING_CONNECTION
@@ -1764,7 +1764,7 @@ static inline hci_con_handle_t gatt_event_service_query_result_get_handle(const 
  * @note: btstack_type X
  */
 static inline void gatt_event_service_query_result_get_service(const uint8_t * event, gatt_client_service_t * service){
-    gatt_client_deserialize_service(event, 4, service);    
+    gatt_client_deserialize_service(event, 4, service);
 }
 #endif
 
@@ -1785,7 +1785,7 @@ static inline hci_con_handle_t gatt_event_characteristic_query_result_get_handle
  * @note: btstack_type Y
  */
 static inline void gatt_event_characteristic_query_result_get_characteristic(const uint8_t * event, gatt_client_characteristic_t * characteristic){
-    gatt_client_deserialize_characteristic(event, 4, characteristic);    
+    gatt_client_deserialize_characteristic(event, 4, characteristic);
 }
 #endif
 
@@ -1815,7 +1815,7 @@ static inline uint16_t gatt_event_included_service_query_result_get_include_hand
  * @note: btstack_type X
  */
 static inline void gatt_event_included_service_query_result_get_service(const uint8_t * event, gatt_client_service_t * service){
-    gatt_client_deserialize_service(event, 6, service);    
+    gatt_client_deserialize_service(event, 6, service);
 }
 #endif
 
@@ -1836,7 +1836,7 @@ static inline hci_con_handle_t gatt_event_all_characteristic_descriptors_query_r
  * @note: btstack_type Z
  */
 static inline void gatt_event_all_characteristic_descriptors_query_result_get_characteristic_descriptor(const uint8_t * event, gatt_client_characteristic_descriptor_t * characteristic_descriptor){
-    gatt_client_deserialize_characteristic_descriptor(event, 4, characteristic_descriptor);    
+    gatt_client_deserialize_characteristic_descriptor(event, 4, characteristic_descriptor);
 }
 #endif
 
@@ -2104,6 +2104,18 @@ static inline uint16_t gatt_event_mtu_get_MTU(const uint8_t * event){
 }
 #endif
 
+#ifdef ENABLE_BLE
+/**
+ * @brief Get field handle from event GATT_EVENT_CAN_WRITE_WITHOUT_RESPONSE
+ * @param event packet
+ * @return handle
+ * @note: btstack_type H
+ */
+static inline hci_con_handle_t gatt_event_can_write_without_response_get_handle(const uint8_t * event){
+    return little_endian_read_16(event, 2);
+}
+#endif
+
 /**
  * @brief Get field handle from event ATT_EVENT_MTU_EXCHANGE_COMPLETE
  * @param event packet
@@ -2223,7 +2235,7 @@ static inline uint16_t bnep_event_channel_opened_get_mtu(const uint8_t * event){
  * @note: btstack_type B
  */
 static inline void bnep_event_channel_opened_get_remote_address(const uint8_t * event, bd_addr_t remote_address){
-    reverse_bd_addr(&event[11], remote_address);    
+    reverse_bd_addr(&event[11], remote_address);
 }
 
 /**
@@ -2260,7 +2272,7 @@ static inline uint16_t bnep_event_channel_closed_get_destination_uuid(const uint
  * @note: btstack_type B
  */
 static inline void bnep_event_channel_closed_get_remote_address(const uint8_t * event, bd_addr_t remote_address){
-    reverse_bd_addr(&event[8], remote_address);    
+    reverse_bd_addr(&event[8], remote_address);
 }
 
 /**
@@ -2297,7 +2309,7 @@ static inline uint16_t bnep_event_channel_timeout_get_destination_uuid(const uin
  * @note: btstack_type B
  */
 static inline void bnep_event_channel_timeout_get_remote_address(const uint8_t * event, bd_addr_t remote_address){
-    reverse_bd_addr(&event[8], remote_address);    
+    reverse_bd_addr(&event[8], remote_address);
 }
 /**
  * @brief Get field channel_state from event BNEP_EVENT_CHANNEL_TIMEOUT
@@ -2343,7 +2355,7 @@ static inline uint16_t bnep_event_can_send_now_get_destination_uuid(const uint8_
  * @note: btstack_type B
  */
 static inline void bnep_event_can_send_now_get_remote_address(const uint8_t * event, bd_addr_t remote_address){
-    reverse_bd_addr(&event[8], remote_address);    
+    reverse_bd_addr(&event[8], remote_address);
 }
 
 #ifdef ENABLE_BLE
@@ -2372,7 +2384,7 @@ static inline uint8_t sm_event_just_works_request_get_addr_type(const uint8_t * 
  * @note: btstack_type B
  */
 static inline void sm_event_just_works_request_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2402,7 +2414,7 @@ static inline uint8_t sm_event_just_works_cancel_get_addr_type(const uint8_t * e
  * @note: btstack_type B
  */
 static inline void sm_event_just_works_cancel_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2432,7 +2444,7 @@ static inline uint8_t sm_event_passkey_display_number_get_addr_type(const uint8_
  * @note: btstack_type B
  */
 static inline void sm_event_passkey_display_number_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 /**
  * @brief Get field passkey from event SM_EVENT_PASSKEY_DISPLAY_NUMBER
@@ -2471,7 +2483,7 @@ static inline uint8_t sm_event_passkey_display_cancel_get_addr_type(const uint8_
  * @note: btstack_type B
  */
 static inline void sm_event_passkey_display_cancel_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2501,7 +2513,7 @@ static inline uint8_t sm_event_passkey_input_number_get_addr_type(const uint8_t 
  * @note: btstack_type B
  */
 static inline void sm_event_passkey_input_number_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2531,7 +2543,7 @@ static inline uint8_t sm_event_passkey_input_cancel_get_addr_type(const uint8_t 
  * @note: btstack_type B
  */
 static inline void sm_event_passkey_input_cancel_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2561,7 +2573,7 @@ static inline uint8_t sm_event_numeric_comparison_request_get_addr_type(const ui
  * @note: btstack_type B
  */
 static inline void sm_event_numeric_comparison_request_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 /**
  * @brief Get field passkey from event SM_EVENT_NUMERIC_COMPARISON_REQUEST
@@ -2600,7 +2612,7 @@ static inline uint8_t sm_event_numeric_comparison_cancel_get_addr_type(const uin
  * @note: btstack_type B
  */
 static inline void sm_event_numeric_comparison_cancel_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2630,7 +2642,7 @@ static inline uint8_t sm_event_identity_resolving_started_get_addr_type(const ui
  * @note: btstack_type B
  */
 static inline void sm_event_identity_resolving_started_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2660,7 +2672,7 @@ static inline uint8_t sm_event_identity_resolving_failed_get_addr_type(const uin
  * @note: btstack_type B
  */
 static inline void sm_event_identity_resolving_failed_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2690,7 +2702,7 @@ static inline uint8_t sm_event_identity_resolving_succeeded_get_addr_type(const 
  * @note: btstack_type B
  */
 static inline void sm_event_identity_resolving_succeeded_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 /**
  * @brief Get field identity_addr_type from event SM_EVENT_IDENTITY_RESOLVING_SUCCEEDED
@@ -2708,15 +2720,15 @@ static inline uint8_t sm_event_identity_resolving_succeeded_get_identity_addr_ty
  * @note: btstack_type B
  */
 static inline void sm_event_identity_resolving_succeeded_get_identity_address(const uint8_t * event, bd_addr_t identity_address){
-    reverse_bd_addr(&event[12], identity_address);    
+    reverse_bd_addr(&event[12], identity_address);
 }
 /**
- * @brief Get field index_internal from event SM_EVENT_IDENTITY_RESOLVING_SUCCEEDED
+ * @brief Get field index from event SM_EVENT_IDENTITY_RESOLVING_SUCCEEDED
  * @param event packet
- * @return index_internal
+ * @return index
  * @note: btstack_type 2
  */
-static inline uint16_t sm_event_identity_resolving_succeeded_get_index_internal(const uint8_t * event){
+static inline uint16_t sm_event_identity_resolving_succeeded_get_index(const uint8_t * event){
     return little_endian_read_16(event, 18);
 }
 #endif
@@ -2747,7 +2759,7 @@ static inline uint8_t sm_event_authorization_request_get_addr_type(const uint8_t
  * @note: btstack_type B
  */
 static inline void sm_event_authorization_request_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 #endif
 
@@ -2777,7 +2789,7 @@ static inline uint8_t sm_event_authorization_result_get_addr_type(const uint8_t 
  * @note: btstack_type B
  */
 static inline void sm_event_authorization_result_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 /**
  * @brief Get field authorization_result from event SM_EVENT_AUTHORIZATION_RESULT
@@ -2837,7 +2849,7 @@ static inline uint8_t sm_event_identity_created_get_addr_type(const uint8_t * ev
  * @note: btstack_type B
  */
 static inline void sm_event_identity_created_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[5], address);    
+    reverse_bd_addr(&event[5], address);
 }
 /**
  * @brief Get field identity_addr_type from event SM_EVENT_IDENTITY_CREATED
@@ -2855,7 +2867,64 @@ static inline uint8_t sm_event_identity_created_get_identity_addr_type(const uin
  * @note: btstack_type B
  */
 static inline void sm_event_identity_created_get_identity_address(const uint8_t * event, bd_addr_t identity_address){
-    reverse_bd_addr(&event[12], identity_address);    
+    reverse_bd_addr(&event[12], identity_address);
+}
+/**
+ * @brief Get field index from event SM_EVENT_IDENTITY_CREATED
+ * @param event packet
+ * @return index
+ * @note: btstack_type 1
+ */
+static inline uint8_t sm_event_identity_created_get_index(const uint8_t * event){
+    return event[18];
+}
+#endif
+
+#ifdef ENABLE_BLE
+/**
+ * @brief Get field handle from event SM_EVENT_PAIRING_COMPLETE
+ * @param event packet
+ * @return handle
+ * @note: btstack_type H
+ */
+static inline hci_con_handle_t sm_event_pairing_complete_get_handle(const uint8_t * event){
+    return little_endian_read_16(event, 2);
+}
+/**
+ * @brief Get field addr_type from event SM_EVENT_PAIRING_COMPLETE
+ * @param event packet
+ * @return addr_type
+ * @note: btstack_type 1
+ */
+static inline uint8_t sm_event_pairing_complete_get_addr_type(const uint8_t * event){
+    return event[4];
+}
+/**
+ * @brief Get field address from event SM_EVENT_PAIRING_COMPLETE
+ * @param event packet
+ * @param Pointer to storage for address
+ * @note: btstack_type B
+ */
+static inline void sm_event_pairing_complete_get_address(const uint8_t * event, bd_addr_t address){
+    reverse_bd_addr(&event[5], address);
+}
+/**
+ * @brief Get field status from event SM_EVENT_PAIRING_COMPLETE
+ * @param event packet
+ * @return status
+ * @note: btstack_type 1
+ */
+static inline uint8_t sm_event_pairing_complete_get_status(const uint8_t * event){
+    return event[11];
+}
+/**
+ * @brief Get field reason from event SM_EVENT_PAIRING_COMPLETE
+ * @param event packet
+ * @return reason
+ * @note: btstack_type 1
+ */
+static inline uint8_t sm_event_pairing_complete_get_reason(const uint8_t * event){
+    return event[12];
 }
 #endif
 
@@ -2894,7 +2963,7 @@ static inline uint8_t gap_event_dedicated_bonding_completed_get_status(const uin
  * @note: btstack_type B
  */
 static inline void gap_event_dedicated_bonding_completed_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[3], address);    
+    reverse_bd_addr(&event[3], address);
 }
 
 /**
@@ -2922,7 +2991,7 @@ static inline uint8_t gap_event_advertising_report_get_address_type(const uint8_
  * @note: btstack_type B
  */
 static inline void gap_event_advertising_report_get_address(const uint8_t * event, bd_addr_t address){
-    reverse_bd_addr(&event[4], address);    
+    reverse_bd_addr(&event[4], address);
 }
 /**
  * @brief Get field rssi from event GAP_EVENT_ADVERTISING_REPORT
@@ -2959,7 +3028,7 @@ static inline const uint8_t * gap_event_advertising_report_get_data(const uint8_
  * @note: btstack_type B
  */
 static inline void gap_event_inquiry_result_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[2], bd_addr);    
+    reverse_bd_addr(&event[2], bd_addr);
 }
 /**
  * @brief Get field page_scan_repetition_mode from event GAP_EVENT_INQUIRY_RESULT
@@ -3087,7 +3156,7 @@ static inline uint8_t hci_subevent_le_connection_complete_get_peer_address_type(
  * @note: btstack_type B
  */
 static inline void hci_subevent_le_connection_complete_get_peer_address(const uint8_t * event, bd_addr_t peer_address){
-    reverse_bd_addr(&event[8], peer_address);    
+    reverse_bd_addr(&event[8], peer_address);
 }
 /**
  * @brief Get field conn_interval from event HCI_SUBEVENT_LE_CONNECTION_COMPLETE
@@ -3336,7 +3405,7 @@ static inline uint8_t hci_subevent_le_read_local_p256_public_key_complete_get_st
  * @note: btstack_type Q
  */
 static inline void hci_subevent_le_read_local_p256_public_key_complete_get_dhkey_x(const uint8_t * event, uint8_t * dhkey_x){
-    reverse_bytes(&event[4], dhkey_x, 32);    
+    reverse_bytes(&event[4], dhkey_x, 32);
 }
 /**
  * @brief Get field dhkey_y from event HCI_SUBEVENT_LE_READ_LOCAL_P256_PUBLIC_KEY_COMPLETE
@@ -3345,7 +3414,7 @@ static inline void hci_subevent_le_read_local_p256_public_key_complete_get_dhkey
  * @note: btstack_type Q
  */
 static inline void hci_subevent_le_read_local_p256_public_key_complete_get_dhkey_y(const uint8_t * event, uint8_t * dhkey_y){
-    reverse_bytes(&event[36], dhkey_y, 32);    
+    reverse_bytes(&event[36], dhkey_y, 32);
 }
 
 /**
@@ -3364,7 +3433,7 @@ static inline uint8_t hci_subevent_le_generate_dhkey_complete_get_status(const u
  * @note: btstack_type Q
  */
 static inline void hci_subevent_le_generate_dhkey_complete_get_dhkey(const uint8_t * event, uint8_t * dhkey){
-    reverse_bytes(&event[4], dhkey, 32);    
+    reverse_bytes(&event[4], dhkey, 32);
 }
 
 /**
@@ -3410,7 +3479,7 @@ static inline uint8_t hci_subevent_le_enhanced_connection_complete_get_peer_addr
  * @note: btstack_type B
  */
 static inline void hci_subevent_le_enhanced_connection_complete_get_perr_addresss(const uint8_t * event, bd_addr_t perr_addresss){
-    reverse_bd_addr(&event[8], perr_addresss);    
+    reverse_bd_addr(&event[8], perr_addresss);
 }
 /**
  * @brief Get field local_resolvable_private_addres from event HCI_SUBEVENT_LE_ENHANCED_CONNECTION_COMPLETE
@@ -3419,7 +3488,7 @@ static inline void hci_subevent_le_enhanced_connection_complete_get_perr_address
  * @note: btstack_type B
  */
 static inline void hci_subevent_le_enhanced_connection_complete_get_local_resolvable_private_addres(const uint8_t * event, bd_addr_t local_resolvable_private_addres){
-    reverse_bd_addr(&event[14], local_resolvable_private_addres);    
+    reverse_bd_addr(&event[14], local_resolvable_private_addres);
 }
 /**
  * @brief Get field peer_resolvable_private_addres from event HCI_SUBEVENT_LE_ENHANCED_CONNECTION_COMPLETE
@@ -3428,7 +3497,7 @@ static inline void hci_subevent_le_enhanced_connection_complete_get_local_resolv
  * @note: btstack_type B
  */
 static inline void hci_subevent_le_enhanced_connection_complete_get_peer_resolvable_private_addres(const uint8_t * event, bd_addr_t peer_resolvable_private_addres){
-    reverse_bd_addr(&event[20], peer_resolvable_private_addres);    
+    reverse_bd_addr(&event[20], peer_resolvable_private_addres);
 }
 /**
  * @brief Get field conn_interval from event HCI_SUBEVENT_LE_ENHANCED_CONNECTION_COMPLETE
@@ -3600,7 +3669,7 @@ static inline hci_con_handle_t hfp_subevent_service_level_connection_established
  * @note: btstack_type B
  */
 static inline void hfp_subevent_service_level_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[6], bd_addr);    
+    reverse_bd_addr(&event[6], bd_addr);
 }
 
 
@@ -3629,7 +3698,7 @@ static inline hci_con_handle_t hfp_subevent_audio_connection_established_get_han
  * @note: btstack_type B
  */
 static inline void hfp_subevent_audio_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[6], bd_addr);    
+    reverse_bd_addr(&event[6], bd_addr);
 }
 /**
  * @brief Get field negotiated_codec from event HFP_SUBEVENT_AUDIO_CONNECTION_ESTABLISHED
@@ -4078,7 +4147,7 @@ static inline uint16_t avdtp_subevent_signaling_connection_established_get_avdtp
  * @note: btstack_type B
  */
 static inline void avdtp_subevent_signaling_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[5], bd_addr);    
+    reverse_bd_addr(&event[5], bd_addr);
 }
 /**
  * @brief Get field status from event AVDTP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED
@@ -4311,6 +4380,355 @@ static inline const uint8_t * avdtp_subevent_signaling_media_codec_other_capabil
 }
 
 /**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_MEDIA_TRANSPORT_CAPABILITY
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_media_transport_capability_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_MEDIA_TRANSPORT_CAPABILITY
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_media_transport_capability_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_MEDIA_TRANSPORT_CAPABILITY
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_media_transport_capability_get_remote_seid(const uint8_t * event){
+    return event[6];
+}
+
+/**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_REPORTING_CAPABILITY
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_reporting_capability_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_REPORTING_CAPABILITY
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_reporting_capability_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_REPORTING_CAPABILITY
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_reporting_capability_get_remote_seid(const uint8_t * event){
+    return event[6];
+}
+
+/**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_RECOVERY_CAPABILITY
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_recovery_capability_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_RECOVERY_CAPABILITY
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_recovery_capability_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_RECOVERY_CAPABILITY
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_recovery_capability_get_remote_seid(const uint8_t * event){
+    return event[6];
+}
+/**
+ * @brief Get field recovery_type from event AVDTP_SUBEVENT_SIGNALING_RECOVERY_CAPABILITY
+ * @param event packet
+ * @return recovery_type
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_recovery_capability_get_recovery_type(const uint8_t * event){
+    return event[7];
+}
+/**
+ * @brief Get field maximum_recovery_window_size from event AVDTP_SUBEVENT_SIGNALING_RECOVERY_CAPABILITY
+ * @param event packet
+ * @return maximum_recovery_window_size
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_recovery_capability_get_maximum_recovery_window_size(const uint8_t * event){
+    return event[8];
+}
+/**
+ * @brief Get field maximum_number_media_packets from event AVDTP_SUBEVENT_SIGNALING_RECOVERY_CAPABILITY
+ * @param event packet
+ * @return maximum_number_media_packets
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_recovery_capability_get_maximum_number_media_packets(const uint8_t * event){
+    return event[9];
+}
+
+/**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_CONTENT_PROTECTION_CAPABILITY
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_content_protection_capability_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_CONTENT_PROTECTION_CAPABILITY
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_content_protection_capability_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_CONTENT_PROTECTION_CAPABILITY
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_content_protection_capability_get_remote_seid(const uint8_t * event){
+    return event[6];
+}
+/**
+ * @brief Get field cp_type from event AVDTP_SUBEVENT_SIGNALING_CONTENT_PROTECTION_CAPABILITY
+ * @param event packet
+ * @return cp_type
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_content_protection_capability_get_cp_type(const uint8_t * event){
+    return little_endian_read_16(event, 7);
+}
+/**
+ * @brief Get field cp_type_value_len from event AVDTP_SUBEVENT_SIGNALING_CONTENT_PROTECTION_CAPABILITY
+ * @param event packet
+ * @return cp_type_value_len
+ * @note: btstack_type L
+ */
+static inline int avdtp_subevent_signaling_content_protection_capability_get_cp_type_value_len(const uint8_t * event){
+    return little_endian_read_16(event, 9);
+}
+/**
+ * @brief Get field cp_type_value from event AVDTP_SUBEVENT_SIGNALING_CONTENT_PROTECTION_CAPABILITY
+ * @param event packet
+ * @return cp_type_value
+ * @note: btstack_type V
+ */
+static inline const uint8_t * avdtp_subevent_signaling_content_protection_capability_get_cp_type_value(const uint8_t * event){
+    return &event[11];
+}
+
+/**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_multiplexing_capability_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_remote_seid(const uint8_t * event){
+    return event[6];
+}
+/**
+ * @brief Get field fragmentation from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return fragmentation
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_fragmentation(const uint8_t * event){
+    return event[7];
+}
+/**
+ * @brief Get field transport_identifiers_num from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return transport_identifiers_num
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_transport_identifiers_num(const uint8_t * event){
+    return event[8];
+}
+/**
+ * @brief Get field transport_session_identifier_1 from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return transport_session_identifier_1
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_transport_session_identifier_1(const uint8_t * event){
+    return event[9];
+}
+/**
+ * @brief Get field transport_session_identifier_2 from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return transport_session_identifier_2
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_transport_session_identifier_2(const uint8_t * event){
+    return event[10];
+}
+/**
+ * @brief Get field transport_session_identifier_3 from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return transport_session_identifier_3
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_transport_session_identifier_3(const uint8_t * event){
+    return event[11];
+}
+/**
+ * @brief Get field tcid_1 from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return tcid_1
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_tcid_1(const uint8_t * event){
+    return event[12];
+}
+/**
+ * @brief Get field tcid_2 from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return tcid_2
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_tcid_2(const uint8_t * event){
+    return event[13];
+}
+/**
+ * @brief Get field tcid_3 from event AVDTP_SUBEVENT_SIGNALING_MULTIPLEXING_CAPABILITY
+ * @param event packet
+ * @return tcid_3
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_multiplexing_capability_get_tcid_3(const uint8_t * event){
+    return event[14];
+}
+
+/**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_DELAY_REPORTING_CAPABILITY
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_delay_reporting_capability_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_DELAY_REPORTING_CAPABILITY
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_delay_reporting_capability_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_DELAY_REPORTING_CAPABILITY
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_delay_reporting_capability_get_remote_seid(const uint8_t * event){
+    return event[6];
+}
+
+/**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_HEADER_COMPRESSION_CAPABILITY
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_header_compression_capability_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_HEADER_COMPRESSION_CAPABILITY
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_header_compression_capability_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_HEADER_COMPRESSION_CAPABILITY
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_header_compression_capability_get_remote_seid(const uint8_t * event){
+    return event[6];
+}
+/**
+ * @brief Get field back_ch from event AVDTP_SUBEVENT_SIGNALING_HEADER_COMPRESSION_CAPABILITY
+ * @param event packet
+ * @return back_ch
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_header_compression_capability_get_back_ch(const uint8_t * event){
+    return event[7];
+}
+/**
+ * @brief Get field media from event AVDTP_SUBEVENT_SIGNALING_HEADER_COMPRESSION_CAPABILITY
+ * @param event packet
+ * @return media
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_header_compression_capability_get_media(const uint8_t * event){
+    return event[8];
+}
+/**
+ * @brief Get field recovery from event AVDTP_SUBEVENT_SIGNALING_HEADER_COMPRESSION_CAPABILITY
+ * @param event packet
+ * @return recovery
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_header_compression_capability_get_recovery(const uint8_t * event){
+    return event[9];
+}
+
+/**
  * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_MEDIA_CODEC_SBC_CONFIGURATION
  * @param event packet
  * @return avdtp_cid
@@ -4517,7 +4935,7 @@ static inline uint16_t avdtp_subevent_streaming_connection_established_get_avdtp
  * @note: btstack_type B
  */
 static inline void avdtp_subevent_streaming_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[5], bd_addr);    
+    reverse_bd_addr(&event[5], bd_addr);
 }
 /**
  * @brief Get field local_seid from event AVDTP_SUBEVENT_STREAMING_CONNECTION_ESTABLISHED
@@ -4592,6 +5010,34 @@ static inline uint8_t avdtp_subevent_streaming_can_send_media_packet_now_get_loc
  */
 static inline uint16_t avdtp_subevent_streaming_can_send_media_packet_now_get_sequence_number(const uint8_t * event){
     return little_endian_read_16(event, 6);
+}
+
+/**
+ * @brief Get field avdtp_cid from event AVDTP_SUBEVENT_SIGNALING_CAPABILITY_DONE
+ * @param event packet
+ * @return avdtp_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avdtp_subevent_signaling_capability_done_get_avdtp_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field local_seid from event AVDTP_SUBEVENT_SIGNALING_CAPABILITY_DONE
+ * @param event packet
+ * @return local_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_capability_done_get_local_seid(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field remote_seid from event AVDTP_SUBEVENT_SIGNALING_CAPABILITY_DONE
+ * @param event packet
+ * @return remote_seid
+ * @note: btstack_type 1
+ */
+static inline uint8_t avdtp_subevent_signaling_capability_done_get_remote_seid(const uint8_t * event){
+    return event[6];
 }
 
 /**
@@ -4820,7 +5266,7 @@ static inline uint16_t a2dp_subevent_stream_established_get_a2dp_cid(const uint8
  * @note: btstack_type B
  */
 static inline void a2dp_subevent_stream_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[5], bd_addr);    
+    reverse_bd_addr(&event[5], bd_addr);
 }
 /**
  * @brief Get field local_seid from event A2DP_SUBEVENT_STREAM_ESTABLISHED
@@ -4983,22 +5429,31 @@ static inline uint8_t a2dp_subevent_command_rejected_get_signal_identifier(const
 }
 
 /**
- * @brief Get field a2dp_cid from event A2DP_SUBEVENT_INCOMING_CONNECTION_ESTABLISHED
+ * @brief Get field a2dp_cid from event A2DP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED
  * @param event packet
  * @return a2dp_cid
  * @note: btstack_type 2
  */
-static inline uint16_t a2dp_subevent_incoming_connection_established_get_a2dp_cid(const uint8_t * event){
+static inline uint16_t a2dp_subevent_signaling_connection_established_get_a2dp_cid(const uint8_t * event){
     return little_endian_read_16(event, 3);
 }
 /**
- * @brief Get field bd_addr from event A2DP_SUBEVENT_INCOMING_CONNECTION_ESTABLISHED
+ * @brief Get field bd_addr from event A2DP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED
  * @param event packet
  * @param Pointer to storage for bd_addr
  * @note: btstack_type B
  */
-static inline void a2dp_subevent_incoming_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[5], bd_addr);    
+static inline void a2dp_subevent_signaling_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
+    reverse_bd_addr(&event[5], bd_addr);
+}
+/**
+ * @brief Get field status from event A2DP_SUBEVENT_SIGNALING_CONNECTION_ESTABLISHED
+ * @param event packet
+ * @return status
+ * @note: btstack_type 1
+ */
+static inline uint8_t a2dp_subevent_signaling_connection_established_get_status(const uint8_t * event){
+    return event[11];
 }
 
 /**
@@ -5027,7 +5482,7 @@ static inline uint8_t avrcp_subevent_connection_established_get_status(const uin
  * @note: btstack_type B
  */
 static inline void avrcp_subevent_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[4], bd_addr);    
+    reverse_bd_addr(&event[4], bd_addr);
 }
 /**
  * @brief Get field avrcp_cid from event AVRCP_SUBEVENT_CONNECTION_ESTABLISHED
@@ -5704,6 +6159,91 @@ static inline uint8_t avrcp_subevent_now_playing_info_done_get_status(const uint
 }
 
 /**
+ * @brief Get field bd_addr from event AVRCP_SUBEVENT_INCOMING_BROWSING_CONNECTION
+ * @param event packet
+ * @param Pointer to storage for bd_addr
+ * @note: btstack_type B
+ */
+static inline void avrcp_subevent_incoming_browsing_connection_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
+    reverse_bd_addr(&event[3], bd_addr);
+}
+/**
+ * @brief Get field browsing_cid from event AVRCP_SUBEVENT_INCOMING_BROWSING_CONNECTION
+ * @param event packet
+ * @return browsing_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avrcp_subevent_incoming_browsing_connection_get_browsing_cid(const uint8_t * event){
+    return little_endian_read_16(event, 9);
+}
+
+/**
+ * @brief Get field status from event AVRCP_SUBEVENT_BROWSING_CONNECTION_ESTABLISHED
+ * @param event packet
+ * @return status
+ * @note: btstack_type 1
+ */
+static inline uint8_t avrcp_subevent_browsing_connection_established_get_status(const uint8_t * event){
+    return event[3];
+}
+/**
+ * @brief Get field bd_addr from event AVRCP_SUBEVENT_BROWSING_CONNECTION_ESTABLISHED
+ * @param event packet
+ * @param Pointer to storage for bd_addr
+ * @note: btstack_type B
+ */
+static inline void avrcp_subevent_browsing_connection_established_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
+    reverse_bd_addr(&event[4], bd_addr);
+}
+/**
+ * @brief Get field browsing_cid from event AVRCP_SUBEVENT_BROWSING_CONNECTION_ESTABLISHED
+ * @param event packet
+ * @return browsing_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avrcp_subevent_browsing_connection_established_get_browsing_cid(const uint8_t * event){
+    return little_endian_read_16(event, 10);
+}
+
+/**
+ * @brief Get field browsing_cid from event AVRCP_SUBEVENT_BROWSING_CONNECTION_RELEASED
+ * @param event packet
+ * @return browsing_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avrcp_subevent_browsing_connection_released_get_browsing_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+
+/**
+ * @brief Get field browsing_cid from event AVRCP_SUBEVENT_BROWSING_MEDIA_ITEM_DONE
+ * @param event packet
+ * @return browsing_cid
+ * @note: btstack_type 2
+ */
+static inline uint16_t avrcp_subevent_browsing_media_item_done_get_browsing_cid(const uint8_t * event){
+    return little_endian_read_16(event, 3);
+}
+/**
+ * @brief Get field browsing_status from event AVRCP_SUBEVENT_BROWSING_MEDIA_ITEM_DONE
+ * @param event packet
+ * @return browsing_status
+ * @note: btstack_type 1
+ */
+static inline uint8_t avrcp_subevent_browsing_media_item_done_get_browsing_status(const uint8_t * event){
+    return event[5];
+}
+/**
+ * @brief Get field bluetooth_status from event AVRCP_SUBEVENT_BROWSING_MEDIA_ITEM_DONE
+ * @param event packet
+ * @return bluetooth_status
+ * @note: btstack_type 1
+ */
+static inline uint8_t avrcp_subevent_browsing_media_item_done_get_bluetooth_status(const uint8_t * event){
+    return event[6];
+}
+
+/**
  * @brief Get field goep_cid from event GOEP_SUBEVENT_CONNECTION_OPENED
  * @param event packet
  * @return goep_cid
@@ -5728,7 +6268,7 @@ static inline uint8_t goep_subevent_connection_opened_get_status(const uint8_t *
  * @note: btstack_type B
  */
 static inline void goep_subevent_connection_opened_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[6], bd_addr);    
+    reverse_bd_addr(&event[6], bd_addr);
 }
 /**
  * @brief Get field con_handle from event GOEP_SUBEVENT_CONNECTION_OPENED
@@ -5794,7 +6334,7 @@ static inline uint8_t pbap_subevent_connection_opened_get_status(const uint8_t *
  * @note: btstack_type B
  */
 static inline void pbap_subevent_connection_opened_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[6], bd_addr);    
+    reverse_bd_addr(&event[6], bd_addr);
 }
 /**
  * @brief Get field con_handle from event PBAP_SUBEVENT_CONNECTION_OPENED
@@ -5869,7 +6409,7 @@ static inline uint8_t hid_subevent_connection_opened_get_status(const uint8_t * 
  * @note: btstack_type B
  */
 static inline void hid_subevent_connection_opened_get_bd_addr(const uint8_t * event, bd_addr_t bd_addr){
-    reverse_bd_addr(&event[6], bd_addr);    
+    reverse_bd_addr(&event[6], bd_addr);
 }
 /**
  * @brief Get field con_handle from event HID_SUBEVENT_CONNECTION_OPENED

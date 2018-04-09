@@ -47,7 +47,8 @@
 #include "classic/avrcp.h"
 #include "classic/avrcp_controller.h"
 
-static avrcp_context_t avrcp_controller_context;
+// made public in avrcp_controller.h
+avrcp_context_t avrcp_controller_context;
 
 void avrcp_controller_create_sdp_record(uint8_t * service, uint32_t service_record_handle, uint8_t browsing, uint16_t supported_features, const char * service_name, const char * service_provider_name){
     avrcp_create_sdp_record(1, service, service_record_handle, browsing, supported_features, service_name, service_provider_name);
@@ -265,7 +266,7 @@ static void avrcp_controller_emit_now_playing_info_event(btstack_packet_handler_
             event[pos++] = value_len;
             memcpy(event+pos, value, value_len);
             break;
-        case AVRCP_MEDIA_ATTR_SONG_LENGTH:
+        case AVRCP_MEDIA_ATTR_SONG_LENGTH_MS:
             event[subevent_type_pos] = AVRCP_SUBEVENT_NOW_PLAYING_SONG_LENGTH_MS_INFO;
             if (value){
                 little_endian_store_32(event, pos, btstack_atoi((char *)value));
@@ -318,7 +319,7 @@ static void avrcp_parser_process_byte(uint8_t byte, avrcp_connection_t * connect
             }
             // TODO emit event
             uint32_t attribute_id = big_endian_read_32(connection->parser_attribute_header, 0);
-            if (attribute_id > AVRCP_MEDIA_ATTR_NONE && attribute_id <= AVRCP_MEDIA_ATTR_SONG_LENGTH){
+            if (attribute_id > AVRCP_MEDIA_ATTR_NONE && attribute_id <= AVRCP_MEDIA_ATTR_SONG_LENGTH_MS){
                 avrcp_controller_emit_now_playing_info_event(avrcp_controller_context.avrcp_callback, connection->avrcp_cid, ctype, attribute_id, connection->attribute_value, connection->attribute_value_len);
             }
             
@@ -434,17 +435,26 @@ static void avrcp_handle_l2cap_data_packet_for_signaling_connection(avrcp_connec
     uint8_t pdu_id;
     uint16_t param_length;
     switch (avrcp_cmd_opcode(packet,size)){
+        case AVRCP_CMD_OPCODE_SUBUNIT_INFO:{
+            if (connection->state != AVCTP_W2_RECEIVE_RESPONSE) return;
+            connection->state = AVCTP_CONNECTION_OPENED;
+            // operands:
+            memcpy(operands, packet+pos, 5);
+            uint8_t unit_type = operands[1] >> 3;
+            uint8_t max_subunit_ID = operands[1] & 0x07;
+            log_info("    SUBUNIT INFO response: ctype 0x%02x (0C), subunit_type 0x%02x (1F), subunit_id 0x%02x (07), opcode 0x%02x (30), unit_type 0x%02x, max_subunit_ID %d", ctype, subunit_type, subunit_id, opcode, unit_type, max_subunit_ID);
+            break;
+        }
         case AVRCP_CMD_OPCODE_UNIT_INFO:{
             if (connection->state != AVCTP_W2_RECEIVE_RESPONSE) return;
             connection->state = AVCTP_CONNECTION_OPENED;
-            
             // operands:
             memcpy(operands, packet+pos, 5);
             uint8_t unit_type = operands[1] >> 3;
             uint8_t unit = operands[1] & 0x07;
             uint32_t company_id = operands[2] << 16 | operands[3] << 8 | operands[4];
             log_info("    UNIT INFO response: ctype 0x%02x (0C), subunit_type 0x%02x (1F), subunit_id 0x%02x (07), opcode 0x%02x (30), unit_type 0x%02x, unit %d, company_id 0x%06" PRIx32,
-                ctype, subunit_type, subunit_id, opcode, unit_type, unit, company_id );
+                ctype, subunit_type, subunit_id, opcode, unit_type, unit, company_id);
             break;
         }
         case AVRCP_CMD_OPCODE_VENDOR_DEPENDENT:
@@ -855,6 +865,27 @@ uint8_t avrcp_controller_unit_info(uint16_t avrcp_cid){
     return ERROR_CODE_SUCCESS;
 }
 
+uint8_t avrcp_controller_subunit_info(uint16_t avrcp_cid){
+    avrcp_connection_t * connection = get_avrcp_connection_for_avrcp_cid(avrcp_cid, &avrcp_controller_context);
+    if (!connection){
+        log_error("avrcp_unit_info: could not find a connection.");
+        return ERROR_CODE_UNKNOWN_CONNECTION_IDENTIFIER; 
+    }
+    if (connection->state != AVCTP_CONNECTION_OPENED) return ERROR_CODE_COMMAND_DISALLOWED;
+    connection->state = AVCTP_W2_SEND_COMMAND;
+    
+    connection->transaction_label++;
+    connection->command_opcode = AVRCP_CMD_OPCODE_SUBUNIT_INFO;
+    connection->command_type = AVRCP_CTYPE_STATUS;
+    connection->subunit_type = AVRCP_SUBUNIT_TYPE_UNIT; //vendor unique
+    connection->subunit_id =   AVRCP_SUBUNIT_ID_IGNORE;
+    memset(connection->cmd_operands, 0xFF, connection->cmd_operands_length);
+    connection->cmd_operands[0] = 7; // page: 0, extention_code: 7
+    connection->cmd_operands_length = 5;
+    avrcp_request_can_send_now(connection, connection->l2cap_signaling_cid);
+    return ERROR_CODE_SUCCESS;
+}
+
 static uint8_t avrcp_controller_get_capabilities(uint16_t avrcp_cid, uint8_t capability_id){
     avrcp_connection_t * connection = get_avrcp_connection_for_avrcp_cid(avrcp_cid, &avrcp_controller_context);
     if (!connection){
@@ -1147,6 +1178,10 @@ uint8_t avrcp_controller_disconnect(uint16_t avrcp_cid){
         return ERROR_CODE_UNKNOWN_CONNECTION_IDENTIFIER;
     }
     if (connection->state != AVCTP_CONNECTION_OPENED) return ERROR_CODE_COMMAND_DISALLOWED;
+    if (connection->browsing_connection){
+        if (connection->browsing_connection->state != AVCTP_CONNECTION_OPENED) return ERROR_CODE_COMMAND_DISALLOWED;
+        l2cap_disconnect(connection->browsing_connection->l2cap_browsing_cid, 0);
+    }
     l2cap_disconnect(connection->l2cap_signaling_cid, 0);
     return ERROR_CODE_SUCCESS;
 }
