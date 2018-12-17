@@ -274,7 +274,7 @@ int des_iterator_init(des_iterator_t * it, uint8_t * element){
     it->element = element;
     it->pos = de_get_header_size(element);
     it->length = de_get_len(element);
-    // printf("des_iterator_init current pos %d, total len %d\n", it->pos, it->length);
+    // BTSTACK_PRINTF("des_iterator_init current pos %d, total len %d\n", it->pos, it->length);
     return 1;
 }
 
@@ -299,7 +299,7 @@ uint8_t * des_iterator_get_element(des_iterator_t * it){
 
 void des_iterator_next(des_iterator_t * it){
     int element_len = de_get_len(&it->element[it->pos]);
-    // printf("des_iterator_next element size %d, current pos %d, total len %d\n", element_len, it->pos, it->length);
+    // BTSTACK_PRINTF("des_iterator_next element size %d, current pos %d, total len %d\n", element_len, it->pos, it->length);
     it->pos += element_len;
 }
 
@@ -660,16 +660,16 @@ int sdp_record_matches_service_search_pattern(uint8_t *record, uint8_t *serviceS
 static int de_traversal_dump_data(uint8_t * element, de_type_t de_type, de_size_t de_size, void *my_context){
     int indent = *(int*) my_context;
     int i;
-    for (i=0; i<indent;i++) printf("    ");
+    for (i=0; i<indent;i++) BTSTACK_PRINTF("    ");
     unsigned int pos     = de_get_header_size(element);
     unsigned int end_pos = de_get_len(element);
-    printf("type %5s (%u), element len %2u ", type_names[de_type], de_type, end_pos);
+    BTSTACK_PRINTF("type %5s (%u), element len %2u ", type_names[de_type], de_type, end_pos);
     if (de_type == DE_DES) {
-		printf("\n");
+		BTSTACK_PRINTF("\n");
         indent++;
         de_traverse_sequence(element, de_traversal_dump_data, (void *)&indent);
     } else if (de_type == DE_UUID && de_size == DE_SIZE_128) {
-        printf(", value: %s\n", uuid128_to_str(element+1));
+        BTSTACK_PRINTF(", value: %s\n", uuid128_to_str(element+1));
     } else if (de_type == DE_STRING) {
         unsigned int len = 0;
         switch (de_size){
@@ -682,7 +682,7 @@ static int de_traversal_dump_data(uint8_t * element, de_type_t de_type, de_size_
             default:
                 break;
         }
-        printf("len %u (0x%02x)\n", len, len);
+        BTSTACK_PRINTF("len %u (0x%02x)\n", len, len);
         printf_hexdump(&element[pos], len);
     } else {
         uint32_t value = 0;
@@ -701,7 +701,7 @@ static int de_traversal_dump_data(uint8_t * element, de_type_t de_type, de_size_
             default:
                 break;
         }
-        printf(", value: 0x%08" PRIx32 "\n", value);
+        BTSTACK_PRINTF(", value: 0x%08" PRIx32 "\n", value);
     }
     return 0;
 }

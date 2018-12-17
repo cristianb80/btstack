@@ -1240,6 +1240,7 @@ uint16_t l2cap_max_mtu(void){
 }
 
 #ifdef ENABLE_BLE
+
 uint16_t l2cap_max_le_mtu(void){
     if (l2cap_le_custom_max_mtu != 0) return l2cap_le_custom_max_mtu;
     return l2cap_max_mtu();
@@ -1250,6 +1251,8 @@ void l2cap_set_max_le_mtu(uint16_t max_mtu){
         l2cap_le_custom_max_mtu = max_mtu;
     }
 }
+#endif
+
 #endif
 
 #ifdef ENABLE_CLASSIC

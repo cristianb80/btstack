@@ -12,9 +12,6 @@ set(CODICE
     hci_transport_h4.c
     l2cap.c
     l2cap_signaling.c
-    classic/bnep.c
-    classic/btstack_cvsd_plc.c
-    #classic/btstack_link_key_db_memory.c : implementation specific
     classic/rfcomm.c
     classic/sdp_server.c
     classic/sdp_util.c
