@@ -106,7 +106,6 @@ static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
     avdtp_packet_handler(packet_type, channel, packet, size, avdtp_sink_context);
 }
 
-// TODO: find out which security level is needed, and replace LEVEL_0 in avdtp_sink_init
 void avdtp_sink_init(avdtp_context_t * avdtp_context){
     if (!avdtp_context){
         log_error("avdtp_source_context is NULL");
@@ -118,7 +117,7 @@ void avdtp_sink_init(avdtp_context_t * avdtp_context){
     avdtp_sink_context->stream_endpoints_id_counter = 0;
     avdtp_sink_context->packet_handler = packet_handler;
 
-    l2cap_register_service(&packet_handler, BLUETOOTH_PROTOCOL_AVDTP, 0xffff, LEVEL_0);
+    l2cap_register_service(&packet_handler, BLUETOOTH_PROTOCOL_AVDTP, 0xffff, LEVEL_2);
 }
 
 avdtp_stream_endpoint_t * avdtp_sink_create_stream_endpoint(avdtp_sep_type_t sep_type, avdtp_media_type_t media_type){
@@ -191,5 +190,37 @@ uint8_t avdtp_sink_set_configuration(uint16_t avdtp_cid, uint8_t local_seid, uin
 
 uint8_t avdtp_sink_reconfigure(uint16_t avdtp_cid, uint8_t local_seid, uint8_t remote_seid, uint16_t configured_services_bitmap, avdtp_capabilities_t configuration){
     return avdtp_reconfigure(avdtp_cid, local_seid, remote_seid, configured_services_bitmap, configuration, avdtp_sink_context);
+}
+
+uint8_t avdtp_sink_delay_report(uint16_t avdtp_cid, uint8_t local_seid, uint16_t delay_ms){
+    avdtp_connection_t * connection = avdtp_connection_for_avdtp_cid(avdtp_cid, avdtp_sink_context);
+    if (!connection){
+        log_error("delay_report: no connection for signaling cid 0x%02x found", avdtp_cid);
+        return AVDTP_CONNECTION_DOES_NOT_EXIST;
+    }
+    if (connection->state != AVDTP_SIGNALING_CONNECTION_OPENED ||
+        connection->initiator_connection_state != AVDTP_SIGNALING_CONNECTION_INITIATOR_IDLE) {
+        log_error("delay_report: connection in wrong state, state %d, initiator state %d", connection->state, connection->initiator_connection_state);
+        return AVDTP_CONNECTION_IN_WRONG_STATE;
+    }
+
+    avdtp_stream_endpoint_t * stream_endpoint = avdtp_stream_endpoint_with_seid(local_seid, avdtp_sink_context);
+    if (!stream_endpoint) {
+        log_error("delay_report: no stream_endpoint with seid %d found", local_seid);
+        return AVDTP_SEID_DOES_NOT_EXIST;
+    }
+
+    if (stream_endpoint->state < AVDTP_STREAM_ENDPOINT_CONFIGURED){
+        log_error("Stream endpoint seid %d in wrong state %d", local_seid, stream_endpoint->state);
+        return AVDTP_STREAM_ENDPOINT_IN_WRONG_STATE;
+    }
+
+    connection->initiator_transaction_label++;
+    connection->initiator_connection_state = AVDTP_SIGNALING_CONNECTION_INITIATOR_W2_SEND_DELAY_REPORT;
+    connection->delay_ms = delay_ms * 10;
+    connection->local_seid = local_seid;
+    connection->remote_seid = stream_endpoint->remote_sep.seid;
+    avdtp_request_can_send_now_initiator(connection, connection->l2cap_signaling_cid);
+    return ERROR_CODE_SUCCESS;
 }
 

@@ -172,13 +172,6 @@ void avdtp_source_init(avdtp_context_t * avdtp_context){
     avdtp_source_context->stream_endpoints_id_counter = 0;
     avdtp_source_context->packet_handler = packet_handler;
 
-    l2cap_register_service(&packet_handler, BLUETOOTH_PROTOCOL_AVDTP, 0xffff, LEVEL_0);
+    l2cap_register_service(&packet_handler, BLUETOOTH_PROTOCOL_AVDTP, 0xffff, LEVEL_2);
 }
 
-uint8_t avdtp_source_remote_seps_num(uint16_t avdtp_cid){
-    return avdtp_remote_seps_num(avdtp_cid, avdtp_source_context);
-}
-
-avdtp_sep_t * avdtp_source_remote_sep(uint16_t avdtp_cid, uint8_t index){
-    return avdtp_remote_sep(avdtp_cid, index, avdtp_source_context);
-}

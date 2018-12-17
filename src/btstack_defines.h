@@ -166,6 +166,7 @@ typedef uint8_t sm_key_t[16];
 
 #define ATT_HANDLE_VALUE_INDICATION_IN_PROGRESS            0x90 
 #define ATT_HANDLE_VALUE_INDICATION_TIMEOUT                0x91
+#define ATT_HANDLE_VALUE_INDICATION_DISCONNECT             0x92
 
 #define GATT_CLIENT_NOT_CONNECTED                          0x93
 #define GATT_CLIENT_BUSY                                   0x94
@@ -184,6 +185,7 @@ typedef uint8_t sm_key_t[16];
 #define OBEX_CONNECT_FAILED                                0xB1
 #define OBEX_DISCONNECTED                                  0xB2
 #define OBEX_NOT_FOUND                                     0xB3
+#define OBEX_NOT_ACCEPTABLE                                0xB4
 
 #define AVDTP_SEID_DOES_NOT_EXIST                          0xC0
 #define AVDTP_CONNECTION_DOES_NOT_EXIST                    0xC1
@@ -297,6 +299,14 @@ typedef uint8_t sm_key_t[16];
 #define GATT_WRITE_LONG_CHARACTERISTIC_DESCRIPTOR                0X80
 #define GATT_WRITE_CLIENT_CHARACTERISTIC_CONFIGURATION           0X81
 #define GATT_GET_MTU                                             0x82
+
+// SM 0x90
+#define SM_SET_AUTHENTICATION_REQUIREMENTS 0x90
+#define SM_SET_IO_CAPABILITIES             0x92
+#define SM_BONDING_DECLINE                 0x93
+#define SM_JUST_WORKS_CONFIRM              0x94
+#define SM_NUMERIC_COMPARISON_CONFIRM      0x95
+#define SM_PASSKEY_INPUT                   0x96
 
 // ATT
 
@@ -924,7 +934,7 @@ typedef uint8_t sm_key_t[16];
  /**
   * @brief Emitted during pairing to inform app about address used as identity
   *
-  * @format H1B1B1
+  * @format H1B1B2
   * @param handle
   * @param addr_type
   * @param address
@@ -1010,6 +1020,7 @@ typedef uint8_t sm_key_t[16];
 #define HCI_EVENT_HID_META                                 0xEF
 #define HCI_EVENT_A2DP_META                                0xF0
 #define HCI_EVENT_HIDS_META                                0xF1
+#define HCI_EVENT_GATTSERVICE_META                         0xF2
 
 // Potential other meta groups
 // #define HCI_EVENT_BNEP_META                                0xxx
@@ -1548,6 +1559,13 @@ typedef uint8_t sm_key_t[16];
 #define AVDTP_SUBEVENT_SIGNALING_CAPABILITY_DONE             0x15
 
 
+/**
+ * @format 12
+ * @param subevent_code
+ * @param avdtp_cid
+ */
+#define AVDTP_SUBEVENT_SIGNALING_SEP_DICOVERY_DONE           0x16
+
 
 /** A2DP Subevent */
 /* Stream goes through following states:
@@ -1679,6 +1697,14 @@ typedef uint8_t sm_key_t[16];
  */
 #define A2DP_SUBEVENT_SIGNALING_CONNECTION_RELEASED                  0x0C
 
+/**
+ * @format 1211          Stream was reconfigured
+ * @param subevent_code
+ * @param a2dp_cid
+ * @param local_seid
+ * @param status
+ */
+#define A2DP_SUBEVENT_STREAM_RECONFIGURED                            0x0D
 
 /** AVRCP Subevent */
 
@@ -1934,17 +1960,43 @@ typedef uint8_t sm_key_t[16];
  * @param subevent_code
  * @param browsing_cid
  */
-#define AVRCP_SUBEVENT_BROWSING_CONNECTION_RELEASED                            0x1D
-
+#define AVRCP_SUBEVENT_BROWSING_CONNECTION_RELEASED                           0x1D
 
 /**
- * @format 1211
+ * @format 12211
  * @param subevent_code
  * @param browsing_cid
+ * @param uid_counter
  * @param browsing_status
  * @param bluetooth_status
  */
-#define AVRCP_SUBEVENT_BROWSING_MEDIA_ITEM_DONE                                0x1E
+#define AVRCP_SUBEVENT_BROWSING_DONE                                          0x1E
+
+/**
+ * @format 1214
+ * @param subevent_code
+ * @param browsing_cid
+ * @param scope
+ * @param attr_bitmap
+ */
+#define AVRCP_SUBEVENT_BROWSING_GET_FOLDER_ITEMS                              0x1F
+
+/**
+ * @format 121
+ * @param subevent_code
+ * @param browsing_cid
+ * @param scope
+ */
+#define AVRCP_SUBEVENT_BROWSING_GET_TOTAL_NUM_ITEMS                           0x20
+
+/**
+ * @format 1214
+ * @param subevent_code
+ * @param avrcp_cid
+ * @param command_type
+ * @param playback_position_ms
+ */
+#define AVRCP_SUBEVENT_NOTIFICATION_PLAYBACK_POS_CHANGED                      0x21
 
 
 /**
@@ -1998,6 +2050,36 @@ typedef uint8_t sm_key_t[16];
  */
 #define PBAP_SUBEVENT_OPERATION_COMPLETED                                  0x03
 
+/**
+ * @format 1212
+ * @param subevent_code
+ * @param goep_cid
+ * @param status
+ * @param phoneboook_size
+ */
+#define PBAP_SUBEVENT_PHONEBOOK_SIZE                                       0x04
+
+/**
+ * @format 1211
+ * @param subevent_code
+ * @param goep_cid
+ * @param user_id_required
+ * @param full_access 
+ */
+#define PBAP_SUBEVENT_AUTHENTICATION_REQUEST                               0x05
+
+/**
+ * @format 12JVJV
+ * @param subevent_code
+ * @param goep_cid
+ * @param name_len
+ * @param name 
+ * @param handle_len
+ * @param handle 
+ */
+#define PBAP_SUBEVENT_CARD_RESULT                                          0x06
+
+
 // HID Meta Event Group
 
 /**
@@ -2024,6 +2106,21 @@ typedef uint8_t sm_key_t[16];
  * @param hid_cid
 */
 #define HID_SUBEVENT_CAN_SEND_NOW                                          0x03
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param con_handle
+*/
+#define HID_SUBEVENT_SUSPEND                                               0x04
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param con_handle
+*/
+#define HID_SUBEVENT_EXIT_SUSPEND                                          0x05
+
 
 // HIDS Meta Event Group
 
@@ -2066,4 +2163,56 @@ typedef uint8_t sm_key_t[16];
 */
 #define HIDS_SUBEVENT_INPUT_REPORT_ENABLE                                   0x05
 
+/**
+ * @format 121
+ * @param subevent_code
+ * @param con_handle
+ * @param enable
+*/
+#define HIDS_SUBEVENT_OUTPUT_REPORT_ENABLE                                  0x06
+
+/**
+ * @format 121
+ * @param subevent_code
+ * @param con_handle
+ * @param enable
+*/
+#define HIDS_SUBEVENT_FEATURE_REPORT_ENABLE                                 0x07
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param con_handle
+*/
+#define HIDS_SUBEVENT_SUSPEND                                               0x08
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param con_handle
+*/
+#define HIDS_SUBEVENT_EXIT_SUSPEND                                          0x09
+
+/**
+ * @format 1211
+ * @param subevent_code
+ * @param con_handle
+ * @param measurement_type  // 0 - force magnitude, 1 - torque magnitude, see cycling_power_sensor_measurement_context_t
+ * @param is_enhanced
+*/
+#define GATTSERVICE_SUBEVENT_CYCLING_POWER_START_CALIBRATION               0x01
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param con_handle
+*/
+#define GATTSERVICE_SUBEVENT_CYCLING_POWER_BROADCAST_START                 0x02
+
+/**
+ * @format 12
+ * @param subevent_code
+ * @param con_handle
+*/
+#define GATTSERVICE_SUBEVENT_CYCLING_POWER_BROADCAST_STOP                  0x03
 #endif

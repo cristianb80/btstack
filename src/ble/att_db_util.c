@@ -37,8 +37,8 @@
 
 #define __BTSTACK_FILE__ "att_db_util.c"
 
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "ble/att_db_util.h"
 #include "ble/att_db.h"
@@ -128,7 +128,6 @@ static void att_db_util_add_attribute_uuid16(uint16_t uuid16, uint16_t flags, ui
 }
 
 static void att_db_util_add_attribute_uuid128(const uint8_t * uuid128, uint16_t flags, uint8_t * data, uint16_t data_len){
-	printf("add flags %04x\n", flags);
 	int size = 2 + 2 + 2 + 16 + data_len;
 	if (!att_db_util_assert_space(size)) return;
 	flags |= ATT_PROPERTY_UUID128;
@@ -181,13 +180,13 @@ static uint16_t att_db_util_encode_permissions(uint16_t properties, uint8_t read
     if (read_permission & 1){
     	flags |= ATT_PROPERTY_READ_PERMISSION_BIT_0;
     }
-    if (read_permission & 1){
+    if (read_permission & 2){
     	flags |= ATT_PROPERTY_READ_PERMISSION_BIT_1;
     }
     if (write_permission & 1){
     	flags |= ATT_PROPERTY_WRITE_PERMISSION_BIT_0;
     }
-    if (write_permission & 1){
+    if (write_permission & 2){
     	flags |= ATT_PROPERTY_WRITE_PERMISSION_BIT_1;
     }
 	return flags;

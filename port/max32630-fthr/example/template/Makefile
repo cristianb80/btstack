@@ -104,6 +104,8 @@ VPATH += ${BTSTACK_ROOT}/3rd-party/bluedroid/decoder/srce
 VPATH += ${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/srce
 VPATH += ${BTSTACK_ROOT}/3rd-party/hxcmod-player
 VPATH += ${BTSTACK_ROOT}/3rd-party/hxcmod-player/mods
+VPATH += ${BTSTACK_ROOT}/3rd-party/md5
+VPATH += ${BTSTACK_ROOT}/3rd-party/yxml
 VPATH += ${BTSTACK_ROOT}/3rd-party/micro-ecc
 VPATH += ${BTSTACK_ROOT}/platform/embedded
 VPATH += ${BTSTACK_ROOT}/src/ble/gatt-service/
@@ -119,6 +121,8 @@ PROJ_CFLAGS += \
     -I${BTSTACK_ROOT}/example \
     -I${BTSTACK_ROOT}/3rd-party/bluedroid/decoder/include \
 	-I${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/include \
+    -I${BTSTACK_ROOT}/3rd-party/md5 \
+    -I${BTSTACK_ROOT}/3rd-party/yxml \
 	-I${BTSTACK_ROOT}/3rd-party/micro-ecc \
 	-I${BTSTACK_ROOT}/3rd-party/hxcmod-player \
 
@@ -143,10 +147,12 @@ COMMON = \
     hci_dump.o                \
     btstack_uart_block_embedded.o \
     hal_flash_bank_mxc.o      \
+    btstack_audio.o           \
     btstack_tlv.o             \
     btstack_tlv_flash_bank.o  \
     btstack_stdin_embedded.o  \
-
+    btstack_crypto.o          \
+    
 CLASSIC = \
     btstack_link_key_db_tlv.o \
     rfcomm.o                  \
@@ -224,7 +230,7 @@ SRCS += $(CVSD_PLC_OBJ)
 SRCS += $(HXCMOD_PLAYER_OBJ)
 SRCS += $(HFP_OBJ)
 SRCS += hsp_hs.o hsp_ag.o 
-SRCS += obex_iterator.o goep_client.o pbap_client.o
+SRCS += obex_iterator.o goep_client.o pbap_client.o md5.o yxml.o
 
 # Enable assertion checking for development
 PROJ_CFLAGS+=-DMXC_ASSERT_ENABLE

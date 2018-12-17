@@ -11,13 +11,14 @@ CORE += \
 	btstack_chipset_tc3566x.c \
 	btstack_link_key_db_fs.c \
 	btstack_run_loop_posix.c \
+	btstack_tlv_posix.c \
 	btstack_uart_block_posix.c \
 	hci_transport_h4.c \
 	le_device_db_fs.c \
 	main.c \
 	btstack_stdin_posix.c \
 	wav_util.c 					\
-	0000000_META_hci_patches_v5_iram.c \
+	0000000_META_hci_patches_v7.c \
 	# bluetooth_init_cc2564_2.14.c \
 	# bluetooth_init_cc2564C_1.0.c \
 

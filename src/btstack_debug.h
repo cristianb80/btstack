@@ -77,19 +77,19 @@
 #endif
 
 #ifdef ENABLE_LOG_DEBUG
-#	define log_debug(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_DEBUG, format,  ## __VA_ARGS__)
+#	define log_debug(format, ...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_DEBUG, format,  ## __VA_ARGS__)
 #else
 #	define log_debug(...)
 #endif
 
 #ifdef ENABLE_LOG_INFO
-#	define log_info(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_INFO, format,  ## __VA_ARGS__)
+#	define log_info(format, ...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_INFO, format,  ## __VA_ARGS__)
 #else
 #	define log_info(...)
 #endif
 
 #ifdef ENABLE_LOG_ERROR
-#	define log_error(format, ...)  HCI_DUMP_LOG(LOG_LEVEL_ERROR, format,  ## __VA_ARGS__)
+#	define log_error(format, ...)  HCI_DUMP_LOG(HCI_DUMP_LOG_LEVEL_ERROR, format,  ## __VA_ARGS__)
 #else
 #	define log_error(...)
 #endif

@@ -53,6 +53,11 @@
 
 #if defined(ENABLE_LOG_DEBUG) || defined(ENABLE_LOG_INFO) || defined(ENABLE_LOG_ERROR)
 
+
+// enable POSIX functions (needed for -std=c99)
+#define _POSIX_C_SOURCE 200809
+
+
 #include "hci_dump.h"
 #include "hci.h"
 #include "hci_transport.h"
@@ -214,7 +219,9 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
     if (dump_format != HCI_DUMP_STDOUT && max_nr_packets > 0){
         if (nr_packets >= max_nr_packets){
             lseek(dump_file, 0, SEEK_SET);
-            ftruncate(dump_file, 0);
+            // avoid -Wunused-result
+            int res = ftruncate(dump_file, 0);
+            UNUSED(res);
             nr_packets = 0;
         }
         nr_packets++;
@@ -224,6 +231,8 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
     struct timeval curr_time;
     gettimeofday(&curr_time, NULL);
 
+    // avoid -Wunused-result
+    int res = 0;
     switch (dump_format){
         case HCI_DUMP_STDOUT: {
             printf_timestamp();
@@ -238,8 +247,8 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
             little_endian_store_32( header_bluez, 4, (uint32_t) curr_time.tv_sec);
             little_endian_store_32( header_bluez, 8,            curr_time.tv_usec);
             header_bluez[12] = packet_type;
-            write (dump_file, header_bluez, HCIDUMP_HDR_SIZE);
-            write (dump_file, packet, len );
+            res = write (dump_file, header_bluez, HCIDUMP_HDR_SIZE);
+            res = write (dump_file, packet, len );
             break;
 
         case HCI_DUMP_PACKETLOGGER:
@@ -273,13 +282,14 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
                 default:
                     return;
             }
-            write (dump_file, &header_packetlogger, PKTLOG_HDR_SIZE);
-            write (dump_file, packet, len );
+            res = write (dump_file, &header_packetlogger, PKTLOG_HDR_SIZE);
+            res = write (dump_file, packet, len );
             break;
 
         default:
             break;
     }
+    UNUSED(res);
 #else
 
     printf_timestamp();
@@ -288,8 +298,8 @@ void hci_dump_packet(uint8_t packet_type, uint8_t in, uint8_t *packet, uint16_t 
 }
 
 static int hci_dump_log_level_active(int log_level){
-    if (log_level < 0) return 0;
-    if (log_level > LOG_LEVEL_ERROR) return 0;
+    if (log_level < HCI_DUMP_LOG_LEVEL_DEBUG) return 0;
+    if (log_level > HCI_DUMP_LOG_LEVEL_ERROR) return 0;
     return log_level_enabled[log_level];
 }
 
@@ -337,8 +347,8 @@ void hci_dump_close(void){
 }
 
 void hci_dump_enable_log_level(int log_level, int enable){
-    if (log_level < 0) return;
-    if (log_level > LOG_LEVEL_ERROR) return;
+    if (log_level < HCI_DUMP_LOG_LEVEL_DEBUG) return;
+    if (log_level > HCI_DUMP_LOG_LEVEL_ERROR) return;
     log_level_enabled[log_level] = enable;
 }
 

@@ -67,6 +67,14 @@
 #include "hci.h"
 #include "hci_transport.h"
 
+// deal with changes in libusb API:
+#ifdef LIBUSB_API_VERSION
+#if LIBUSB_API_VERSION >= 0x01000106
+// since 1.0.22, libusb_set_option replaces libusb_set_debug
+#define libusb_set_debug(context,level) libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, level)
+#endif
+#endif
+
 #if (USB_VENDOR_ID != 0) && (USB_PRODUCT_ID != 0)
 #define HAVE_USB_VENDOR_ID_AND_PRODUCT_ID
 #endif
@@ -149,7 +157,6 @@ static void (*packet_handler)(uint8_t packet_type, uint8_t *packet, uint16_t siz
 // libusb
 #ifndef HAVE_USB_VENDOR_ID_AND_PRODUCT_ID
 static struct libusb_device_descriptor desc;
-static libusb_device        * dev;
 #endif
 static libusb_device_handle * handle;
 
@@ -218,6 +225,9 @@ static int sco_out_addr;
 // device path
 static int usb_path_len;
 static uint8_t usb_path[USB_MAX_PATH_LEN];
+
+// transport interface state
+static int usb_transport_open;
 
 
 #ifdef ENABLE_SCO_OVER_HCI
@@ -573,6 +583,8 @@ static const uint16_t known_bt_devices[] = {
     0x0a5c, 0x21e8,
     // Asus BT400
     0x0b05, 0x17cb,
+    // BCM20702B0 (Generic USB Detuned Class 1 @ 20 MHz)
+    0x0a5c, 0x22be
 };
 
 static int num_known_devices = sizeof(known_bt_devices) / sizeof(uint16_t) / 2;
@@ -587,7 +599,7 @@ static int is_known_bt_device(uint16_t vendor_id, uint16_t product_id){
     return 0;
 }
 
-static void scan_for_bt_endpoints(void) {
+static int scan_for_bt_endpoints(libusb_device *dev) {
     int r;
 
     event_in_addr = 0;
@@ -599,6 +611,7 @@ static void scan_for_bt_endpoints(void) {
     // get endpoints from interface descriptor
     struct libusb_config_descriptor *config_descriptor;
     r = libusb_get_active_config_descriptor(dev, &config_descriptor);
+    if (r < 0) return r;
 
     int num_interfaces = config_descriptor->bNumInterfaces;
     log_info("active configuration has %u interfaces", num_interfaces);
@@ -648,13 +661,14 @@ static void scan_for_bt_endpoints(void) {
         }
     }
     libusb_free_config_descriptor(config_descriptor);
+    return 0;
 }
 
 // returns index of found device or -1
 static int scan_for_bt_device(libusb_device **devs, int start_index) {
     int i;
     for (i = start_index; devs[i] ; i++){
-        dev = devs[i];
+        libusb_device * dev = devs[i];
         int r = libusb_get_device_descriptor(dev, &desc);
         if (r < 0) {
             log_error("failed to get device descriptor");
@@ -911,6 +925,8 @@ static void usb_sco_stop(void){
 static int usb_open(void){
     int r;
 
+    if (usb_transport_open) return 0;
+
     handle_packet = NULL;
 
     // default endpoint addresses
@@ -929,6 +945,8 @@ static int usb_open(void){
     // configure debug level
     libusb_set_debug(NULL, LIBUSB_LOG_LEVEL_WARNING);
     
+    libusb_device * dev = NULL;
+
 #ifdef HAVE_USB_VENDOR_ID_AND_PRODUCT_ID
 
     // Use a specified device
@@ -948,6 +966,13 @@ static int usb_open(void){
         return -1;
     }
 
+    dev = libusb_get_device(aHandle);
+    r = scan_for_bt_endpoints(dev);
+    if (r < 0){
+        usb_close();
+        return -1;
+    }
+
 #else
     // Scan system for an appropriate devices
     libusb_device **devs;
@@ -959,8 +984,6 @@ static int usb_open(void){
         usb_close();
         return -1;
     }
-
-    dev = NULL;
 
     if (usb_path_len){
         int i;
@@ -974,9 +997,18 @@ static int usb_open(void){
                 if (!handle) continue;
 
                 r = prepare_device(handle);
-                if (r < 0) continue;
+                if (r < 0) {
+                    handle = NULL;
+                    continue;
+                }
 
                 dev = devs[i];
+                r = scan_for_bt_endpoints(dev);
+                if (r < 0) {
+                    handle = NULL;
+                    continue;
+                }
+
                 libusb_state = LIB_USB_INTERFACE_CLAIMED;
                 break;
             };
@@ -1000,9 +1032,18 @@ static int usb_open(void){
             if (!handle) continue;
 
             r = prepare_device(handle);
-            if (r < 0) continue;
+            if (r < 0) {
+                handle = NULL;
+                continue;
+            }
 
             dev = devs[deviceIndex];
+            r = scan_for_bt_endpoints(dev);
+            if (r < 0) {
+                handle = NULL;
+                continue;
+            }
+
             libusb_state = LIB_USB_INTERFACE_CLAIMED;
             break;
         }
@@ -1014,8 +1055,6 @@ static int usb_open(void){
         log_error("No USB Bluetooth device found");
         return -1;
     }
-
-    scan_for_bt_endpoints();
 
 #endif
     
@@ -1085,6 +1124,7 @@ static int usb_open(void){
             usb_close();
             return 1;            
         }
+        memset(pollfd_data_sources, 0, sizeof(btstack_data_source_t) * num_pollfds);
         for (r = 0 ; r < num_pollfds ; r++) {
             btstack_data_source_t *ds = &pollfd_data_sources[r];
             btstack_run_loop_set_data_source_fd(ds, pollfd[r]->fd);
@@ -1103,12 +1143,16 @@ static int usb_open(void){
         usb_timer_active = 1;
     }
 
+    usb_transport_open = 1;
+
     return 0;
 }
 
 static int usb_close(void){
     int c;
     int completed = 0;
+
+    if (!usb_transport_open) return 0;
 
     log_info("usb_close");
 
@@ -1242,6 +1286,7 @@ static int usb_close(void){
 
     libusb_state = LIB_USB_CLOSED;
     handle = NULL;
+    usb_transport_open = 0;
 
     return 0;
 }

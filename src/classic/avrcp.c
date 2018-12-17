@@ -199,7 +199,8 @@ uint8_t avrcp_cmd_opcode(uint8_t *packet, uint16_t size){
     return packet[cmd_opcode_index];
 }
 
-void avrcp_create_sdp_record(uint8_t controller, uint8_t * service, uint32_t service_record_handle, uint8_t browsing, uint16_t supported_features, const char * service_name, const char * service_provider_name){
+void avrcp_create_sdp_record(uint8_t controller, uint8_t * service, uint32_t service_record_handle, uint8_t browsing, uint16_t supported_features, 
+    const char * service_name, const char * service_provider_name){
     uint8_t* attribute;
     de_create_sequence(service);
 
@@ -370,15 +371,19 @@ static avrcp_connection_t * avrcp_create_connection(bd_addr_t remote_addr, avrcp
         log_error("avrcp: not enough memory to create connection");
         return NULL;
     }
-    memset(connection, 0, sizeof(avrcp_connection_t));
     connection->state = AVCTP_CONNECTION_IDLE;
     connection->transaction_label = 0xFF;
+    connection->max_num_fragments = 0xFF;
     connection->avrcp_cid = avrcp_get_next_cid();
     memcpy(connection->remote_addr, remote_addr, 6);
     btstack_linked_list_add(&context->connections, (btstack_linked_item_t *) connection);
     return connection;
 }
 
+static void avrcp_finalize_connection(avrcp_connection_t * connection, avrcp_context_t * context){
+    btstack_linked_list_remove(&context->connections, (btstack_linked_item_t*) connection);
+    btstack_memory_avrcp_connection_free(connection);
+}
 
 void avrcp_emit_connection_established(btstack_packet_handler_t callback, uint16_t avrcp_cid, bd_addr_t addr, uint8_t status){
     if (!callback) return;
@@ -477,15 +482,14 @@ void avrcp_handle_sdp_client_query_result(uint8_t packet_type, uint16_t channel,
                                     if (de_get_element_type(element) != DE_UUID) continue;
                                     
                                     uuid = de_get_uuid32(element);
+                                    des_iterator_next(&prot_it);
                                     switch (uuid){
                                         case BLUETOOTH_PROTOCOL_L2CAP:
                                             if (!des_iterator_has_more(&prot_it)) continue;
-                                            des_iterator_next(&prot_it);
                                             de_element_get_uint16(des_iterator_get_element(&prot_it), &sdp_query_context->avrcp_l2cap_psm);
                                             break;
                                         case BLUETOOTH_PROTOCOL_AVCTP:
                                             if (!des_iterator_has_more(&prot_it)) continue;
-                                            des_iterator_next(&prot_it);
                                             de_element_get_uint16(des_iterator_get_element(&prot_it), &sdp_query_context->avrcp_version);
                                             break;
                                         default:
@@ -519,15 +523,14 @@ void avrcp_handle_sdp_client_query_result(uint8_t packet_type, uint16_t channel,
                                     if (de_get_element_type(element) != DE_UUID) continue;
                                     
                                     uuid = de_get_uuid32(element);
+                                    des_iterator_next(&prot_it);
                                     switch (uuid){
                                         case BLUETOOTH_PROTOCOL_L2CAP:
                                             if (!des_iterator_has_more(&prot_it)) continue;
-                                            des_iterator_next(&prot_it);
                                             de_element_get_uint16(des_iterator_get_element(&prot_it), &connection->browsing_l2cap_psm);
                                             break;
                                         case BLUETOOTH_PROTOCOL_AVCTP:
                                             if (!des_iterator_has_more(&prot_it)) continue;
-                                            des_iterator_next(&prot_it);
                                             de_element_get_uint16(des_iterator_get_element(&prot_it), &connection->browsing_version);
                                             break;
                                         default:
@@ -549,21 +552,19 @@ void avrcp_handle_sdp_client_query_result(uint8_t packet_type, uint16_t channel,
             status = sdp_event_query_complete_get_status(packet);
     
             if (status != ERROR_CODE_SUCCESS){
-                avrcp_emit_connection_established(sdp_query_context->avrcp_callback, connection->avrcp_cid, connection->remote_addr, status);
-                btstack_linked_list_remove(&sdp_query_context->connections, (btstack_linked_item_t*) connection); 
-                btstack_memory_avrcp_connection_free(connection);
                 log_info("AVRCP: SDP query failed with status 0x%02x.", status);
+                avrcp_emit_connection_established(sdp_query_context->avrcp_callback, connection->avrcp_cid, connection->remote_addr, status);
+                avrcp_finalize_connection(connection, sdp_query_context);
                 break;
             }
 
-            if (!sdp_query_context->parse_sdp_record){
+            if (!sdp_query_context->avrcp_l2cap_psm){
                 connection->state = AVCTP_CONNECTION_IDLE;
+                log_info("AVRCP: no suitable service found");
                 avrcp_emit_connection_established(sdp_query_context->avrcp_callback, connection->avrcp_cid, connection->remote_addr, SDP_SERVICE_NOT_FOUND);
-                btstack_linked_list_remove(&sdp_query_context->connections, (btstack_linked_item_t*) connection); 
-                btstack_memory_avrcp_connection_free(connection);
+                avrcp_finalize_connection(connection, sdp_query_context);
                 break;                
             } 
-            // log_info("AVRCP Control PSM 0x%02x, Browsing PSM 0x%02x", sdp_query_context->avrcp_l2cap_psm, sdp_query_context->browsing_l2cap_psm);
             connection->state = AVCTP_CONNECTION_W4_L2CAP_CONNECTED;
             l2cap_create_channel(sdp_query_context->packet_handler, connection->remote_addr, sdp_query_context->avrcp_l2cap_psm, l2cap_max_mtu(), NULL);
             break;
@@ -578,7 +579,8 @@ void avrcp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet
     uint16_t local_cid;
     uint8_t  status;
     avrcp_connection_t * connection = NULL;
-    
+    uint16_t psm;
+
     if (packet_type != HCI_EVENT_PACKET) return;
 
     switch (hci_event_packet_get_type(packet)) {
@@ -594,10 +596,19 @@ void avrcp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet
                 l2cap_decline_connection(local_cid);
                 break;
             }
-            connection->state = AVCTP_CONNECTION_W4_L2CAP_CONNECTED;
-            connection->l2cap_signaling_cid = local_cid;
-            log_info("L2CAP_EVENT_INCOMING_CONNECTION avrcp_cid 0x%02x, l2cap_signaling_cid 0x%02x", connection->avrcp_cid, connection->l2cap_signaling_cid);
-            l2cap_accept_connection(local_cid);
+            
+            psm = l2cap_event_incoming_connection_get_psm(packet);
+            if (psm == PSM_AVCTP){
+                if (!connection->l2cap_signaling_cid){
+                    connection->state = AVCTP_CONNECTION_W4_L2CAP_CONNECTED;
+                    connection->l2cap_signaling_cid = local_cid;
+                    log_info("L2CAP_EVENT_INCOMING_CONNECTION avrcp_cid 0x%02x, l2cap_signaling_cid 0x%02x", connection->avrcp_cid, connection->l2cap_signaling_cid);
+                    l2cap_accept_connection(local_cid);
+                    break;
+                }
+            }
+            log_info("L2CAP_EVENT_INCOMING_CONNECTION local_cid 0x%02x, psm 0x%2x, decline connection", local_cid, psm);
+            l2cap_decline_connection(local_cid);
             break;
             
         case L2CAP_EVENT_CHANNEL_OPENED:
@@ -607,26 +618,30 @@ void avrcp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet
             
             connection = get_avrcp_connection_for_bd_addr(event_addr, context);
             if (!connection){
-                log_error("Failed to alloc AVRCP connection structure");
-                avrcp_emit_connection_established(context->avrcp_callback, connection->avrcp_cid, event_addr, BTSTACK_MEMORY_ALLOC_FAILED);
+                // TODO: validate if this cannot happen. If not,  drop disconnect call
+                log_error("AVRCP connection lookup failed");
                 l2cap_disconnect(local_cid, 0); // reason isn't used
                 break;
             }
             if (status != ERROR_CODE_SUCCESS){
                 log_info("L2CAP connection to connection %s failed. status code 0x%02x", bd_addr_to_str(event_addr), status);
                 avrcp_emit_connection_established(context->avrcp_callback, connection->avrcp_cid, event_addr, status);
-                btstack_linked_list_remove(&context->connections, (btstack_linked_item_t*) connection); 
-                btstack_memory_avrcp_connection_free(connection);
+                avrcp_finalize_connection(connection, context);
                 break;
             }
-            connection->l2cap_signaling_cid = local_cid;
-            connection->song_length_ms = 0xFFFFFFFF;
-            connection->song_position_ms = 0xFFFFFFFF;
-            connection->playback_status = AVRCP_PLAYBACK_STATUS_ERROR;
 
-            log_info("L2CAP_EVENT_CHANNEL_OPENED avrcp_cid 0x%02x, l2cap_signaling_cid 0x%02x", connection->avrcp_cid, connection->l2cap_signaling_cid);
-            connection->state = AVCTP_CONNECTION_OPENED;
-            avrcp_emit_connection_established(context->avrcp_callback, connection->avrcp_cid, event_addr, ERROR_CODE_SUCCESS);
+            psm = l2cap_event_channel_opened_get_psm(packet);
+            if (psm == PSM_AVCTP){
+                connection->l2cap_signaling_cid = local_cid;
+                connection->l2cap_mtu = l2cap_event_channel_opened_get_remote_mtu(packet);
+                connection->song_length_ms = 0xFFFFFFFF;
+                connection->song_position_ms = 0xFFFFFFFF;
+                connection->playback_status = AVRCP_PLAYBACK_STATUS_ERROR;
+
+                log_info("L2CAP_EVENT_CHANNEL_OPENED avrcp_cid 0x%02x, l2cap_signaling_cid 0x%02x", connection->avrcp_cid, connection->l2cap_signaling_cid);
+                connection->state = AVCTP_CONNECTION_OPENED;
+                avrcp_emit_connection_established(context->avrcp_callback, connection->avrcp_cid, event_addr, ERROR_CODE_SUCCESS);
+            }
             break;
         
         case L2CAP_EVENT_CHANNEL_CLOSED:
@@ -635,9 +650,7 @@ void avrcp_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet
             connection = get_avrcp_connection_for_l2cap_signaling_cid(local_cid, context);
             if (connection){
                 avrcp_emit_connection_closed(context->avrcp_callback, connection->avrcp_cid);
-                // free connection
-                btstack_linked_list_remove(&context->connections, (btstack_linked_item_t*) connection); 
-                btstack_memory_avrcp_connection_free(connection);
+                avrcp_finalize_connection(connection, context);
                 break;
             }
             break;
@@ -657,9 +670,10 @@ uint8_t avrcp_connect(bd_addr_t bd_addr, avrcp_context_t * context, uint16_t * a
         return BTSTACK_MEMORY_ALLOC_FAILED;
     }
     
-    if (!avrcp_cid) return L2CAP_LOCAL_CID_DOES_NOT_EXIST;
-    
-    *avrcp_cid = connection->avrcp_cid; 
+    if (avrcp_cid){
+        *avrcp_cid = connection->avrcp_cid;
+    }
+
     connection->state = AVCTP_CONNECTION_W4_SDP_QUERY_COMPLETE;
     
     context->avrcp_l2cap_psm = 0;
@@ -667,5 +681,14 @@ uint8_t avrcp_connect(bd_addr_t bd_addr, avrcp_context_t * context, uint16_t * a
     context->avrcp_cid = connection->avrcp_cid;
     connection->browsing_l2cap_psm = 0;
     sdp_query_context = context;
-    return sdp_client_query_uuid16(&avrcp_handle_sdp_client_query_result, bd_addr, BLUETOOTH_PROTOCOL_AVCTP);
+
+    uint8_t status = sdp_client_query_uuid16(&avrcp_handle_sdp_client_query_result, bd_addr, BLUETOOTH_PROTOCOL_AVCTP);
+
+    // free connection struct in case of SDP connection error
+    if (status){
+        log_info("AVRCP: SDP query failed with status 0x%02x.", status);
+        avrcp_finalize_connection(connection, context);
+    }
+
+    return status;
 }

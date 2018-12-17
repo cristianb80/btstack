@@ -75,7 +75,7 @@ typedef enum {
 static btstack_packet_callback_registration_t hci_event_callback_registration;
 
 static bd_addr_t peer_addr;
-static state_t state;;
+static state_t state;
 
 // SPP
 static uint16_t  rfcomm_mtu;
@@ -266,14 +266,14 @@ int btstack_main(int argc, const char * argv[]){
     UNUSED(argc);
     (void)argv;
 
-    // register for HCI events
-    hci_event_callback_registration.callback = &packet_handler;
-    hci_add_event_handler(&hci_event_callback_registration);
-
     l2cap_init();
 
     rfcomm_init();
     rfcomm_register_service(packet_handler, RFCOMM_SERVER_CHANNEL, 0xffff);
+
+    // register for HCI events
+    hci_event_callback_registration.callback = &packet_handler;
+    hci_add_event_handler(&hci_event_callback_registration);
 
     // init SDP
     gap_ssp_set_io_capability(SSP_IO_CAPABILITY_DISPLAY_YES_NO);

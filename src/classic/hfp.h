@@ -131,7 +131,7 @@ extern "C" {
 #define HFP_EXTENDED_AUDIO_GATEWAY_ERROR "+CME ERROR"
 #define HFP_TRIGGER_CODEC_CONNECTION_SETUP "+BCC"
 #define HFP_CONFIRM_COMMON_CODEC "+BCS"
-#define HFP_CALL_ANSWERED "ATA"
+#define HFP_ANSWER_CALL "ATA"
 #define HFP_HANG_UP_CALL "+CHUP"
 #define HFP_CHANGE_IN_BAND_RING_TONE_SETTING "+BSIR"
 #define HFP_CALL_PHONE_NUMBER "ATD"
@@ -155,7 +155,8 @@ extern "C" {
 #define HFP_CODEC_MSBC 0x02
 
 typedef enum {
-    HFP_ROLE_AG = 0,
+    HFP_ROLE_INVALID = 0,
+    HFP_ROLE_AG,
     HFP_ROLE_HF,
 } hfp_role_t;
 
@@ -646,18 +647,22 @@ void hfp_set_ag_rfcomm_packet_handler(btstack_packet_handler_t handler);
 
 void hfp_set_hf_callback(btstack_packet_handler_t callback);
 void hfp_set_hf_rfcomm_packet_handler(btstack_packet_handler_t handler);
+void hfp_set_hf_run_for_context(void (*callbcack)(hfp_connection_t * hfp_connection));
+
+void hfp_init(void);
 
 void hfp_create_sdp_record(uint8_t * service, uint32_t service_record_handle, uint16_t service_uuid, int rfcomm_channel_nr, const char * name);
 void hfp_handle_hci_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size, hfp_role_t local_role);
+void hfp_handle_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size, hfp_role_t local_role);
 void hfp_emit_event(hfp_connection_t * hfp_connection, uint8_t event_subtype, uint8_t value);
 void hfp_emit_simple_event(hfp_connection_t * hfp_connection, uint8_t event_subtype);
 void hfp_emit_string_event(hfp_connection_t * hfp_connection, uint8_t event_subtype, const char * value);
 void hfp_emit_slc_connection_event(hfp_connection_t * hfp_connection, uint8_t status, hci_con_handle_t con_handle, bd_addr_t addr);
 
 hfp_connection_t * get_hfp_connection_context_for_rfcomm_cid(uint16_t cid);
-hfp_connection_t * get_hfp_connection_context_for_bd_addr(bd_addr_t bd_addr);
-hfp_connection_t * get_hfp_connection_context_for_sco_handle(uint16_t handle);
-hfp_connection_t * get_hfp_connection_context_for_acl_handle(uint16_t handle);
+hfp_connection_t * get_hfp_connection_context_for_bd_addr(bd_addr_t bd_addr, hfp_role_t hfp_role);
+hfp_connection_t * get_hfp_connection_context_for_sco_handle(uint16_t handle, hfp_role_t hfp_role);
+hfp_connection_t * get_hfp_connection_context_for_acl_handle(uint16_t handle, hfp_role_t hfp_role);
 
 btstack_linked_list_t * hfp_get_connections(void);
 void hfp_parse(hfp_connection_t * connection, uint8_t byte, int isHandsFree);
@@ -671,9 +676,12 @@ void hfp_release_audio_connection(hfp_connection_t * connection);
 void hfp_setup_synchronous_connection(hfp_connection_t * connection);
 int hfp_supports_codec(uint8_t codec, int codecs_nr, uint8_t * codecs);
 void hfp_hf_drop_mSBC_if_eSCO_not_supported(uint8_t * codecs, uint8_t * codecs_nr);
+void hfp_init_link_settings(hfp_connection_t * hfp_connection, uint8_t esco_s4_supported);
 
 const char * hfp_hf_feature(int index);
 const char * hfp_ag_feature(int index);
+
+void hfp_log_rfcomm_message(const char * tag, uint8_t * packet, uint16_t size);
 
 #if defined __cplusplus
 }

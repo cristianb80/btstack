@@ -68,11 +68,12 @@ static btstack_packet_callback_registration_t hci_event_callback_registration;
 static void packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size);
 
 static void gap_le_advertisements_setup(void){
-    hci_event_callback_registration.callback = &packet_handler;
-    hci_add_event_handler(&hci_event_callback_registration);
     // Active scanning, 100% (scan interval = scan window)
     gap_set_scan_parameters(1,48,48);
     gap_start_scan(); 
+
+    hci_event_callback_registration.callback = &packet_handler;
+    hci_add_event_handler(&hci_event_callback_registration);
 }
 
 /* LISTING_END */
@@ -85,7 +86,7 @@ static void gap_le_advertisements_setup(void){
  */
 
 /* LISTING_START(GAPLEAdvDataTypesAndFlags): Advertising data types and flags */
-static char * ad_types[] = {
+static const char * ad_types[] = {
     "", 
     "Flags",
     "Incomplete List of 16-bit Service Class UUIDs",
@@ -115,7 +116,7 @@ static char * ad_types[] = {
     "Advertising Interval"
 };
 
-static char * flags[] = {
+static const char * flags[] = {
     "LE Limited Discoverable Mode",
     "LE General Discoverable Mode",
     "BR/EDR Not Supported",

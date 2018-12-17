@@ -17,7 +17,7 @@ GLOBAL_INCLUDES += \
 	../../../../
 
 # micro-ecc of WICED tree used for SECP256R1 in LE Secure Connections
-$(NAME)_COMPONENTS += crypto/micro-ecc
+$(NAME)_COMPONENTS += $(MICRO_ECC)
 
 # additional CFLAGS
 $(NAME)_CFLAGS += $(BTSTACK_CFLAGS)
@@ -29,13 +29,13 @@ $(NAME)_SOURCES += \
 	../../src/ble/att_dispatch.c 		  \
 	../../src/ble/att_server.c   		  \
 	../../src/ble/gatt_client.c   		  \
-	../../src/ble/le_device_db_memory.c   \
 	../../src/ble/gatt-service/battery_service_server.c   \
+	../../src/ble/gatt-service/device_information_service_server.c   \
 	../../src/ble/sm.c          		  \
 	../../src/classic/hfp.c 			  \
 	../../src/classic/hfp_ag.c 			  \
 	../../src/classic/hfp_hf.c 			  \
-	../../src/classic/hsp_hs.c            \
+	../../src/classic/hsp_ag.c            \
 	../../src/classic/hsp_hs.c            \
 	../../src/classic/rfcomm.c            \
 	../../src/classic/sdp_server.c        \
@@ -43,6 +43,7 @@ $(NAME)_SOURCES += \
 	../../src/classic/sdp_client_rfcomm.c \
 	../../src/classic/sdp_util.c          \
 	../../src/classic/spp_server.c        \
+	../../src/btstack_crypto.c            \
 	../../src/btstack_linked_list.c       \
 	../../src/btstack_memory.c            \
 	../../src/btstack_memory_pool.c       \

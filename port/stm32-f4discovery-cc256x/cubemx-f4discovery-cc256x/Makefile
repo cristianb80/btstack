@@ -38,19 +38,21 @@ VPATH += ${BTSTACK_ROOT}/3rd-party/bluedroid/decoder/srce
 VPATH += ${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/srce
 VPATH += ${BTSTACK_ROOT}/3rd-party/hxcmod-player
 VPATH += ${BTSTACK_ROOT}/3rd-party/hxcmod-player/mods
+VPATH += ${BTSTACK_ROOT}/3rd-party/md5
+VPATH += ${BTSTACK_ROOT}/3rd-party/yxml
 VPATH += ${BTSTACK_ROOT}/3rd-party/segger-rtt
 VPATH += ${BTSTACK_ROOT}/chipset/cc256x
 VPATH += ${BTSTACK_ROOT}/example
 VPATH += ${BTSTACK_ROOT}/platform/embedded
-VPATH += ${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/eclipse-template/src
-VPATH += ${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/eclipse-template/system/src/cmsis
-VPATH += ${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/eclipse-template/system/src/stm32f4xx
-VPATH += ${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/src
-VPATH += ${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/src/bsp
 VPATH += ${BTSTACK_ROOT}/src
 VPATH += ${BTSTACK_ROOT}/src/ble
 VPATH += ${BTSTACK_ROOT}/src/ble/gatt-service
 VPATH += ${BTSTACK_ROOT}/src/classic
+VPATH += ../eclipse-template/src
+VPATH += ../eclipse-template/system/src/cmsis
+VPATH += ../eclipse-template/system/src/stm32f4xx
+VPATH += ../src
+VPATH += ../src/bsp
 
 ######################################
 # source
@@ -90,10 +92,15 @@ att_db.c \
 att_dispatch.c \
 att_server.c \
 battery_service_server.c \
+btstack_audio.c \
+btstack_audio_embedded.c \
+btstack_crypto.c \
+btstack_cvsd_plc.c \
 btstack_linked_list.c \
 btstack_memory.c \
 btstack_memory_pool.c \
 btstack_ring_buffer.c \
+btstack_stdin_embedded.c \
 btstack_run_loop.c \
 btstack_run_loop_embedded.c \
 btstack_tlv.c \
@@ -113,7 +120,6 @@ sm.c \
 uECC.c \
 btstack_chipset_cc256x.c \
 bluetooth_init_cc2564B_1.6_BT_Spec_4.1.c \
-hal_audio_dma.c \
 hal_flash_bank_stm32.c \
 btstack_tlv_flash_bank.c \
 le_device_db_tlv.c \
@@ -122,6 +128,7 @@ audio.c \
 cs43l22.c \
 stm32f4_discovery.c \
 stm32f4_discovery_audio.c \
+hal_audio_f4discovery.c \
 a2dp_sink.c \
 a2dp_source.c \
 avdtp.c \
@@ -153,6 +160,8 @@ hfp_msbc.c \
 hsp_hs.c \
 hsp_ag.c \
 hid_device.c \
+md5.c \
+yxml.c \
 rfcomm.c \
 sco_demo_util.c \
 btstack_hid_parser.c \
@@ -234,15 +243,17 @@ C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/bluedroid/decoder/include
 C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/bluedroid/encoder/include
 C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/hxcmod-player
 C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/hxcmod-player/mods
+C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/md5
+C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/yxml
 C_INCLUDES += -I${BTSTACK_ROOT}/3rd-party/segger-rtt
 C_INCLUDES += -I${BTSTACK_ROOT}/platform/embedded
 C_INCLUDES += -I${BTSTACK_ROOT}/chipset/cc256x
-C_INCLUDES += -I${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/src
-C_INCLUDES += -I${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/src/bsp
-C_INCLUDES += -I${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/eclipse-template/include
-C_INCLUDES += -I${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/eclipse-template/system/include/stm32f4xx
-C_INCLUDES += -I${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/eclipse-template/system/include/cmsis
-C_INCLUDES += -I${BTSTACK_ROOT}/port/stm32-f4discovery-cc256x/eclipse-template/system/include/cmsis/device
+C_INCLUDES += -I../src
+C_INCLUDES += -I../src/bsp
+C_INCLUDES += -I../eclipse-template/include
+C_INCLUDES += -I../eclipse-template/system/include/stm32f4xx
+C_INCLUDES += -I../eclipse-template/system/include/cmsis
+C_INCLUDES += -I../eclipse-template/system/include/cmsis/device
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
@@ -300,6 +311,7 @@ EXAMPLES = 					\
 	hog_mouse_demo          \
 	hsp_ag_demo             \
 	hsp_hs_demo             \
+	mod_player              \
 	le_counter              \
 	le_streamer				\
 	le_streamer_client      \
