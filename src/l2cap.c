@@ -789,7 +789,6 @@ void l2cap_init(void){
 #endif
 }
 
-#if 0
 void l2cap_register_packet_handler(void (*handler)(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size)){
 #ifdef ENABLE_BLE
     l2cap_event_packet_handler = handler;
@@ -797,7 +796,6 @@ void l2cap_register_packet_handler(void (*handler)(uint8_t packet_type, uint16_t
     UNUSED(handler);    // ok: no code
 #endif
 }
-#endif
 
 void l2cap_request_can_send_fix_channel_now_event(hci_con_handle_t con_handle, uint16_t channel_id){
     UNUSED(con_handle);  // ok: there is no con handle
@@ -1251,8 +1249,6 @@ void l2cap_set_max_le_mtu(uint16_t max_mtu){
         l2cap_le_custom_max_mtu = max_mtu;
     }
 }
-#endif
-
 #endif
 
 #ifdef ENABLE_CLASSIC
@@ -1882,9 +1878,6 @@ uint8_t l2cap_create_channel(btstack_packet_handler_t channel_packet_handler, bd
 
 void l2cap_disconnect(uint16_t local_cid, uint8_t reason){
     log_info("L2CAP_DISCONNECT local_cid 0x%x reason 0x%x", local_cid, reason);
-#else
-    UNUSED(reason) ;
-#endif
     // find channel for local_cid
     l2cap_channel_t * channel = l2cap_get_channel_for_local_cid(local_cid);
     if (channel) {

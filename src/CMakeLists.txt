@@ -1,6 +1,7 @@
 # Compilo solo quelli che mi interessano
 set(CODICE
     ad_parser.c
+	btstack_crypto.c
     btstack_linked_list.c
     btstack_memory.c
     btstack_memory_pool.c

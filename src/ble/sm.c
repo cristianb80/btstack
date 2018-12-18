@@ -3950,25 +3950,25 @@ void sm_request_pairing(hci_con_handle_t con_handle){
         if (sm_conn->sm_engine_state == SM_INITIATOR_CONNECTED){
             uint8_t ltk[16];
             switch (sm_conn->sm_irk_lookup_state){
-                case IRK_LOOKUP_SUCCEEDED:
+			case IRK_LOOKUP_SUCCEEDED:
 #ifndef ENABLE_LE_CENTRAL_AUTO_ENCRYPTION
-                    le_device_db_encryption_get(sm_conn->sm_le_db_index, NULL, NULL, ltk, NULL, NULL, NULL);
-                    int have_ltk = !sm_is_null_key(ltk);
-                    log_info("have ltk %u", have_ltk);
-                    // trigger 'pairing complete' event on encryption change
-                    sm_conn->sm_pairing_requested = 1;
-                    sm_conn->sm_engine_state = SM_INITIATOR_PH0_HAS_LTK;
-                    break;
+					le_device_db_encryption_get(sm_conn->sm_le_db_index, NULL, NULL, ltk, NULL, NULL, NULL);
+					int have_ltk = !sm_is_null_key(ltk);
+					log_info("have ltk %u", have_ltk);
+					// trigger 'pairing complete' event on encryption change
+					sm_conn->sm_pairing_requested = 1;
+					sm_conn->sm_engine_state = SM_INITIATOR_PH0_HAS_LTK;
+				break;
 #endif
-                     /* explicit fall-through */
+				 /* explicit fall-through */
 
-                case IRK_LOOKUP_FAILED:
-                    sm_conn->sm_engine_state = SM_INITIATOR_PH1_W2_SEND_PAIRING_REQUEST;
-                    break;
-                default:
-                    log_info("irk lookup pending");
-                    sm_conn->sm_pairing_requested = 1;
-                    break;
+			case IRK_LOOKUP_FAILED:
+				sm_conn->sm_engine_state = SM_INITIATOR_PH1_W2_SEND_PAIRING_REQUEST;
+				break;
+			default:
+				log_info("irk lookup pending");
+				sm_conn->sm_pairing_requested = 1;
+				break;
             }
         } else if (sm_conn->sm_engine_state == SM_GENERAL_IDLE){
             sm_conn->sm_pairing_requested = 1;
