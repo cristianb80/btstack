@@ -45,8 +45,6 @@ set(CMAKE_C_FLAGS
 set(CMAKE_CXX_FLAGS
 	"${CMAKE_CXX_FLAGS} ${gcc_flags} ${gcc_cpp_flags}")	
 
-# cfr includimi.h
-add_definitions(-DSTM32F429xx -DHSE_VALUE=24000000 -DUSE_HAL_DRIVER)
 
 #####################################################################
 add_subdirectory(src)

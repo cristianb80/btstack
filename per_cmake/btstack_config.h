@@ -6,7 +6,20 @@
 #define __BTSTACK_CONFIG
 
 #include "utili.h"
-#define BTSTACK_PRINTF		PRINTF
+
+
+static inline void bts_vprintf(const char * fmt, va_list arg)
+{
+	UNUSED(fmt) ;
+	UNUSED(arg) ;
+}
+static inline void bts_printf(const char * fmt, ...)
+{
+	UNUSED(fmt) ;
+}
+
+#define BTSTACK_PRINTF		bts_printf
+#define BTSTACK_VPRINTF		bts_vprintf
 
 
 // MZ: non voglio che usi la malloc (HAVE_MALLOC)
