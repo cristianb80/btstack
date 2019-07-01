@@ -9,7 +9,7 @@ set(CODICE
     btstack_util.c
     hci.c
     hci_cmd.c
-    #hci_dump.c : implementation specific
+	hci_dump.c
     hci_transport_h4.c
     l2cap.c
     l2cap_signaling.c
@@ -19,6 +19,7 @@ set(CODICE
 	ble/att_db.c
 	ble/att_dispatch.c
 	ble/att_server.c
+	ble/gatt_client.c
 	ble/sm.c
 	
 )
