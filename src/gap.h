@@ -35,8 +35,8 @@
  *
  */
 
-#ifndef __GAP_H
-#define __GAP_H
+#ifndef GAP_H
+#define GAP_H
 
 #if defined __cplusplus
 extern "C" {
@@ -397,6 +397,17 @@ int gap_auto_connection_stop(bd_addr_type_t address_typ, bd_addr_t address);
 void gap_auto_connection_stop_all(void);
 
 /**
+ * @brief Set LE PHY
+ * @param con_handle
+ * @param all_phys 0 = set rx/tx, 1 = set only rx, 2 = set only tx
+ * @param tx_phys 1 = 1M, 2 = 2M, 4 = Coded
+ * @param rx_phys 1 = 1M, 2 = 2M, 4 = Coded
+ * @param phy_options 0 = no preferred coding for Coded, 1 = S=2 coding (500 kbit), 2 = S=8 coding (125 kbit)
+ * @returns 0 if ok
+ */
+uint8_t gap_le_set_phy(hci_con_handle_t con_handle, uint8_t all_phys, uint8_t tx_phys, uint8_t rx_phys, uint8_t phy_options);
+
+/**
  * @brief Get connection interval
  * @return connection interval, otherwise 0 if error 
  */
@@ -416,6 +427,13 @@ int gap_encryption_key_size(hci_con_handle_t con_handle);
  * @return 1 if bonded with OOB/Passkey (AND MITM protection)
  */
 int gap_authenticated(hci_con_handle_t con_handle);
+
+/**
+ * @brief Get secure connection property
+ * @param con_handle
+ * @return 1 if bonded usiung LE Secure Connections
+ */
+int gap_secure_connection(hci_con_handle_t con_handle);
 
 /**
  * @brief Queries authorization state.
@@ -600,4 +618,4 @@ int gap_reconnect_security_setup_active(hci_con_handle_t con_handle);
 }
 #endif
 
-#endif // __GAP_H
+#endif // GAP_H

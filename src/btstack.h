@@ -41,8 +41,8 @@
  */
 
 
-#ifndef __BTSTACK_H
-#define __BTSTACK_H
+#ifndef BTSTACK_H
+#define BTSTACK_H
 
 #include "btstack_config.h"
 
@@ -124,4 +124,4 @@
 #include "classic/spp_server.h"
 #endif
 
-#endif  // __BTSTACK_H
+#endif  // BTSTACK_H

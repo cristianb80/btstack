@@ -42,8 +42,8 @@
  *
  */
 
-#ifndef __HCI_H
-#define __HCI_H
+#ifndef HCI_H
+#define HCI_H
 
 #include "btstack_config.h"
 
@@ -388,6 +388,7 @@ typedef struct sm_connection {
     irk_lookup_state_t      sm_irk_lookup_state;
     uint8_t                  sm_connection_encrypted;
     uint8_t                  sm_connection_authenticated;   // [0..1]
+    uint8_t                  sm_connection_sc;
     uint8_t                  sm_actual_encryption_key_size;
     sm_pairing_packet_t      sm_m_preq;  // only used during c1
     authorization_state_t    sm_connection_authorization_state;
@@ -494,7 +495,17 @@ typedef struct {
     uint16_t sniff_max_interval;
     uint16_t sniff_attempt;
     uint16_t sniff_timeout;
-#endif
+
+    // track SCO rx event
+    uint32_t sco_rx_ms;
+    uint8_t  sco_rx_count;
+    uint8_t  sco_rx_valid;
+
+    // generate sco can send now based on received packets, using timeout below
+    uint8_t  sco_tx_ready;
+    
+    btstack_timer_source_t timeout_sco;
+#endif /* ENABLE_CLASSIC */
 
     // errands
     uint32_t authentication_flags;
@@ -509,9 +520,9 @@ typedef struct {
     uint16_t acl_recombination_pos;
     uint16_t acl_recombination_length;
     
+
     // number packets sent to controller
-    uint8_t num_acl_packets_sent;
-    uint8_t num_sco_packets_sent;
+    uint8_t num_packets_sent;
 
 #ifdef ENABLE_HCI_CONTROLLER_TO_HOST_FLOW_CONTROL
     uint8_t num_packets_completed;
@@ -527,6 +538,13 @@ typedef struct {
 
 #ifdef ENABLE_BLE
     uint16_t le_connection_interval;
+
+    // LE PHY Update via set phy command
+    uint8_t le_phy_update_all_phys;      // 0xff for idle
+    uint8_t le_phy_update_tx_phys;
+    uint8_t le_phy_update_rx_phys;
+    int8_t  le_phy_update_phy_options;
+
     // LE Security Manager
     sm_connection_t sm_connection;
 
@@ -648,7 +666,12 @@ typedef enum hci_init_state{
     HCI_FALLING_ASLEEP_W4_WRITE_SCAN_ENABLE,
     HCI_FALLING_ASLEEP_COMPLETE,
 
-    HCI_INIT_AFTER_SLEEP
+    HCI_INIT_AFTER_SLEEP,
+
+    HCI_HALTING_DISCONNECT_ALL_NO_TIMER,
+    HCI_HALTING_DISCONNECT_ALL_TIMER,
+    HCI_HALTING_W4_TIMER,
+    HCI_HALTING_CLOSE,
 
 } hci_substate_t;
 
@@ -723,6 +746,7 @@ typedef struct {
     uint8_t   hci_packet_buffer_reserved;
     uint16_t  acl_fragmentation_pos;
     uint16_t  acl_fragmentation_total_size;
+    uint8_t   acl_fragmentation_tx_active;
      
     /* host to controller flow control */
     uint8_t  num_cmd_packets;
@@ -734,17 +758,19 @@ typedef struct {
     uint8_t  le_acl_packets_total_num;
     uint16_t le_data_packets_length;
     uint8_t  sco_waiting_for_can_send_now;
+    uint8_t  sco_can_send_now;
 
     /* local supported features */
     uint8_t local_supported_features[8];
 
     /* local supported commands summary - complete info is 64 bytes */
-    /* 0 - Read Buffer Size */
-    /* 1 - Write Le Host Supported */
-    /* 2 - Write Synchronous Flow Control Enable (Octet 10/bit 4) */
-    /* 3 - Write Default Erroneous Data Reporting (Octet 18/bit 3) */
-    /* 4 - LE Write Suggested Default Data Length (Octet 34/bit 0) */
-    /* 5 - LE Read Maximum Data Length (Octet 35/bit 3) */
+    /* 0 - Read Buffer Size                        (Octet 14/bit 7) */
+    /* 1 - Write Le Host Supported                 (Octet 24/bit 6) */
+    /* 2 - Write Synchronous Flow Control Enable   (Octet 10/bit 4) */
+    /* 3 - Write Default Erroneous Data Reporting  (Octet 18/bit 3) */
+    /* 4 - LE Write Suggested Default Data Length  (Octet 34/bit 0) */
+    /* 5 - LE Read Maximum Data Length             (Octet 35/bit 3) */
+    /* 6 - LE Set Default PHY                      (Octet 35/bit 5) */ 
     uint8_t local_supported_commands[1];
 
     /* bluetooth device information from hci read local version information */
@@ -762,6 +788,7 @@ typedef struct {
     HCI_STATE      state;
     hci_substate_t substate;
     btstack_timer_source_t timeout;
+    btstack_chipset_result_t chipset_result;
 
     uint16_t  last_cmd_opcode;
 
@@ -1185,8 +1212,13 @@ void hci_disable_l2cap_timeout_check(void);
  */
 HCI_STATE hci_get_state(void);
 
+/**
+ * Defer halt. Used by btstack_crypto to allow current HCI operation to complete
+ */
+void hci_halting_defer(void);
+
 #if defined __cplusplus
 }
 #endif
 
-#endif // __HCI_H
+#endif // HCI_H

@@ -35,7 +35,7 @@
  *
  */
 
-#define __BTSTACK_FILE__ "hfp_ag.c"
+#define BTSTACK_FILE__ "hfp_ag.c"
  
 // *****************************************************************************
 //
@@ -937,7 +937,6 @@ static void hfp_ag_hf_accept_call(hfp_connection_t * source){
 
         hfp_ag_hf_stop_ringing(hfp_connection);
         if (hfp_connection == source){
-            hfp_connection->ok_pending = 1;
 
             if (use_in_band_tone()){
                 hfp_connection->call_state = HFP_CALL_ACTIVE;
@@ -1016,7 +1015,9 @@ static void hfp_ag_trigger_terminate_call(void){
         if (hfp_connection->call_state == HFP_CALL_IDLE) continue;
         hfp_connection->call_state = HFP_CALL_IDLE;
         hfp_connection->ag_indicators_status_update_bitmap = store_bit(hfp_connection->ag_indicators_status_update_bitmap, call_indicator_index, 1);
-        hfp_connection->release_audio_connection = 1;
+        if (hfp_connection->state == HFP_AUDIO_CONNECTION_ESTABLISHED){
+            hfp_connection->release_audio_connection = 1;
+        }
         hfp_ag_run_for_context(hfp_connection);
     }
     hfp_ag_emit_simple_event(HFP_SUBEVENT_CALL_TERMINATED);
@@ -1208,6 +1209,7 @@ static void hfp_ag_call_sm(hfp_ag_call_event_t event, hfp_connection_t * hfp_con
                             hfp_ag_set_callsetup_indicator();
                             hfp_ag_set_call_indicator();
                             hfp_ag_hf_accept_call(hfp_connection);
+                            hfp_connection->ok_pending = 1;
                             log_info("HF answers call, accept call by GSM");
                             hfp_emit_simple_event(hfp_connection, HFP_SUBEVENT_CALL_ANSWERED);
                             break;

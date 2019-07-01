@@ -41,8 +41,8 @@
  * Numbers defined or derived from the official Bluetooth specification
  */
 
-#ifndef __BLUETOOTH_H
-#define __BLUETOOTH_H
+#ifndef BLUETOOTH_H
+#define BLUETOOTH_H
 
 #include <stdint.h>
 
@@ -439,6 +439,14 @@ typedef enum {
 
 #define HCI_EVENT_READ_REMOTE_SUPPORTED_FEATURES_COMPLETE  0x0B
 
+/**
+ * @format 12122
+ * @param status
+ * @param connection_handle
+ * @param version
+ * @param manufacturer_name
+ * @param subversion
+ */
 #define HCI_EVENT_READ_REMOTE_VERSION_INFORMATION_COMPLETE 0x0C
 
 #define HCI_EVENT_QOS_SETUP_COMPLETE                       0x0D
@@ -1103,6 +1111,9 @@ typedef enum {
 #define ATT_ERROR_UNSUPPORTED_GROUP_TYPE           0x10
 #define ATT_ERROR_INSUFFICIENT_RESOURCES           0x11
 
+// MARK: ATT Error Codes used internally by BTstack
+#define ATT_ERROR_BONDING_INFORMATION_MISSING      0x70
+
 // MARK: ATT Error Codes from Cycling Power Service spec
 #define CYCLING_POWER_ERROR_CODE_INAPPROPRIATE_CONNECTION_PARAMETERS                          0x80
 #define CYCLING_POWER_ERROR_CODE_PROCEDURE_ALREADY_IN_PROGRESS                                0xFE
@@ -1132,6 +1143,7 @@ typedef enum {
 #define ATT_SECURITY_ENCRYPTED 1
 #define ATT_SECURITY_AUTHENTICATED 2
 #define ATT_SECURITY_AUTHORIZED 3
+#define ATT_SECURITY_AUTHENTICATED_SC 4
 
 // internal additions
 // 128 bit UUID used
@@ -1141,6 +1153,8 @@ typedef enum {
 #define ATT_PROPERTY_READ_PERMISSION_BIT_1  0x0800
 #define ATT_PROPERTY_WRITE_PERMISSION_BIT_0 0x0001
 #define ATT_PROPERTY_WRITE_PERMISSION_BIT_1 0x0010
+#define ATT_PROPERTY_READ_PERMISSION_SC     0x0020
+#define ATT_PROPERTY_WRITE_PERMISSION_SC    0x0080
 
 
 // ATT Transaction Timeout of 30 seconds for Command/Response or Indication/Confirmation

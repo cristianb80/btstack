@@ -93,7 +93,7 @@ VPATH += $(BOARD_DIR)/Source
 IPATH += $(BOARD_DIR)/Include
 
 # BTstack
-BTSTACK_ROOT = ../../../..
+BTSTACK_ROOT ?= ../../../..
 VPATH += $(BTSTACK_ROOT)/chipset/cc256x
 VPATH += $(BTSTACK_ROOT)/example
 VPATH += $(BTSTACK_ROOT)/port/pegasus-max3263x
@@ -184,6 +184,7 @@ AVDTP += \
 	a2dp_source.c 		\
 	a2dp_sink.c  		\
 	btstack_ring_buffer.c \
+    btstack_resample.c  \
 	avrcp.c \
 	avrcp_target.c \
 	avrcp_controller.c \

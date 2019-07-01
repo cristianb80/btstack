@@ -1,5 +1,5 @@
 # Makefile for Raspberry Pi
-BTSTACK_ROOT = ../..
+BTSTACK_ROOT ?= ../..
 
 CORE += \
 	btstack_chipset_bcm.c \
@@ -16,6 +16,7 @@ CORE += \
 	main.c \
 	wav_util.c 					\
 	btstack_stdin_posix.c \
+	raspi_get_model.c 
 
 # examples
 include ${BTSTACK_ROOT}/example/Makefile.inc

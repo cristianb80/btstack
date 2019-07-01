@@ -36,8 +36,8 @@
  */
 
 
-#ifndef __ATT_H
-#define __ATT_H
+#ifndef ATT_H
+#define ATT_H
 
 #include <stdint.h>
 #include "bluetooth.h"
@@ -69,6 +69,7 @@ typedef struct att_connection {
     uint8_t  encryption_key_size;
     uint8_t  authenticated;
     uint8_t  authorized;
+    uint8_t  secure_connection;
 } att_connection_t;
 
 // ATT Client Read Callback for Dynamic Data
@@ -267,4 +268,4 @@ int att_is_persistent_ccc(uint16_t handle);
 }
 #endif
 
-#endif // __ATT_H
+#endif // ATT_H
