@@ -1,0 +1,47 @@
+$ ./gatt_client_demo -u 9
+Specified USB Path: 09
+Packet Log: /tmp/hci_dump_9.pklg
+USB Path: 09
+Local version information:
+- HCI Version    0x0006
+- HCI Revision   0x22bb
+- LMP Version    0x0006
+- LMP Subversion 0x22bb
+- Manufacturer 0x000a
+BTstack up and running on 00:1A:7D:DA:71:02.
+Start scanning!
+Stop scan. Connect to device with addr 00:1A:7D:DA:71:01.
+Connection Interval: 30.00 ms
+Connection Latency: 4
+Search for GATT Server Demo service.
+ATT MTU = 1691
+Search for GATT Server Demo characteristic A.
+Found Characteristic A with value handle 0x0006
+Search for GATT Server Demo characteristic B.
+Found Characteristic B with value handle 0x0008
+Search for GATT Server Demo characteristic C.
+Found Characteristic C with value handle 0x000a
+Search for GATT Server Demo characteristic D.
+Found Characteristic D with value handle 0x000c
+All Characteristics found!
+Request to send Write Without Response
+Write without response to Characteristic A - handle 0x0006
+Write to Characteristic C - handle 0x000a
+Write successful.
+Long Write to Characteristic C - handle 0x000a
+Write Long successful.
+Prepare Write to Characteristic C - handle 0x000a
+Reliable Write of Characteristic C successful.
+Prepare Write to Characteristic D - handle 0x000c
+Reliable Write of Characteristic D successful.
+Execute Prepared Write to Characteristics C and D
+Reliable Write execution successful.
+Signed write to Characteristic B - handle 0x0008
+Signed write failed - no pairing information available. Trigger pairing...
+Pairing: Just Works requeste, accepting
+Pairing complete, success
+Retry signed write..
+Signed write to Characteristic B - handle 0x0008
+Signed write sent.
+
+End of demo

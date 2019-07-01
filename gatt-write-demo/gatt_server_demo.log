@@ -1,0 +1,27 @@
+$ ./gatt_server_demo -u 7
+Specified USB Path: 07
+Packet Log: /tmp/hci_dump_7.pklg
+USB Path: 07
+Disconnect, reason 16
+Local version information:
+- HCI Version    0x0006
+- HCI Revision   0x22bb
+- LMP Version    0x0006
+- LMP Subversion 0x22bb
+- Manufacturer 0x000a
+BTstack up and running on 00:1A:7D:DA:71:01.
+To start the streaming, please run the gatt_server_demo_client example on other device, or use some GATT Explorer, e.g. LightBlue, BLExplr.
+Connection Interval: 30.00 ms, latency 4
+ATT MTU = 1688
+Write Callback: att_handle 0006, transaction mode ATT_TRANSACTION_MODE_NONE     text: 'Write Without Response'
+Write Callback: att_handle 000a, transaction mode ATT_TRANSACTION_MODE_NONE     text: 'Normal Write'
+Write Callback: att_handle 000a, transaction mode ATT_TRANSACTION_MODE_NONE     text: 'Long Write 1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'
+Write Callback: att_handle 000a, transaction mode ATT_TRANSACTION_MODE_ACTIVE   text: 'Reliable Write to C'
+Write Callback: att_handle 000c, transaction mode ATT_TRANSACTION_MODE_ACTIVE   text: 'Reliable Write to D'
+Write Callback: att_handle 0000, transaction mode ATT_TRANSACTION_MODE_VALIDATE
+Write Callback: att_handle 0000, transaction mode ATT_TRANSACTION_MODE_EXECUTE
+Pairing: Just Works requeste, accepting
+Pairing complete, success
+Write Callback: att_handle 0008, transaction mode ATT_TRANSACTION_MODE_NONE     text: 'Signed Write'
+Write Callback: att_handle 0000, transaction mode ATT_TRANSACTION_MODE_CANCEL
+Disconnect, reason 13
