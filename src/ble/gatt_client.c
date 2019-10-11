@@ -1504,7 +1504,7 @@ static void gatt_client_att_packet_handler(uint8_t packet_type, uint16_t handle,
 
                 case ATT_ERROR_INSUFFICIENT_AUTHENTICATION:
                 case ATT_ERROR_INSUFFICIENT_ENCRYPTION_KEY_SIZE:
-                case ATT_ERROR_INSUFFICIENT_ENCRYPTION:
+                case ATT_ERROR_INSUFFICIENT_ENCRYPTION: {
                     // security too low
                     if (peripheral->security_counter > 0) {
                         gatt_client_report_error_if_pending(peripheral, packet[4]);
@@ -1589,6 +1589,7 @@ static void gatt_client_att_packet_handler(uint8_t packet_type, uint16_t handle,
                     peripheral->wait_for_pairing_complete = 1;
                     peripheral->pending_error_code = packet[4];
                     sm_request_pairing(peripheral->con_handle);
+                    }
                     break;
 #endif
 

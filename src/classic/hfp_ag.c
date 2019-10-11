@@ -243,13 +243,13 @@ static int hfp_ag_send_ring(uint16_t cid){
 
 static int hfp_ag_send_clip(uint16_t cid){
     char buffer[50];
-    sprintf(buffer, "\r\n%s: \"%s\",%u\r\n", HFP_ENABLE_CLIP, hfp_gsm_clip_number(), hfp_gsm_clip_type());
+    sprintf(buffer, "\r\n%s: \"%s\",%" PRIu8 "\r\n", HFP_ENABLE_CLIP, hfp_gsm_clip_number(), hfp_gsm_clip_type());
     return send_str_over_rfcomm(cid, buffer);
 }
 
 static int hfp_send_subscriber_number_cmd(uint16_t cid, uint8_t type, const char * number){
     char buffer[50];
-    sprintf(buffer, "\r\n%s: ,\"%s\",%u, , \r\n", HFP_SUBSCRIBER_NUMBER_INFORMATION, number, type);
+    sprintf(buffer, "\r\n%s: ,\"%s\",%" PRIu8 ", , \r\n", HFP_SUBSCRIBER_NUMBER_INFORMATION, number, type);
     return send_str_over_rfcomm(cid, buffer);
 }
         
@@ -261,7 +261,7 @@ static int hfp_ag_send_phone_number_for_voice_tag_cmd(uint16_t cid){
 
 static int hfp_ag_send_call_waiting_notification(uint16_t cid){
     char buffer[50];
-    sprintf(buffer, "\r\n%s: \"%s\",%u\r\n", HFP_ENABLE_CALL_WAITING_NOTIFICATION, hfp_gsm_clip_number(), hfp_gsm_clip_type());
+    sprintf(buffer, "\r\n%s: \"%s\",%" PRIu8 "\r\n", HFP_ENABLE_CALL_WAITING_NOTIFICATION, hfp_gsm_clip_number(), hfp_gsm_clip_type());
     return send_str_over_rfcomm(cid, buffer);
 }
 
@@ -1609,7 +1609,7 @@ static void hfp_ag_send_call_status(hfp_connection_t * hfp_connection, int call_
     // TODO: check length of a buffer, to fit the MTU
     int offset = snprintf(buffer, sizeof(buffer), "\r\n%s: %d,%d,%d,%d,%d", HFP_LIST_CURRENT_CALLS, idx, dir, status, mode, mpty);
     if (number){
-        offset += snprintf(buffer+offset, sizeof(buffer)-offset-3, ", \"%s\",%u", number, type);
+        offset += snprintf(buffer+offset, sizeof(buffer)-offset-3, ", \"%s\",%" PRIu8 "", number, type);
     } 
     snprintf(buffer+offset, sizeof(buffer)-offset, "\r\n");
     log_info("hfp_ag_send_current_call_status 000 index %d, dir %d, status %d, mode %d, mpty %d, type %d, number %s", idx, dir, status,

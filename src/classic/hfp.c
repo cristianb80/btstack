@@ -614,6 +614,8 @@ static int hfp_handle_failed_sco_connection(uint8_t status){
 
 void hfp_handle_hci_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size, hfp_role_t local_role){
     UNUSED(channel);    // ok: no channel
+    UNUSED(packet_type) ;
+    UNUSED(size) ;
 
     bd_addr_t event_addr;
     hci_con_handle_t handle;
@@ -744,6 +746,8 @@ void hfp_handle_hci_event(uint8_t packet_type, uint16_t channel, uint8_t *packet
 
 void hfp_handle_rfcomm_event(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size, hfp_role_t local_role){
     UNUSED(channel);    // ok: no channel
+    UNUSED(packet_type) ;
+    UNUSED(size) ;
 
     bd_addr_t event_addr;
     uint16_t rfcomm_cid;
@@ -1626,5 +1630,9 @@ void hfp_log_rfcomm_message(const char * tag, uint8_t * packet, uint16_t size){
     }
     printable[i] = 0;
     log_info("%s: '%s'", tag, printable);
+#else
+    UNUSED(tag) ;
+    UNUSED(packet) ;
+    UNUSED(size) ;
 #endif
 }
